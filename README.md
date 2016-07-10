@@ -1,5 +1,7 @@
 # PE Cleaner
 
+*This is a work in progress.*
+
 This is a simple tool to make builds of Portable Executables (PEs) reproducible.
 
 Timestamps and other non-deterministic data are embedded in DLLs, EXEs, and
