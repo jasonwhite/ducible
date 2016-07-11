@@ -30,8 +30,8 @@ The files are overwritten in-place.
 
 ## Building It
 
-This is a very simple C program. There are no dependencies and it should be
-buildable and runnable on any platform (even non-Windows).
+This is a very simple C++ program. There are no dependencies and it should be
+buildable and runnable on any platform (even non-Windows!).
 
 *Build instructions are coming soon to a README near you.*
 
