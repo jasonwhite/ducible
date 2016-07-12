@@ -27,6 +27,7 @@
 
 #include <vector>
 #include <iostream>
+#include <iomanip>
 
 #include "pefile.h"
 #include "pemap.h"
@@ -46,7 +47,7 @@ namespace {
 struct Patch
 {
     // Location to patch.
-    uint8_t* addr;
+    size_t offset;
 
     // Length of the data.
     size_t length;
@@ -57,16 +58,16 @@ struct Patch
     // Name of the patch. Useful to see what's going on.
     const char* name;
 
-    Patch(uint8_t* addr, size_t length, const uint8_t* data, const char* name = NULL)
-        : addr(addr),
+    Patch(size_t offset, size_t length, const uint8_t* data, const char* name = NULL)
+        : offset(offset),
           length(length),
           data(data),
           name(name)
     {}
 
     template<typename T>
-    Patch(T* addr, const T* data, const char* name = NULL)
-        : addr((uint8_t*)addr),
+    Patch(size_t offset, const T* data, const char* name = NULL)
+        : offset(offset),
           length(sizeof(T)),
           data((const uint8_t*)data),
           name(name)
@@ -79,18 +80,20 @@ struct Patch
      * Applies the patch. Note that no bounds checking is done. It is assumed
      * that it has already been done.
      */
-    void apply(bool dryRun) {
+    void apply(uint8_t* buf, size_t bufLength, bool dryRun) {
         std::cout << *this << std::endl;
 
         if (!dryRun) {
             for (size_t i = 0; i < length; ++i)
-                *addr = data[i];
+                buf[i] = data[i];
         }
     }
 };
 
 std::ostream& operator<<(std::ostream& os, const Patch& patch) {
-    os << "Patching '" << patch.name << "' (" << patch.length << " bytes)";
+    os << "Patching '" << patch.name
+       << "' at 0x" << std::hex << patch.offset << std::dec
+       << " (" << patch.length << " bytes)";
     return os;
 }
 
@@ -100,10 +103,12 @@ private:
     // List of patches
     std::vector<Patch> _patches;
 
+    uint8_t* _buf;
+    size_t _length;
+
 public:
 
-    Patches() {}
-    ~Patches() {}
+    Patches(uint8_t* buf, size_t length) : _buf(buf), _length(length) {}
 
     void add(Patch patch) {
         _patches.push_back(patch);
@@ -112,12 +117,12 @@ public:
     template<typename T>
     void add(T* addr, const T* data, const char* name = NULL)
     {
-        add(Patch(addr, data, name));
+        add(Patch((uint8_t*)addr - _buf, data, name));
     }
 
     void applyAll(bool dryRun = false) {
         for (auto&& patch: _patches)
-            patch.apply(dryRun);
+            patch.apply(_buf, _length, dryRun);
     }
 };
 
@@ -130,26 +135,27 @@ void patchImage(const char* imagePath, const char* pdbPath, bool dryRun) {
     // Replacement for timestamps
     const uint32_t timestamp = 0;
 
-    uint8_t* pStart = (uint8_t*)image.buf();
-    uint8_t* pEnd   = pStart + image.length();
-    uint8_t* p      = pStart;
+    size_t i = 0;
 
-    Patches patches;
+    uint8_t* buf = (uint8_t*)image.buf();
+    const size_t length = image.length();
 
-    if (image.length() < sizeof(IMAGE_DOS_HEADER))
+    Patches patches(buf, length);
+
+    if (length < sizeof(IMAGE_DOS_HEADER))
         throw InvalidImage("missing DOS header");
 
-    IMAGE_DOS_HEADER* dosHeader = (IMAGE_DOS_HEADER*)p;
+    IMAGE_DOS_HEADER* dosHeader = (IMAGE_DOS_HEADER*)(buf+i);
     if (dosHeader->e_magic != IMAGE_DOS_SIGNATURE)
         throw InvalidImage("invalid DOS signature");
 
     // Skip to the NT headers. Note that we assume this is a PE32 (not a PE32+)
     // header for now.
-    p += dosHeader->e_lfanew;
-    if (p + sizeof(IMAGE_NT_HEADERS32) >= pEnd)
+    i += dosHeader->e_lfanew;
+    if (i + sizeof(IMAGE_NT_HEADERS32) >= length)
         throw InvalidImage("missing IMAGE_NT_HEADERS");
 
-    IMAGE_NT_HEADERS32* ntHeaders = (IMAGE_NT_HEADERS32*)p;
+    IMAGE_NT_HEADERS32* ntHeaders = (IMAGE_NT_HEADERS32*)(buf+i);
 
     // Check the signature
     if (ntHeaders->Signature != *(const uint32_t*)"PE\0\0")
