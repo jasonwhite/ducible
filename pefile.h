@@ -262,6 +262,52 @@ typedef struct _IMAGE_ROM_HEADERS {
 #define IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT   13   // Delay Load Import Descriptors
 #define IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR 14   // COM Runtime descriptor
 
+//
+// Export Format
+//
+
+typedef struct _IMAGE_EXPORT_DIRECTORY {
+    uint32_t   Characteristics;
+    uint32_t   TimeDateStamp;
+    uint16_t    MajorVersion;
+    uint16_t    MinorVersion;
+    uint32_t   Name;
+    uint32_t   Base;
+    uint32_t   NumberOfFunctions;
+    uint32_t   NumberOfNames;
+    uint32_t   AddressOfFunctions;     // RVA from base of image
+    uint32_t   AddressOfNames;         // RVA from base of image
+    uint32_t   AddressOfNameOrdinals;  // RVA from base of image
+} IMAGE_EXPORT_DIRECTORY, *PIMAGE_EXPORT_DIRECTORY;
+
+//
+// Resource Format.
+//
+
+//
+// Resource directory consists of two counts, following by a variable length
+// array of directory entries.  The first count is the number of entries at
+// beginning of the array that have actual names associated with each entry.
+// The entries are in ascending order, case insensitive strings.  The second
+// count is the number of entries that immediately follow the named entries.
+// This second count identifies the number of entries that have 16-bit integer
+// Ids as their name.  These entries are also sorted in ascending order.
+//
+// This structure allows fast lookup by either name or number, but for any
+// given resource entry only one form of lookup is supported, not both.
+// This is consistent with the syntax of the .RC file and the .RES file.
+//
+
+typedef struct _IMAGE_RESOURCE_DIRECTORY {
+    uint32_t   Characteristics;
+    uint32_t   TimeDateStamp;
+    uint16_t    MajorVersion;
+    uint16_t    MinorVersion;
+    uint16_t    NumberOfNamedEntries;
+    uint16_t    NumberOfIdEntries;
+//  IMAGE_RESOURCE_DIRECTORY_ENTRY DirectoryEntries[];
+} IMAGE_RESOURCE_DIRECTORY, *PIMAGE_RESOURCE_DIRECTORY;
+
 #pragma pack(pop)
 
 #ifdef __cplusplus
