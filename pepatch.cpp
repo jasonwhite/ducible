@@ -85,19 +85,16 @@ public:
     Patches() {}
     ~Patches() {}
 
-    void add(Patch patch);
+    void add(Patch patch) {
+        _patches.push_back(patch);
+    }
 
-    void applyAll();
+    void applyAll() {
+        for (auto&& patch: _patches)
+            patch.apply();
+    }
 };
 
-void Patches::add(Patch patch) {
-    _patches.push_back(patch);
-}
-
-void Patches::applyAll() {
-    for (auto&& patch: _patches)
-        patch.apply();
-}
 
 }
 
