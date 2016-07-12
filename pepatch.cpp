@@ -89,6 +89,12 @@ public:
         _patches.push_back(patch);
     }
 
+    template<typename T>
+    void add(T* addr, const T* data)
+    {
+        add(Patch(addr, data));
+    }
+
     void applyAll() {
         for (auto&& patch: _patches)
             patch.apply();
@@ -130,8 +136,8 @@ void patchImage(const char* imagePath, const char* pdbPath) {
         throw InvalidImage("invalid PE signature");
 
     // Eliminate non-determinism
-    patches.add(Patch(&ntHeaders->FileHeader.TimeDateStamp, &timestamp));
-    patches.add(Patch(&ntHeaders->OptionalHeader.CheckSum, &timestamp));
+    patches.add(&ntHeaders->FileHeader.TimeDateStamp, &timestamp);
+    patches.add(&ntHeaders->OptionalHeader.CheckSum, &timestamp);
 
     patches.applyAll();
 }
