@@ -40,7 +40,7 @@ buildable and runnable on any platform (even non-Windows!).
 I am only aware of the [zap_timestamp][] tool in [Syzygy][]. Unfortunately, it
 has a couple of problems:
 
- 1. It does not work with 64-bit PE files (i.e., the PE+ format).
+ 1. It does not work with 64-bit PE files (i.e., the PE32+ format).
  2. It is a pain to build. It is part of a larger suite of tools that operate on
     PE files. That suite then requires Google's depot_tools. The end result is
     that you're required to download hundreds of megabytes of tooling around
