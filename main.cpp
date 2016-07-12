@@ -55,7 +55,7 @@ int main(int argc, char** argv)
         opts.pdb = NULL;
 
     try {
-        patchImage(opts.image, opts.pdb);
+        patchImage(opts.image, opts.pdb, true);
     }
     catch (const InvalidImage& error) {
         std::cerr << "Error: Invalid image (" << error.why() << ")\n";

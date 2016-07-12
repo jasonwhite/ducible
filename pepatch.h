@@ -21,7 +21,7 @@
  */
 #pragma once
 
-void patchImage(const char* imagePath, const char* pdbPath);
+void patchImage(const char* imagePath, const char* pdbPath, bool dryRun = true);
 
 /**
  * Thrown when an image is found to be invalid.

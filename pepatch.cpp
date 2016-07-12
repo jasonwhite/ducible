@@ -24,7 +24,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <vector>
+#include <iostream>
 
 #include "pefile.h"
 #include "pemap.h"
@@ -52,27 +54,45 @@ struct Patch
     // Data overwrite the given location with.
     const uint8_t* data;
 
-    Patch(uint8_t* addr, size_t length, const uint8_t* data)
-        : addr(addr), length(length), data(data)
+    // Name of the patch. Useful to see what's going on.
+    const char* name;
+
+    Patch(uint8_t* addr, size_t length, const uint8_t* data, const char* name = NULL)
+        : addr(addr),
+          length(length),
+          data(data),
+          name(name)
     {}
 
     template<typename T>
-    Patch(T* addr, const T* data)
+    Patch(T* addr, const T* data, const char* name = NULL)
         : addr((uint8_t*)addr),
           length(sizeof(T)),
-          data((const uint8_t*)data)
+          data((const uint8_t*)data),
+          name(name)
     {
     }
+
+    friend std::ostream& operator<<(std::ostream& os, const Patch& patch);
 
     /**
      * Applies the patch. Note that no bounds checking is done. It is assumed
      * that it has already been done.
      */
-    void apply() {
-        for (size_t i = 0; i < length; ++i)
-            *addr = data[i];
+    void apply(bool dryRun) {
+        std::cout << *this << std::endl;
+
+        if (!dryRun) {
+            for (size_t i = 0; i < length; ++i)
+                *addr = data[i];
+        }
     }
 };
+
+std::ostream& operator<<(std::ostream& os, const Patch& patch) {
+    os << "Patching '" << patch.name << "' (" << patch.length << " bytes)";
+    return os;
+}
 
 class Patches
 {
@@ -90,21 +110,21 @@ public:
     }
 
     template<typename T>
-    void add(T* addr, const T* data)
+    void add(T* addr, const T* data, const char* name = NULL)
     {
-        add(Patch(addr, data));
+        add(Patch(addr, data, name));
     }
 
-    void applyAll() {
+    void applyAll(bool dryRun = false) {
         for (auto&& patch: _patches)
-            patch.apply();
+            patch.apply(dryRun);
     }
 };
 
 
 }
 
-void patchImage(const char* imagePath, const char* pdbPath) {
+void patchImage(const char* imagePath, const char* pdbPath, bool dryRun) {
     MemMap image(imagePath);
 
     // Replacement for timestamps
@@ -135,9 +155,10 @@ void patchImage(const char* imagePath, const char* pdbPath) {
     if (ntHeaders->Signature != *(const uint32_t*)"PE\0\0")
         throw InvalidImage("invalid PE signature");
 
-    // Eliminate non-determinism
-    patches.add(&ntHeaders->FileHeader.TimeDateStamp, &timestamp);
-    patches.add(&ntHeaders->OptionalHeader.CheckSum, &timestamp);
+    patches.add(&ntHeaders->FileHeader.TimeDateStamp, &timestamp,
+            "FileHeader.TimeDateStamp");
+    patches.add(&ntHeaders->OptionalHeader.CheckSum, &timestamp,
+            "OptionalHeader.CheckSum");
 
-    patches.applyAll();
+    patches.applyAll(dryRun);
 }
