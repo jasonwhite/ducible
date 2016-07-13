@@ -1,0 +1,12 @@
+[
+    {
+        "inputs": ["BUILD.lua"],
+        "task": [["button-lua", "BUILD.lua", "-o", ".BUILD.lua.json"]],
+        "outputs": [".BUILD.lua.json"]
+    },
+    {
+        "inputs": [".BUILD.lua.json"],
+        "task": [["button", "build", "-f", ".BUILD.lua.json"]],
+        "outputs": [".BUILD.lua.json.state"]
+    }
+]
