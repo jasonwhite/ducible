@@ -7,10 +7,10 @@ CXXFLAGS = -g -Wall -Werror
 default: $(TARGET)
 all: default
 
-OBJECTS = $(patsubst %.cpp, %.o, $(wildcard *.cpp))
-HEADERS = $(wildcard *.h)
+OBJECTS = $(patsubst %.cpp, %.o, $(wildcard src/*.cpp))
+HEADERS = $(wildcard src/*.h)
 
-%.o: %.cpp $(HEADERS)
+src/%.o: src/%.cpp $(HEADERS)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 $(TARGET): $(OBJECTS)
