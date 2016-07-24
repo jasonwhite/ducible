@@ -25,8 +25,15 @@
 #if defined(_WIN32)
 
 #include <windows.h>
+#include <system_error>
 
-// TODO: Implement me
+MemMap::MemMap(const char* path, size_t length)
+    : _buf(0), _length(0) {
+    // TODO: Implement me
+}
+
+MemMap::~MemMap() {
+}
 
 #else
 
