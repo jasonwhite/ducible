@@ -32,6 +32,10 @@
 
 #include <stdlib.h> // For size_t
 
+#ifdef _WIN32
+typedef void* HANDLE;
+#endif
+
 /**
  * Maps a file into memory.
  */
@@ -41,9 +45,18 @@ private:
     void* _buf;
     size_t _length;
 
+#ifdef _WIN32
+    HANDLE _fileMap;
+    void _init(HANDLE hFile, size_t length = 0);
+#endif
+
 public:
     MemMap(const char* path, size_t length = 0);
     ~MemMap();
+
+#ifdef _WIN32
+    MemMap(const wchar_t* path, size_t length = 0);
+#endif
 
     /**
      * Returns the size of the file.

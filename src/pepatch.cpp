@@ -80,19 +80,19 @@ struct Patch
      * Applies the patch. Note that no bounds checking is done. It is assumed
      * that it has already been done.
      */
-    void apply(uint8_t* buf, size_t bufLength, bool dryRun) {
+    void apply(uint8_t* buf, bool dryRun) {
         std::cout << *this << std::endl;
 
         if (!dryRun) {
             for (size_t i = 0; i < length; ++i)
-                buf[i] = data[i];
+                buf[offset+i] = data[i];
         }
     }
 };
 
 std::ostream& operator<<(std::ostream& os, const Patch& patch) {
     os << "Patching '" << patch.name
-       << "' at 0x" << std::hex << patch.offset << std::dec
+       << "' at offset 0x" << std::hex << patch.offset << std::dec
        << " (" << patch.length << " bytes)";
     return os;
 }
@@ -104,11 +104,10 @@ private:
     std::vector<Patch> _patches;
 
     uint8_t* _buf;
-    size_t _length;
 
 public:
 
-    Patches(uint8_t* buf, size_t length) : _buf(buf), _length(length) {}
+    Patches(uint8_t* buf) : _buf(buf) {}
 
     void add(Patch patch) {
         _patches.push_back(patch);
@@ -122,7 +121,7 @@ public:
 
     void applyAll(bool dryRun = false) {
         for (auto&& patch: _patches)
-            patch.apply(_buf, _length, dryRun);
+            patch.apply(_buf, dryRun);
     }
 };
 
@@ -131,6 +130,7 @@ public:
 
 void patchImage(const char* imagePath, const char* pdbPath, bool dryRun) {
     MemMap image(imagePath);
+    MemMap pdb(pdbPath);
 
     // Replacement for timestamps
     const uint32_t timestamp = 0;
@@ -140,7 +140,7 @@ void patchImage(const char* imagePath, const char* pdbPath, bool dryRun) {
     uint8_t* buf = (uint8_t*)image.buf();
     const size_t length = image.length();
 
-    Patches patches(buf, length);
+    Patches patches(buf);
 
     if (length < sizeof(IMAGE_DOS_HEADER))
         throw InvalidImage("missing DOS header");

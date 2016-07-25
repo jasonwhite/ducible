@@ -32,6 +32,8 @@ struct CommandOptions
 {
     const char* image;
     const char* pdb;
+
+    CommandOptions() : image(NULL), pdb(NULL) {}
 };
 
 /**
@@ -41,7 +43,7 @@ int usage();
 
 int main(int argc, char** argv)
 {
-    struct CommandOptions opts;
+    CommandOptions opts;
 
     if (argc <= 1)
         return usage();
