@@ -267,17 +267,17 @@ typedef struct _IMAGE_ROM_HEADERS {
 //
 
 typedef struct _IMAGE_EXPORT_DIRECTORY {
-    uint32_t   Characteristics;
-    uint32_t   TimeDateStamp;
-    uint16_t    MajorVersion;
-    uint16_t    MinorVersion;
-    uint32_t   Name;
-    uint32_t   Base;
-    uint32_t   NumberOfFunctions;
-    uint32_t   NumberOfNames;
-    uint32_t   AddressOfFunctions;     // RVA from base of image
-    uint32_t   AddressOfNames;         // RVA from base of image
-    uint32_t   AddressOfNameOrdinals;  // RVA from base of image
+    uint32_t Characteristics;
+    uint32_t TimeDateStamp;
+    uint16_t MajorVersion;
+    uint16_t MinorVersion;
+    uint32_t Name;
+    uint32_t Base;
+    uint32_t NumberOfFunctions;
+    uint32_t NumberOfNames;
+    uint32_t AddressOfFunctions;     // RVA from base of image
+    uint32_t AddressOfNames;         // RVA from base of image
+    uint32_t AddressOfNameOrdinals;  // RVA from base of image
 } IMAGE_EXPORT_DIRECTORY, *PIMAGE_EXPORT_DIRECTORY;
 
 //
@@ -299,14 +299,29 @@ typedef struct _IMAGE_EXPORT_DIRECTORY {
 //
 
 typedef struct _IMAGE_RESOURCE_DIRECTORY {
-    uint32_t   Characteristics;
-    uint32_t   TimeDateStamp;
-    uint16_t    MajorVersion;
-    uint16_t    MinorVersion;
-    uint16_t    NumberOfNamedEntries;
-    uint16_t    NumberOfIdEntries;
+    uint32_t Characteristics;
+    uint32_t TimeDateStamp;
+    uint16_t MajorVersion;
+    uint16_t MinorVersion;
+    uint16_t NumberOfNamedEntries;
+    uint16_t NumberOfIdEntries;
 //  IMAGE_RESOURCE_DIRECTORY_ENTRY DirectoryEntries[];
 } IMAGE_RESOURCE_DIRECTORY, *PIMAGE_RESOURCE_DIRECTORY;
+
+//
+// Debug Format
+//
+
+typedef struct _IMAGE_DEBUG_DIRECTORY {
+    uint32_t Characteristics;
+    uint32_t TimeDateStamp;
+    uint16_t MajorVersion;
+    uint16_t MinorVersion;
+    uint32_t Type;
+    uint32_t SizeOfData;
+    uint32_t AddressOfRawData;
+    uint32_t PointerToRawData;
+} IMAGE_DEBUG_DIRECTORY, *PIMAGE_DEBUG_DIRECTORY;
 
 #pragma pack(pop)
 

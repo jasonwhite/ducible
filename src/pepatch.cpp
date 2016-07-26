@@ -125,6 +125,36 @@ public:
     }
 };
 
+/**
+ * Patches the timestamp associated with a data directory.
+ */
+template<typename T>
+void patchDataDirectory(uint8_t* buf, const size_t length, Patches& patches,
+        const IMAGE_DATA_DIRECTORY* imageDataDirs,
+        uint32_t entry, const char* name, uint32_t timestamp) {
+
+    const IMAGE_DATA_DIRECTORY& imageDataDir = imageDataDirs[entry];
+
+    // Doesn't exist? Nothing to patch.
+    if (imageDataDir.VirtualAddress == 0)
+        return;
+
+    if (imageDataDir.Size < sizeof(T)) {
+        // Note that we check if the size is less than our defined struct.
+        // Microsoft is free to add elements to the end of the struct in future
+        // versions as that still maintains ABI compatibility.
+        throw InvalidImage("invalid IMAGE_DATA_DIRECTORY size");
+    }
+
+    if (imageDataDir.VirtualAddress + imageDataDir.Size >= length) {
+        throw InvalidImage("invalid IMAGE_DATA_DIRECTORY offset");
+    }
+
+    T* dir = (T*)(buf + imageDataDir.VirtualAddress);
+    if (dir->TimeDateStamp != 0) {
+        patches.add(&dir->TimeDateStamp, &timestamp, name);
+    }
+}
 
 }
 
@@ -150,7 +180,8 @@ void patchImage(const char* imagePath, const char* pdbPath, bool dryRun) {
         throw InvalidImage("invalid DOS signature");
 
     // Skip to the NT headers. Note that we assume this is a PE32 (not a PE32+)
-    // header for now.
+    // header for now. This distinction only becomes important in the
+    // OptionalHeader.
     i += dosHeader->e_lfanew;
     if (i + sizeof(IMAGE_NT_HEADERS32) >= length)
         throw InvalidImage("missing IMAGE_NT_HEADERS");
@@ -163,8 +194,34 @@ void patchImage(const char* imagePath, const char* pdbPath, bool dryRun) {
 
     patches.add(&ntHeaders->FileHeader.TimeDateStamp, &timestamp,
             "FileHeader.TimeDateStamp");
+
+    switch (ntHeaders->OptionalHeader.Magic) {
+        case IMAGE_NT_OPTIONAL_HDR32_MAGIC:
+            // TODO: Parse as a PE32 file
+            break;
+
+        case IMAGE_NT_OPTIONAL_HDR64_MAGIC:
+            // TODO: Parse as a PE32+ file
+            break;
+
+        default:
+            throw InvalidImage("unsupported IMAGE_NT_HEADERS.OptionalHeader");
+    }
+
     patches.add(&ntHeaders->OptionalHeader.CheckSum, &timestamp,
             "OptionalHeader.CheckSum");
+
+    const IMAGE_DATA_DIRECTORY* dataDirs = ntHeaders->OptionalHeader.DataDirectory;
+
+    // Patch exports directory timestamp
+    patchDataDirectory<IMAGE_EXPORT_DIRECTORY>(buf, length, patches,
+            dataDirs, IMAGE_DIRECTORY_ENTRY_EXPORT,
+            "IMAGE_EXPORT_DIRECTORY.TimeDateStamp", timestamp);
+
+    // Patch resource directory timestamp
+    patchDataDirectory<IMAGE_RESOURCE_DIRECTORY>(buf, length, patches,
+            dataDirs, IMAGE_DIRECTORY_ENTRY_RESOURCE,
+            "IMAGE_RESOURCE_DIRECTORY.TimeDateStamp", timestamp);
 
     patches.applyAll(dryRun);
 }

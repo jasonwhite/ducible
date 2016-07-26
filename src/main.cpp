@@ -57,6 +57,7 @@ int main(int argc, char** argv)
         opts.pdb = NULL;
 
     try {
+        // TODO: Don't hardcode dry run
         patchImage(opts.image, opts.pdb, true);
     }
     catch (const InvalidImage& error) {
