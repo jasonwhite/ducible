@@ -156,6 +156,30 @@ void patchDataDirectory(uint8_t* buf, const size_t length, Patches& patches,
     }
 }
 
+/**
+ * Patches the image based on the optional header type. The optional header can
+ * be either 32- or 64-bit.
+ */
+template<typename T>
+void patchOptionalHeader(T* header, uint8_t* buf, const size_t length,
+        Patches& patches, uint32_t timestamp) {
+
+    patches.add(&header->CheckSum, &timestamp,
+            "OptionalHeader.CheckSum");
+
+    const IMAGE_DATA_DIRECTORY* dataDirs = header->DataDirectory;
+
+    // Patch exports directory timestamp
+    patchDataDirectory<IMAGE_EXPORT_DIRECTORY>(buf, length, patches,
+            dataDirs, IMAGE_DIRECTORY_ENTRY_EXPORT,
+            "IMAGE_EXPORT_DIRECTORY.TimeDateStamp", timestamp);
+
+    // Patch resource directory timestamp
+    patchDataDirectory<IMAGE_RESOURCE_DIRECTORY>(buf, length, patches,
+            dataDirs, IMAGE_DIRECTORY_ENTRY_RESOURCE,
+            "IMAGE_RESOURCE_DIRECTORY.TimeDateStamp", timestamp);
+}
+
 }
 
 void patchImage(const char* imagePath, const char* pdbPath, bool dryRun) {
@@ -179,49 +203,53 @@ void patchImage(const char* imagePath, const char* pdbPath, bool dryRun) {
     if (dosHeader->e_magic != IMAGE_DOS_SIGNATURE)
         throw InvalidImage("invalid DOS signature");
 
-    // Skip to the NT headers. Note that we assume this is a PE32 (not a PE32+)
-    // header for now. This distinction only becomes important in the
-    // OptionalHeader.
+    // Skip to the NT headers. Note that we don't parse this section as
+    // IMAGE_NT_HEADERS32/IMAGE_NT_HEADERS64 because we don't yet know if this
+    // image is 32- or 64-bit. That information is in the first field of the
+    // optional header.
     i += dosHeader->e_lfanew;
-    if (i + sizeof(IMAGE_NT_HEADERS32) >= length)
-        throw InvalidImage("missing IMAGE_NT_HEADERS");
-
-    IMAGE_NT_HEADERS32* ntHeaders = (IMAGE_NT_HEADERS32*)(buf+i);
 
     // Check the signature
-    if (ntHeaders->Signature != *(const uint32_t*)"PE\0\0")
+    const uint32_t signature = *(uint32_t*)(buf+i);
+
+    if (i + sizeof(signature) >= length)
+        throw InvalidImage("missing PE signature");
+
+    if (signature != *(const uint32_t*)"PE\0\0")
         throw InvalidImage("invalid PE signature");
 
-    patches.add(&ntHeaders->FileHeader.TimeDateStamp, &timestamp,
-            "FileHeader.TimeDateStamp");
+    i += sizeof(signature);
 
-    switch (ntHeaders->OptionalHeader.Magic) {
+    // Parse the file header
+    IMAGE_FILE_HEADER* fileHeader = (IMAGE_FILE_HEADER*)(buf+i);
+
+    if (i + sizeof(*fileHeader) >= length)
+        throw InvalidImage("missing IMAGE_FILE_HEADER");
+
+    i += sizeof(*fileHeader);
+
+    patches.add(&fileHeader->TimeDateStamp, &timestamp,
+            "IMAGE_FILE_HEADER.TimeDateStamp");
+
+    // This is the Magic field of IMAGE_OPTIONAL_HEADER.
+    const uint16_t magic = *(uint16_t*)(buf+i);
+
+    switch (magic) {
         case IMAGE_NT_OPTIONAL_HDR32_MAGIC:
-            // TODO: Parse as a PE32 file
+            // Patch as a PE32 file
+            patchOptionalHeader((IMAGE_OPTIONAL_HEADER32*)(buf+i), buf, length,
+                    patches, timestamp);
             break;
 
         case IMAGE_NT_OPTIONAL_HDR64_MAGIC:
-            // TODO: Parse as a PE32+ file
+            // Patch as a PE32+ file
+            patchOptionalHeader((IMAGE_OPTIONAL_HEADER64*)(buf+i), buf, length,
+                    patches, timestamp);
             break;
 
         default:
             throw InvalidImage("unsupported IMAGE_NT_HEADERS.OptionalHeader");
     }
-
-    patches.add(&ntHeaders->OptionalHeader.CheckSum, &timestamp,
-            "OptionalHeader.CheckSum");
-
-    const IMAGE_DATA_DIRECTORY* dataDirs = ntHeaders->OptionalHeader.DataDirectory;
-
-    // Patch exports directory timestamp
-    patchDataDirectory<IMAGE_EXPORT_DIRECTORY>(buf, length, patches,
-            dataDirs, IMAGE_DIRECTORY_ENTRY_EXPORT,
-            "IMAGE_EXPORT_DIRECTORY.TimeDateStamp", timestamp);
-
-    // Patch resource directory timestamp
-    patchDataDirectory<IMAGE_RESOURCE_DIRECTORY>(buf, length, patches,
-            dataDirs, IMAGE_DIRECTORY_ENTRY_RESOURCE,
-            "IMAGE_RESOURCE_DIRECTORY.TimeDateStamp", timestamp);
 
     patches.applyAll(dryRun);
 }
