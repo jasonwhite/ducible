@@ -161,8 +161,13 @@ void patchDataDirectory(uint8_t* buf, const size_t length, Patches& patches,
  * be either 32- or 64-bit.
  */
 template<typename T>
-void patchOptionalHeader(T* header, uint8_t* buf, const size_t length,
+void patchOptionalHeader(uint8_t* buf, const size_t length, size_t& pos,
         Patches& patches, uint32_t timestamp) {
+
+    T* header = (T*)(buf + pos);
+
+    if (pos + sizeof(*header) >= length)
+        throw InvalidImage("missing IMAGE_OPTIONAL_HEADER");
 
     patches.add(&header->CheckSum, &timestamp,
             "OptionalHeader.CheckSum");
@@ -189,7 +194,7 @@ void patchImage(const char* imagePath, const char* pdbPath, bool dryRun) {
     // Replacement for timestamps
     const uint32_t timestamp = 0;
 
-    size_t i = 0;
+    size_t pos = 0;
 
     uint8_t* buf = (uint8_t*)image.buf();
     const size_t length = image.length();
@@ -199,7 +204,7 @@ void patchImage(const char* imagePath, const char* pdbPath, bool dryRun) {
     if (length < sizeof(IMAGE_DOS_HEADER))
         throw InvalidImage("missing DOS header");
 
-    IMAGE_DOS_HEADER* dosHeader = (IMAGE_DOS_HEADER*)(buf+i);
+    IMAGE_DOS_HEADER* dosHeader = (IMAGE_DOS_HEADER*)(buf+pos);
     if (dosHeader->e_magic != IMAGE_DOS_SIGNATURE)
         throw InvalidImage("invalid DOS signature");
 
@@ -207,43 +212,43 @@ void patchImage(const char* imagePath, const char* pdbPath, bool dryRun) {
     // IMAGE_NT_HEADERS32/IMAGE_NT_HEADERS64 because we don't yet know if this
     // image is 32- or 64-bit. That information is in the first field of the
     // optional header.
-    i += dosHeader->e_lfanew;
+    pos += dosHeader->e_lfanew;
 
     // Check the signature
-    const uint32_t signature = *(uint32_t*)(buf+i);
+    const uint32_t signature = *(uint32_t*)(buf+pos);
 
-    if (i + sizeof(signature) >= length)
+    if (pos + sizeof(signature) >= length)
         throw InvalidImage("missing PE signature");
 
     if (signature != *(const uint32_t*)"PE\0\0")
         throw InvalidImage("invalid PE signature");
 
-    i += sizeof(signature);
+    pos += sizeof(signature);
 
     // Parse the file header
-    IMAGE_FILE_HEADER* fileHeader = (IMAGE_FILE_HEADER*)(buf+i);
+    IMAGE_FILE_HEADER* fileHeader = (IMAGE_FILE_HEADER*)(buf+pos);
 
-    if (i + sizeof(*fileHeader) >= length)
+    if (pos + sizeof(*fileHeader) >= length)
         throw InvalidImage("missing IMAGE_FILE_HEADER");
 
-    i += sizeof(*fileHeader);
+    pos += sizeof(*fileHeader);
 
     patches.add(&fileHeader->TimeDateStamp, &timestamp,
             "IMAGE_FILE_HEADER.TimeDateStamp");
 
     // This is the Magic field of IMAGE_OPTIONAL_HEADER.
-    const uint16_t magic = *(uint16_t*)(buf+i);
+    const uint16_t magic = *(uint16_t*)(buf+pos);
 
     switch (magic) {
         case IMAGE_NT_OPTIONAL_HDR32_MAGIC:
             // Patch as a PE32 file
-            patchOptionalHeader((IMAGE_OPTIONAL_HEADER32*)(buf+i), buf, length,
+            patchOptionalHeader<IMAGE_OPTIONAL_HEADER32>(buf, length, pos,
                     patches, timestamp);
             break;
 
         case IMAGE_NT_OPTIONAL_HDR64_MAGIC:
             // Patch as a PE32+ file
-            patchOptionalHeader((IMAGE_OPTIONAL_HEADER64*)(buf+i), buf, length,
+            patchOptionalHeader<IMAGE_OPTIONAL_HEADER64>(buf, length, pos,
                     patches, timestamp);
             break;
 
