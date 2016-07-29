@@ -114,22 +114,154 @@ public:
     }
 
     template<typename T>
-    void add(T* addr, const T* data, const char* name = NULL)
+    void add(const T* addr, const T* data, const char* name = NULL)
     {
-        add(Patch((uint8_t*)addr - _buf, data, name));
+        add(Patch((const uint8_t*)addr - _buf, data, name));
     }
 
-    void applyAll(bool dryRun = false) {
+    void apply(bool dryRun = false) {
         for (auto&& patch: _patches)
             patch.apply(_buf, dryRun);
     }
 };
 
 /**
+ * Helper class to parse image headers.
+ */
+class ImageHeaders
+{
+private:
+
+    const uint8_t* _buf;
+    const size_t _length;
+
+    // Pointer to the optional header.
+    const uint8_t* _optional;
+
+    void _init();
+
+public:
+
+    const IMAGE_DOS_HEADER* dos;
+    const IMAGE_FILE_HEADER* file;
+    const IMAGE_SECTION_HEADER* sections;
+
+
+    ImageHeaders(const uint8_t* buf, size_t length);
+
+    /**
+     * The Magic field of the optional header. This is used to determine if the
+     * optional header is 32- or 64-bit.
+     */
+    uint16_t magic() const {
+        return *(uint16_t*)_optional;
+    }
+
+    /**
+     * Returns the optional header of the given type.
+     */
+    template<typename T>
+    const T* optional() const {
+        // Bounds check
+        if (_optional + sizeof(T) >= _buf + _length)
+            throw InvalidImage("missing IMAGE_OPTIONAL_HEADER");
+
+        return (T*)_optional;
+    }
+
+    /**
+     * Translates a relative virtual address (RVA) to a physical address within
+     * the mapped file. Note that this does not do any bounds checking. You must
+     * check the bounds before dereferencing the returned pointer.
+     */
+    const uint8_t* translate(size_t rva) const {
+
+        const IMAGE_SECTION_HEADER* s = sections;
+
+        for (size_t i = 0; i < file->NumberOfSections; ++i) {
+            if (rva >= s->VirtualAddress &&
+                rva < s->VirtualAddress + s->Misc.VirtualSize)
+                break;
+
+            ++s;
+        }
+
+        return _buf + rva - s->VirtualAddress + s->PointerToRawData;
+    }
+
+    /**
+     * Checks if the given image address is valid.
+     */
+    bool isValidAddress(const uint8_t* p) const {
+        return p >= _buf && p < _buf + _length;
+    }
+};
+
+ImageHeaders::ImageHeaders(const uint8_t* buf, size_t length)
+    : _buf(buf), _length(length)
+{
+    _init();
+}
+
+void ImageHeaders::_init() {
+
+    const uint8_t* p = _buf;
+    const uint8_t* end = _buf + _length;
+
+    if (p + sizeof(IMAGE_DOS_HEADER) >= end)
+        throw InvalidImage("missing DOS header");
+
+    dos = (IMAGE_DOS_HEADER*)p;
+    if (dos->e_magic != IMAGE_DOS_SIGNATURE)
+        throw InvalidImage("invalid DOS signature");
+
+    // Skip to the NT headers. Note that we don't parse this section as
+    // IMAGE_NT_HEADERS32/IMAGE_NT_HEADERS64 because we don't yet know if this
+    // image is 32- or 64-bit. That information is in the first field of the
+    // optional header.
+    p += dos->e_lfanew;
+
+    //
+    // Check the signature
+    //
+    if (p + sizeof(uint32_t) >= end)
+        throw InvalidImage("missing PE signature");
+
+    const uint32_t signature = *(uint32_t*)p;
+    if (signature != *(const uint32_t*)"PE\0\0")
+        throw InvalidImage("invalid PE signature");
+
+    p += sizeof(signature);
+
+    //
+    // Parse the image file header
+    //
+    if (p + sizeof(IMAGE_FILE_HEADER) >= end)
+        throw InvalidImage("missing IMAGE_FILE_HEADER");
+
+    file = (IMAGE_FILE_HEADER*)p;
+
+    p += sizeof(IMAGE_FILE_HEADER);
+
+    //
+    // The optional header is here. Parsing of this is delayed because it can
+    // either be a 32- or 64-bit structure.
+    //
+    _optional = p;
+
+    p += file->SizeOfOptionalHeader;
+
+    //
+    // Section headers. There are IMAGE_FILE_HEADER.NumberOfSections of these.
+    //
+    sections = (IMAGE_SECTION_HEADER*)p;
+}
+
+/**
  * Patches the timestamp associated with a data directory.
  */
 template<typename T>
-void patchDataDirectory(uint8_t* buf, const size_t length, Patches& patches,
+void patchDataDirectory(const ImageHeaders& headers, Patches& patches,
         const IMAGE_DATA_DIRECTORY* imageDataDirs,
         uint32_t entry, const char* name, uint32_t timestamp) {
 
@@ -146,14 +278,14 @@ void patchDataDirectory(uint8_t* buf, const size_t length, Patches& patches,
         throw InvalidImage("invalid IMAGE_DATA_DIRECTORY size");
     }
 
-    if (imageDataDir.VirtualAddress + imageDataDir.Size >= length) {
+    const uint8_t* p = headers.translate(imageDataDir.VirtualAddress);
+    if (!headers.isValidAddress(p))
         throw InvalidImage("invalid IMAGE_DATA_DIRECTORY offset");
-    }
 
-    T* dir = (T*)(buf + imageDataDir.VirtualAddress);
-    if (dir->TimeDateStamp != 0) {
+    const T* dir = (const T*)p;
+
+    if (dir->TimeDateStamp != 0)
         patches.add(&dir->TimeDateStamp, &timestamp, name);
-    }
 }
 
 /**
@@ -161,26 +293,23 @@ void patchDataDirectory(uint8_t* buf, const size_t length, Patches& patches,
  * be either 32- or 64-bit.
  */
 template<typename T>
-void patchOptionalHeader(uint8_t* buf, const size_t length, size_t& pos,
+void patchOptionalHeader(const ImageHeaders& headers,
         Patches& patches, uint32_t timestamp) {
 
-    T* header = (T*)(buf + pos);
+    const T* optional = headers.optional<T>();
 
-    if (pos + sizeof(*header) >= length)
-        throw InvalidImage("missing IMAGE_OPTIONAL_HEADER");
-
-    patches.add(&header->CheckSum, &timestamp,
+    patches.add(&optional->CheckSum, &timestamp,
             "OptionalHeader.CheckSum");
 
-    const IMAGE_DATA_DIRECTORY* dataDirs = header->DataDirectory;
+    const IMAGE_DATA_DIRECTORY* dataDirs = optional->DataDirectory;
 
     // Patch exports directory timestamp
-    patchDataDirectory<IMAGE_EXPORT_DIRECTORY>(buf, length, patches,
+    patchDataDirectory<IMAGE_EXPORT_DIRECTORY>(headers, patches,
             dataDirs, IMAGE_DIRECTORY_ENTRY_EXPORT,
             "IMAGE_EXPORT_DIRECTORY.TimeDateStamp", timestamp);
 
     // Patch resource directory timestamp
-    patchDataDirectory<IMAGE_RESOURCE_DIRECTORY>(buf, length, patches,
+    patchDataDirectory<IMAGE_RESOURCE_DIRECTORY>(headers, patches,
             dataDirs, IMAGE_DIRECTORY_ENTRY_RESOURCE,
             "IMAGE_RESOURCE_DIRECTORY.TimeDateStamp", timestamp);
 }
@@ -194,61 +323,29 @@ void patchImage(const char* imagePath, const char* pdbPath, bool dryRun) {
     // Replacement for timestamps
     const uint32_t timestamp = 0;
 
-    size_t pos = 0;
-
     uint8_t* buf = (uint8_t*)image.buf();
     const size_t length = image.length();
+
+    ImageHeaders headers = ImageHeaders(buf, length);
 
     Patches patches(buf);
 
     if (length < sizeof(IMAGE_DOS_HEADER))
         throw InvalidImage("missing DOS header");
 
-    IMAGE_DOS_HEADER* dosHeader = (IMAGE_DOS_HEADER*)(buf+pos);
-    if (dosHeader->e_magic != IMAGE_DOS_SIGNATURE)
-        throw InvalidImage("invalid DOS signature");
-
-    // Skip to the NT headers. Note that we don't parse this section as
-    // IMAGE_NT_HEADERS32/IMAGE_NT_HEADERS64 because we don't yet know if this
-    // image is 32- or 64-bit. That information is in the first field of the
-    // optional header.
-    pos += dosHeader->e_lfanew;
-
-    // Check the signature
-    const uint32_t signature = *(uint32_t*)(buf+pos);
-
-    if (pos + sizeof(signature) >= length)
-        throw InvalidImage("missing PE signature");
-
-    if (signature != *(const uint32_t*)"PE\0\0")
-        throw InvalidImage("invalid PE signature");
-
-    pos += sizeof(signature);
-
-    // Parse the file header
-    IMAGE_FILE_HEADER* fileHeader = (IMAGE_FILE_HEADER*)(buf+pos);
-
-    if (pos + sizeof(*fileHeader) >= length)
-        throw InvalidImage("missing IMAGE_FILE_HEADER");
-
-    pos += sizeof(*fileHeader);
-
-    patches.add(&fileHeader->TimeDateStamp, &timestamp,
+    patches.add(&headers.file->TimeDateStamp, &timestamp,
             "IMAGE_FILE_HEADER.TimeDateStamp");
 
-    // This is the Magic field of IMAGE_OPTIONAL_HEADER.
-    const uint16_t magic = *(uint16_t*)(buf+pos);
-
-    switch (magic) {
+    switch (headers.magic()) {
         case IMAGE_NT_OPTIONAL_HDR32_MAGIC:
             // Patch as a PE32 file
-            patchOptionalHeader<IMAGE_OPTIONAL_HEADER32>(buf, length, pos,
+            patchOptionalHeader<IMAGE_OPTIONAL_HEADER32>(headers,
                     patches, timestamp);
             break;
 
         case IMAGE_NT_OPTIONAL_HDR64_MAGIC:
             // Patch as a PE32+ file
-            patchOptionalHeader<IMAGE_OPTIONAL_HEADER64>(buf, length, pos,
+            patchOptionalHeader<IMAGE_OPTIONAL_HEADER64>(headers,
                     patches, timestamp);
             break;
 
@@ -256,5 +353,5 @@ void patchImage(const char* imagePath, const char* pdbPath, bool dryRun) {
             throw InvalidImage("unsupported IMAGE_NT_HEADERS.OptionalHeader");
     }
 
-    patches.applyAll(dryRun);
+    patches.apply(dryRun);
 }
