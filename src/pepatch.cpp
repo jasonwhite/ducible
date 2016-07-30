@@ -275,17 +275,51 @@ void patchDataDirectory(const PEFile& pe, Patches& patches,
         // Note that we check if the size is less than our defined struct.
         // Microsoft is free to add elements to the end of the struct in future
         // versions as that still maintains ABI compatibility.
-        throw InvalidImage("invalid IMAGE_DATA_DIRECTORY size");
+        throw InvalidImage("IMAGE_DATA_DIRECTORY.Size is invalid");
     }
 
     const uint8_t* p = pe.translate(imageDataDir.VirtualAddress);
     if (!pe.isValidAddress(p))
-        throw InvalidImage("invalid IMAGE_DATA_DIRECTORY offset");
+        throw InvalidImage("IMAGE_DATA_DIRECTORY.VirtualAddress is invalid");
 
     const T* dir = (const T*)p;
 
     if (dir->TimeDateStamp != 0)
         patches.add(&dir->TimeDateStamp, &timestamp, name);
+}
+
+/**
+ * There are 0 or more debug data directories. We need to patch the timestamp in
+ * all of them.
+ */
+void patchDebugDataDirectories(const PEFile& pe, Patches& patches,
+        const IMAGE_DATA_DIRECTORY* imageDataDirs, uint32_t timestamp) {
+
+    const IMAGE_DATA_DIRECTORY& imageDataDir = imageDataDirs[IMAGE_DIRECTORY_ENTRY_DEBUG];
+
+    // Doesn't exist? Nothing to patch.
+    if (imageDataDir.VirtualAddress == 0)
+        return;
+
+    const uint8_t* p = pe.translate(imageDataDir.VirtualAddress);
+    if (!pe.isValidAddress(p))
+        throw InvalidImage("invalid IMAGE_DATA_DIRECTORY.VirtualAddress is invalid");
+
+    // The first debug data directory
+    const IMAGE_DEBUG_DIRECTORY* dir = (const IMAGE_DEBUG_DIRECTORY*)p;
+
+    // There can be multiple debug data directories in this section. This is how
+    // to calculate the number of them.
+    const size_t debugDirCount = imageDataDir.Size /
+        sizeof(IMAGE_DEBUG_DIRECTORY);
+
+    for (size_t i = 0; i < debugDirCount; ++i) {
+        if (dir->TimeDateStamp != 0)
+            patches.add(&dir->TimeDateStamp, &timestamp,
+                    "IMAGE_DEBUG_DIRECTORY.TimeDateStamp");
+
+        ++dir;
+    }
 }
 
 /**
@@ -312,6 +346,9 @@ void patchOptionalHeader(const PEFile& pe,
     patchDataDirectory<IMAGE_RESOURCE_DIRECTORY>(pe, patches,
             dataDirs, IMAGE_DIRECTORY_ENTRY_RESOURCE,
             "IMAGE_RESOURCE_DIRECTORY.TimeDateStamp", timestamp);
+
+    // Patch the debug directories
+    patchDebugDataDirectories(pe, patches, dataDirs, timestamp);
 }
 
 }
@@ -336,14 +373,14 @@ void patchImage(const char* imagePath, const char* pdbPath, bool dryRun) {
     switch (pe.magic()) {
         case IMAGE_NT_OPTIONAL_HDR32_MAGIC:
             // Patch as a PE32 file
-            patchOptionalHeader<IMAGE_OPTIONAL_HEADER32>(pe,
-                    patches, timestamp);
+            patchOptionalHeader<IMAGE_OPTIONAL_HEADER32>(pe, patches,
+                    timestamp);
             break;
 
         case IMAGE_NT_OPTIONAL_HDR64_MAGIC:
             // Patch as a PE32+ file
-            patchOptionalHeader<IMAGE_OPTIONAL_HEADER64>(pe,
-                    patches, timestamp);
+            patchOptionalHeader<IMAGE_OPTIONAL_HEADER64>(pe, patches,
+                    timestamp);
             break;
 
         default:
