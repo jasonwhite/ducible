@@ -128,7 +128,7 @@ public:
 /**
  * Helper class to parse image headers.
  */
-class ImageHeaders
+class PEFile
 {
 private:
 
@@ -142,12 +142,12 @@ private:
 
 public:
 
-    const IMAGE_DOS_HEADER* dos;
-    const IMAGE_FILE_HEADER* file;
-    const IMAGE_SECTION_HEADER* sections;
+    const IMAGE_DOS_HEADER* dosHeader;
+    const IMAGE_FILE_HEADER* fileHeader;
+    const IMAGE_SECTION_HEADER* sectionHeaders;
 
 
-    ImageHeaders(const uint8_t* buf, size_t length);
+    PEFile(const uint8_t* buf, size_t length);
 
     /**
      * The Magic field of the optional header. This is used to determine if the
@@ -176,9 +176,9 @@ public:
      */
     const uint8_t* translate(size_t rva) const {
 
-        const IMAGE_SECTION_HEADER* s = sections;
+        const IMAGE_SECTION_HEADER* s = sectionHeaders;
 
-        for (size_t i = 0; i < file->NumberOfSections; ++i) {
+        for (size_t i = 0; i < fileHeader->NumberOfSections; ++i) {
             if (rva >= s->VirtualAddress &&
                 rva < s->VirtualAddress + s->Misc.VirtualSize)
                 break;
@@ -197,13 +197,13 @@ public:
     }
 };
 
-ImageHeaders::ImageHeaders(const uint8_t* buf, size_t length)
+PEFile::PEFile(const uint8_t* buf, size_t length)
     : _buf(buf), _length(length)
 {
     _init();
 }
 
-void ImageHeaders::_init() {
+void PEFile::_init() {
 
     const uint8_t* p = _buf;
     const uint8_t* end = _buf + _length;
@@ -211,15 +211,15 @@ void ImageHeaders::_init() {
     if (p + sizeof(IMAGE_DOS_HEADER) >= end)
         throw InvalidImage("missing DOS header");
 
-    dos = (IMAGE_DOS_HEADER*)p;
-    if (dos->e_magic != IMAGE_DOS_SIGNATURE)
+    dosHeader = (IMAGE_DOS_HEADER*)p;
+    if (dosHeader->e_magic != IMAGE_DOS_SIGNATURE)
         throw InvalidImage("invalid DOS signature");
 
     // Skip to the NT headers. Note that we don't parse this section as
     // IMAGE_NT_HEADERS32/IMAGE_NT_HEADERS64 because we don't yet know if this
     // image is 32- or 64-bit. That information is in the first field of the
     // optional header.
-    p += dos->e_lfanew;
+    p += dosHeader->e_lfanew;
 
     //
     // Check the signature
@@ -239,7 +239,7 @@ void ImageHeaders::_init() {
     if (p + sizeof(IMAGE_FILE_HEADER) >= end)
         throw InvalidImage("missing IMAGE_FILE_HEADER");
 
-    file = (IMAGE_FILE_HEADER*)p;
+    fileHeader = (IMAGE_FILE_HEADER*)p;
 
     p += sizeof(IMAGE_FILE_HEADER);
 
@@ -249,19 +249,19 @@ void ImageHeaders::_init() {
     //
     _optional = p;
 
-    p += file->SizeOfOptionalHeader;
+    p += fileHeader->SizeOfOptionalHeader;
 
     //
     // Section headers. There are IMAGE_FILE_HEADER.NumberOfSections of these.
     //
-    sections = (IMAGE_SECTION_HEADER*)p;
+    sectionHeaders = (IMAGE_SECTION_HEADER*)p;
 }
 
 /**
  * Patches the timestamp associated with a data directory.
  */
 template<typename T>
-void patchDataDirectory(const ImageHeaders& headers, Patches& patches,
+void patchDataDirectory(const PEFile& pe, Patches& patches,
         const IMAGE_DATA_DIRECTORY* imageDataDirs,
         uint32_t entry, const char* name, uint32_t timestamp) {
 
@@ -278,8 +278,8 @@ void patchDataDirectory(const ImageHeaders& headers, Patches& patches,
         throw InvalidImage("invalid IMAGE_DATA_DIRECTORY size");
     }
 
-    const uint8_t* p = headers.translate(imageDataDir.VirtualAddress);
-    if (!headers.isValidAddress(p))
+    const uint8_t* p = pe.translate(imageDataDir.VirtualAddress);
+    if (!pe.isValidAddress(p))
         throw InvalidImage("invalid IMAGE_DATA_DIRECTORY offset");
 
     const T* dir = (const T*)p;
@@ -293,10 +293,10 @@ void patchDataDirectory(const ImageHeaders& headers, Patches& patches,
  * be either 32- or 64-bit.
  */
 template<typename T>
-void patchOptionalHeader(const ImageHeaders& headers,
+void patchOptionalHeader(const PEFile& pe,
         Patches& patches, uint32_t timestamp) {
 
-    const T* optional = headers.optional<T>();
+    const T* optional = pe.optional<T>();
 
     patches.add(&optional->CheckSum, &timestamp,
             "OptionalHeader.CheckSum");
@@ -304,12 +304,12 @@ void patchOptionalHeader(const ImageHeaders& headers,
     const IMAGE_DATA_DIRECTORY* dataDirs = optional->DataDirectory;
 
     // Patch exports directory timestamp
-    patchDataDirectory<IMAGE_EXPORT_DIRECTORY>(headers, patches,
+    patchDataDirectory<IMAGE_EXPORT_DIRECTORY>(pe, patches,
             dataDirs, IMAGE_DIRECTORY_ENTRY_EXPORT,
             "IMAGE_EXPORT_DIRECTORY.TimeDateStamp", timestamp);
 
     // Patch resource directory timestamp
-    patchDataDirectory<IMAGE_RESOURCE_DIRECTORY>(headers, patches,
+    patchDataDirectory<IMAGE_RESOURCE_DIRECTORY>(pe, patches,
             dataDirs, IMAGE_DIRECTORY_ENTRY_RESOURCE,
             "IMAGE_RESOURCE_DIRECTORY.TimeDateStamp", timestamp);
 }
@@ -326,26 +326,23 @@ void patchImage(const char* imagePath, const char* pdbPath, bool dryRun) {
     uint8_t* buf = (uint8_t*)image.buf();
     const size_t length = image.length();
 
-    ImageHeaders headers = ImageHeaders(buf, length);
+    PEFile pe = PEFile(buf, length);
 
     Patches patches(buf);
 
-    if (length < sizeof(IMAGE_DOS_HEADER))
-        throw InvalidImage("missing DOS header");
-
-    patches.add(&headers.file->TimeDateStamp, &timestamp,
+    patches.add(&pe.fileHeader->TimeDateStamp, &timestamp,
             "IMAGE_FILE_HEADER.TimeDateStamp");
 
-    switch (headers.magic()) {
+    switch (pe.magic()) {
         case IMAGE_NT_OPTIONAL_HDR32_MAGIC:
             // Patch as a PE32 file
-            patchOptionalHeader<IMAGE_OPTIONAL_HEADER32>(headers,
+            patchOptionalHeader<IMAGE_OPTIONAL_HEADER32>(pe,
                     patches, timestamp);
             break;
 
         case IMAGE_NT_OPTIONAL_HDR64_MAGIC:
             // Patch as a PE32+ file
-            patchOptionalHeader<IMAGE_OPTIONAL_HEADER64>(headers,
+            patchOptionalHeader<IMAGE_OPTIONAL_HEADER64>(pe,
                     patches, timestamp);
             break;
 
