@@ -190,10 +190,13 @@ public:
     }
 
     /**
-     * Checks if the given image address is valid.
+     * Checks if the given pointer for type T is contained in the image. That
+     * is, if the object it points to fits inside as well.
      */
-    bool isValidAddress(const uint8_t* p) const {
-        return p >= _buf && p < _buf + _length;
+    template<typename T>
+    bool isValidReference(const T* p) const {
+        return ((const uint8_t*)p >= _buf) &&
+               ((const uint8_t*)p + sizeof(T) <= _buf + _length);
     }
 };
 
@@ -279,7 +282,7 @@ void patchDataDirectory(const PEFile& pe, Patches& patches,
     }
 
     const uint8_t* p = pe.translate(imageDataDir.VirtualAddress);
-    if (!pe.isValidAddress(p))
+    if (!pe.isValidReference(p))
         throw InvalidImage("IMAGE_DATA_DIRECTORY.VirtualAddress is invalid");
 
     const T* dir = (const T*)p;
@@ -302,7 +305,7 @@ void patchDebugDataDirectories(const PEFile& pe, Patches& patches,
         return;
 
     const uint8_t* p = pe.translate(imageDataDir.VirtualAddress);
-    if (!pe.isValidAddress(p))
+    if (!pe.isValidReference(p))
         throw InvalidImage("invalid IMAGE_DATA_DIRECTORY.VirtualAddress is invalid");
 
     // The first debug data directory
@@ -314,6 +317,10 @@ void patchDebugDataDirectories(const PEFile& pe, Patches& patches,
         sizeof(IMAGE_DEBUG_DIRECTORY);
 
     for (size_t i = 0; i < debugDirCount; ++i) {
+
+        if (!pe.isValidReference(dir))
+            throw InvalidImage("IMAGE_DEBUG_DIRECTORY is not valid");
+
         if (dir->TimeDateStamp != 0)
             patches.add(&dir->TimeDateStamp, &timestamp,
                     "IMAGE_DEBUG_DIRECTORY.TimeDateStamp");
