@@ -42,8 +42,9 @@ issue or, better yet, a pull request.
 ### Linux
 
 Although this is primarily a Windows utility, it was developed in a Linux
-environment simply because it is faster and easier. Thus, it builds and runs on
-Linux as well.
+environment simply because it is faster and easier. One might also want to use
+it for compiling Windows binaries on Linux. Thus, it builds and runs on Linux as
+well.
 
 To build it, just run `make`.
 
