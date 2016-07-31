@@ -235,7 +235,7 @@ int peclean(int argc, CharT** argv)
     return 0;
 }
 
-#ifdef _WIN32
+#if defined(_WIN32) && defined(UNICODE)
 
 int wmain(int argc, wchar_t** argv) {
     return peclean<wchar_t>(argc, argv);
