@@ -68,11 +68,41 @@ class CommandLineHelp {
 };
 
 /**
+ * String literals for the appropriate character type.
+ *
+ * FIXME: I'm sure there is a better way to do this...
+ */
+template<typename CharT>
+struct OptionNames {};
+
+template<>
+struct OptionNames<char> {
+    const char* helpLong    = "--help";
+    const char* helpShort   = "-h";
+    const char* dryrunLong  = "--dryrun";
+    const char* dryrunShort = "-n";
+    const char* dashDash    = "--";
+};
+
+template<>
+struct OptionNames<wchar_t> {
+    const wchar_t* helpLong    = L"--help";
+    const wchar_t* helpShort   = L"-h";
+    const wchar_t* dryrunLong  = L"--dryrun";
+    const wchar_t* dryrunShort = L"-n";
+    const wchar_t* dashDash    = L"--";
+};
+
+/**
  * Command line options.
  */
 template<typename CharT = char>
 class CommandOptions
 {
+private:
+
+    static const OptionNames<CharT> opt;
+
 public:
 
     const CharT* image;
@@ -90,8 +120,8 @@ public:
 
         // Look for the help option
         for (int i = 1; i < argc; ++i) {
-            if (argv[i] == string("--help") ||
-                argv[i] == string("-h")) {
+            if (argv[i] == string(opt.helpLong) ||
+                argv[i] == string(opt.helpShort)) {
                 throw CommandLineHelp();
             }
         }
@@ -108,10 +138,10 @@ public:
             if (onlyPositional) {
                 positional.push_back(argv[i]);
             }
-            else if (arg == "--") {
+            else if (arg == opt.dashDash) {
                 onlyPositional = true;
             }
-            else if (arg == "--dryrun" || arg == "-n") {
+            else if (arg == opt.dryrunLong || arg == opt.dryrunShort) {
                 dryrun = true;
             }
             else if (arg.length() > 0 && arg.front() == '-') {
@@ -138,6 +168,9 @@ public:
         }
     }
 };
+
+template<typename CharT>
+const OptionNames<CharT> CommandOptions<CharT>::opt = OptionNames<CharT>();
 
 const char* usage =
     "Usage: peclean image [pdb] [--help] [--dryrun]";
