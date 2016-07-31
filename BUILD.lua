@@ -2,7 +2,7 @@ local cc = require "rules.cc"
 
 local peclean = cc.binary {
     name = "peclean",
-    srcs = glob "src/*.cpp",
+    srcs = glob { "src/*.cpp", "src/*.c" },
     warnings = {"all", "error"},
     compiler_opts = {"-g"},
 }
