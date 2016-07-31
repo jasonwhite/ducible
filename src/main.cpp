@@ -173,7 +173,7 @@ template<typename CharT>
 const OptionNames<CharT> CommandOptions<CharT>::opt = OptionNames<CharT>();
 
 const char* usage =
-    "Usage: peclean image [pdb] [--help] [--dryrun]";
+    "Usage: pepatch image [pdb] [--help] [--dryrun]";
 
 const char* help =
 R"(
@@ -196,7 +196,7 @@ Optional arguments:
 )";
 
 template<typename CharT = char>
-int peclean(int argc, CharT** argv)
+int pepatch(int argc, CharT** argv)
 {
     CommandOptions<CharT> opts;
 
@@ -238,13 +238,13 @@ int peclean(int argc, CharT** argv)
 #if defined(_WIN32) && defined(UNICODE)
 
 int wmain(int argc, wchar_t** argv) {
-    return peclean<wchar_t>(argc, argv);
+    return pepatch<wchar_t>(argc, argv);
 }
 
 #else
 
 int main(int argc, char** argv) {
-    return peclean<char>(argc, argv);
+    return pepatch<char>(argc, argv);
 }
 
 #endif

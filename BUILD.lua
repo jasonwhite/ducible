@@ -1,14 +1,14 @@
 local cc = require "rules.cc"
 
-local peclean = cc.binary {
-    name = "peclean",
+local pepatch = cc.binary {
+    name = "pepatch",
     srcs = glob { "src/*.cpp", "src/*.c" },
     warnings = {"all", "error"},
     compiler_opts = {"-g"},
 }
 
 --
--- Test peclean
+-- Test pepatch
 --
 local tests = {
     {image = "vs/vs2015/Debug/test_dll.dll", pdb = "vs/vs2015/Debug/test_dll.pdb"},
@@ -24,14 +24,14 @@ local tests = {
 
 for _,t in ipairs(tests) do
     rule {
-        inputs = {peclean:path()},
-        task = {{peclean:path(), t.image, t.pdb}},
+        inputs = {pepatch:path()},
+        task = {{pepatch:path(), t.image, t.pdb}},
         outputs = {},
     }
 end
 
 rule {
-    inputs = {peclean:path()},
-    task = {{peclean:path(), "--help"}},
+    inputs = {pepatch:path()},
+    task = {{pepatch:path(), "--help"}},
     outputs = {},
 }

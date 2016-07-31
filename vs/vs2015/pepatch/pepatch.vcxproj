@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{2C07E47D-CA17-4D0A-8C9A-336DB1256938}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>peclean</RootNamespace>
+    <RootNamespace>pepatch</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

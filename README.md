@@ -16,7 +16,7 @@ reasons.
 
 Usage is as follows:
 
-    $ peclean IMAGE [PDB]
+    $ pepatch IMAGE [PDB]
 
 The EXE/DLL is specified as the first parameter and the PDB is optionally
 specified as the second. The PDB must be modified because changing the image
@@ -24,7 +24,7 @@ invalidates the signature for the PDB.
 
 As a post-build step, simply run:
 
-    $ peclean MyModule.dll MyModule.pdb
+    $ pepatch MyModule.dll MyModule.pdb
 
 The files are overwritten in-place.
 

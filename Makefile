@@ -1,4 +1,4 @@
-TARGET = peclean
+TARGET = pepatch
 CXX = g++
 CXXFLAGS = -g -Wall -Werror
 CFLAGS = -g -Wall -Werror
