@@ -29,3 +29,9 @@ for _,t in ipairs(tests) do
         outputs = {},
     }
 end
+
+rule {
+    inputs = {peclean:path()},
+    task = {{peclean:path(), "--help"}},
+    outputs = {},
+}
