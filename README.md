@@ -33,7 +33,28 @@ The files are overwritten in-place.
 This is a very simple C++ program. There are no dependencies and it should be
 buildable and runnable on any platform (even non-Windows!).
 
-*Build instructions are coming soon to a README near you.*
+### Windows
+
+Just open `vs/vs2015/peclean.sln` and build it. Of course, this requires Visual
+Studio 2015. If another version of Visual Studio is needed, please submit an
+issue or, better yet, a pull request.
+
+### Linux
+
+Although this is primarily a Windows utility, it was developed in a Linux
+environment simply because it is faster and easier. Thus, it builds and runs on
+Linux as well.
+
+To build it, just run `make`.
+
+### OS X
+
+This hasn't been tested on OS X, but it probably works as there is nothing
+Linux-specific in the code.
+
+To build it, just run `make`.
+
+If you find that this works, please submit an issue letting me know.
 
 ## Related Work
 
