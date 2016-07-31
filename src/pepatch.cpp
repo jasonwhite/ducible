@@ -505,9 +505,8 @@ void calculateChecksum(const uint8_t* buf, const size_t length,
     md5_finish(&ctx, output);
 }
 
-}
-
-void patchImage(const char* imagePath, const char* pdbPath, bool dryRun) {
+template<typename CharT>
+void patchImageImpl(const CharT* imagePath, const CharT* pdbPath, bool dryRun) {
     MemMap image(imagePath);
 
     uint8_t* buf = (uint8_t*)image.buf();
@@ -548,3 +547,15 @@ void patchImage(const char* imagePath, const char* pdbPath, bool dryRun) {
 
     patches.apply(dryRun);
 }
+
+}
+
+void patchImage(const char* imagePath, const char* pdbPath, bool dryrun) {
+    patchImageImpl(imagePath, pdbPath, dryrun);
+}
+
+#ifdef _WIN32
+void patchImage(const wchar_t* imagePath, const wchar_t* pdbPath, bool dryrun) {
+    patchImageImpl(imagePath, pdbPath, dryrun);
+}
+#endif

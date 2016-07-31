@@ -23,6 +23,10 @@
 
 void patchImage(const char* imagePath, const char* pdbPath, bool dryRun = true);
 
+#ifdef _WIN32
+void patchImage(const wchar_t* imagePath, const wchar_t* pdbPath, bool dryRun = true);
+#endif
+
 /**
  * Thrown when an image is found to be invalid.
  */
