@@ -495,8 +495,8 @@ void calculateChecksum(const uint8_t* buf, const size_t length,
         // Hash everything up to the patch
         md5_update(&ctx, buf + pos, patch.offset - pos);
 
-        // Skip over the patch
-        pos += patch.length;
+        // Skip past the patch
+        pos = patch.offset + patch.length;
     }
 
     // Get everything after the last patch
