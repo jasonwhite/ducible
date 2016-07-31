@@ -323,6 +323,19 @@ typedef struct _IMAGE_DEBUG_DIRECTORY {
     uint32_t PointerToRawData;
 } IMAGE_DEBUG_DIRECTORY, *PIMAGE_DEBUG_DIRECTORY;
 
+#define IMAGE_DEBUG_TYPE_UNKNOWN          0
+#define IMAGE_DEBUG_TYPE_COFF             1
+#define IMAGE_DEBUG_TYPE_CODEVIEW         2
+#define IMAGE_DEBUG_TYPE_FPO              3
+#define IMAGE_DEBUG_TYPE_MISC             4
+#define IMAGE_DEBUG_TYPE_EXCEPTION        5
+#define IMAGE_DEBUG_TYPE_FIXUP            6
+#define IMAGE_DEBUG_TYPE_OMAP_TO_SRC      7
+#define IMAGE_DEBUG_TYPE_OMAP_FROM_SRC    8
+#define IMAGE_DEBUG_TYPE_BORLAND          9
+#define IMAGE_DEBUG_TYPE_RESERVED10       10
+#define IMAGE_DEBUG_TYPE_CLSID            11
+
 //
 // Section header format.
 //
@@ -346,6 +359,33 @@ typedef struct _IMAGE_SECTION_HEADER {
 } IMAGE_SECTION_HEADER, *PIMAGE_SECTION_HEADER;
 
 #define IMAGE_SIZEOF_SECTION_HEADER          40
+
+//
+// CodeView Info
+//
+// Reference: http://www.debuginfo.com/articles/debuginfomatch.html
+//
+
+// This reads 'RSDS' in memory.
+#define CV_INFO_SIGNATURE_PDB70 0x53445352
+
+typedef struct {
+    // CodeView signature, equal to “RSDS”
+    uint32_t CvSignature;
+
+    // A unique identifier, which changes with every rebuild of the executable
+    // and PDB file.
+    uint8_t Signature[16];
+
+    // Ever-incrementing value, which is initially set to 1 and incremented
+    // every time when a part of the PDB file is updated without rewriting the
+    // whole file.
+    uint32_t Age;
+
+    // Null-terminated name of the PDB file. It can also contain full or partial
+    // path to the file.
+    char PdbFileName[0];
+} CV_INFO_PDB70;
 
 #pragma pack(pop)
 
