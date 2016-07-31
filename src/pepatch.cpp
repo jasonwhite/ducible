@@ -20,6 +20,52 @@
  * SOFTWARE.
  */
 
+/**
+ * This file contains the core logic for parsing the PE file, finding the places
+ * in the PE file that need to be overwritten, and overwriting those places.
+ *
+ * In general, it works like this:
+ *
+ *  1. Map the PE file into memory. Since we are not changing the size of the
+ *     file, this is much more efficient than simply loading the whole file into
+ *     memory the naive way. To write to the file, we simply set values in the
+ *     appropriate memory locations.
+ *
+ *  2. Parse the PE headers. Until we get to the optional header, there are no
+ *     differences between the PE and PE+ formats (32- and 64-bit images). We
+ *     must parse the optional header differently depending on which format the
+ *     file is.
+ *
+ *  3. After the main headers are parsed, we start marking regions in the file
+ *     that need to be patched. Note that we do not overwrite these locations
+ *     immediately because there is still more parsing to do. If the parsing
+ *     fails, we do not want to end up in an inconsistent state. The potential
+ *     for a partial success/failure state should be minimized as much as
+ *     possible. Thus, we do not apply the patches until the very end. The main
+ *     places to patch include:
+ *
+ *     a. Time stamps occur in few places in the main headers. We patch all of
+ *        these with a semi-arbitrary timestamp of Jan 1, 2010, 0:00:00 GMT. We
+ *        cannot use 0 as that has a special meaning. Rather than being
+ *        inconsistent with prior work, we use the same one as Google's
+ *        zap_timestamp utility.
+ *     b. Next, we patch the data directories. There are three of them with
+ *        non-reproducible data: IMAGE_EXPORT_DIRECTORY,
+ *        IMAGE_RESOURCE_DIRECTORY, and IMAGE_DEBUG_DIRECTORY. The tricky one is
+ *        the debug directory. This includes a signature to match the PE file
+ *        with the PDB file. We patch this with an MD5 checksum of the PE file,
+ *        skipping over the patched areas. This checksum is calculated after
+ *        all of the patches are added. When the patches are applied, this is
+ *        what will be set.
+ *
+ *  4. Finally, the patches are applied.
+ *
+ * References:
+ * - https://msdn.microsoft.com/en-us/library/ms809762.aspx
+ * - http://www.debuginfo.com/articles/debuginfomatch.html
+ * - https://github.com/google/syzygy/
+ */
+
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
