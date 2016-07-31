@@ -288,6 +288,8 @@ public:
 PEFile::PEFile(const uint8_t* buf, size_t length)
     : buf(buf), length(length)
 {
+    memset(pdbSignature, 0, sizeof(pdbSignature)/sizeof(*pdbSignature));
+
     _init();
 }
 
