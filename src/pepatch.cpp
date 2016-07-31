@@ -71,6 +71,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <algorithm>
 #include <vector>
 #include <iostream>
 #include <iomanip>
@@ -78,6 +79,7 @@
 #include "pefile.h"
 #include "pemap.h"
 #include "pepatch.h"
+#include "md5.h"
 
 namespace {
 
@@ -120,8 +122,6 @@ struct Patch
     {
     }
 
-    friend std::ostream& operator<<(std::ostream& os, const Patch& patch);
-
     /**
      * Applies the patch. Note that no bounds checking is done. It is assumed
      * that it has already been done.
@@ -134,39 +134,57 @@ struct Patch
                 buf[offset+i] = data[i];
         }
     }
-};
 
-std::ostream& operator<<(std::ostream& os, const Patch& patch) {
-    os << "Patching '" << patch.name
-       << "' at offset 0x" << std::hex << patch.offset << std::dec
-       << " (" << patch.length << " bytes)";
-    return os;
-}
+    friend std::ostream& operator<<(std::ostream& os, const Patch& patch) {
+        os << "Patching '" << patch.name
+           << "' at offset 0x" << std::hex << patch.offset << std::dec
+           << " (" << patch.length << " bytes)";
+        return os;
+    }
+
+    // Implement ordering for sorting purposes.
+    friend bool operator<(const Patch& a, const Patch& b) {
+        return std::tie(a.offset, a.length) < std::tie(b.offset, b.length);
+    }
+};
 
 class Patches
 {
 private:
-    // List of patches
-    std::vector<Patch> _patches;
 
     uint8_t* _buf;
 
 public:
+    // List of patches
+    std::vector<Patch> patches;
 
     Patches(uint8_t* buf) : _buf(buf) {}
 
     void add(Patch patch) {
-        _patches.push_back(patch);
+        patches.push_back(patch);
     }
 
+    /**
+     * Convenience function for adding patches.
+     */
     template<typename T>
     void add(const T* addr, const T* data, const char* name = NULL)
     {
         add(Patch((const uint8_t*)addr - _buf, data, name));
     }
 
+    /**
+     * Sort the patches. The patches will be ordered according to the offset in
+     * the file. This is useful once all the patches have been added, but not
+     * applied so that we can take the checksum of the file in the areas between
+     * the patches.
+     */
+    void sort() {
+        std::sort(patches.begin(), patches.end());
+    }
+
     void apply(bool dryRun = false) {
-        for (auto&& patch: _patches)
+        for (auto&& patch: patches)
             patch.apply(_buf, dryRun);
     }
 };
@@ -178,9 +196,6 @@ class PEFile
 {
 private:
 
-    const uint8_t* _buf;
-    const size_t _length;
-
     // Pointer to the optional header.
     const uint8_t* _optional;
 
@@ -188,10 +203,33 @@ private:
 
 public:
 
+    const uint8_t* buf;
+    const size_t length;
+
     const IMAGE_DOS_HEADER* dosHeader;
     const IMAGE_FILE_HEADER* fileHeader;
     const IMAGE_SECTION_HEADER* sectionHeaders;
 
+    // Replacement for timestamps
+    //
+    // The timestamp can't just be set to zero as that represents a special
+    // value in the PE file. We set it to some arbitrary fixed date in the past.
+    // This is Jan 1, 2010, 0:00:00 GMT. This date shouldn't be too far in the
+    // past, otherwise Windows might trigger a warning saying that the
+    // instrumented image has known incompatibility issues when someone tries to
+    // run it.
+    const uint32_t timestamp = 1262304000;
+
+    // Replacement for the PDB age. Starting at 1, this is normally incremented
+    // every time the PDB file is incrementally updated. However, for our
+    // purposes, we want to keep this at 1.
+    const uint32_t pdbAge = 1;
+
+    // Replacement for the PDB GUID. This is calculated by taking the MD5
+    // checksum of the PE file skipping over the parts that we patch. Thus, we
+    // can mark the PDB signature to be patched with these bytes, but calculate
+    // the signature before actually applying the patch.
+    uint8_t pdbSignature[16];
 
     PEFile(const uint8_t* buf, size_t length);
 
@@ -209,7 +247,7 @@ public:
     template<typename T>
     const T* optional() const {
         // Bounds check
-        if (_optional + sizeof(T) >= _buf + _length)
+        if (_optional + sizeof(T) >= buf + length)
             throw InvalidImage("missing IMAGE_OPTIONAL_HEADER");
 
         return (T*)_optional;
@@ -232,7 +270,7 @@ public:
             ++s;
         }
 
-        return _buf + rva - s->VirtualAddress + s->PointerToRawData;
+        return buf + rva - s->VirtualAddress + s->PointerToRawData;
     }
 
     /**
@@ -241,21 +279,21 @@ public:
      */
     template<typename T>
     bool isValidReference(const T* p) const {
-        return ((const uint8_t*)p >= _buf) &&
-               ((const uint8_t*)p + sizeof(T) <= _buf + _length);
+        return ((const uint8_t*)p >= buf) &&
+               ((const uint8_t*)p + sizeof(T) <= buf + length);
     }
 };
 
 PEFile::PEFile(const uint8_t* buf, size_t length)
-    : _buf(buf), _length(length)
+    : buf(buf), length(length)
 {
     _init();
 }
 
 void PEFile::_init() {
 
-    const uint8_t* p = _buf;
-    const uint8_t* end = _buf + _length;
+    const uint8_t* p = buf;
+    const uint8_t* end = buf + length;
 
     if (p + sizeof(IMAGE_DOS_HEADER) >= end)
         throw InvalidImage("missing DOS header");
@@ -312,7 +350,7 @@ void PEFile::_init() {
 template<typename T>
 void patchDataDirectory(const PEFile& pe, Patches& patches,
         const IMAGE_DATA_DIRECTORY* imageDataDirs,
-        uint32_t entry, const char* name, uint32_t timestamp) {
+        uint32_t entry, const char* name) {
 
     const IMAGE_DATA_DIRECTORY& imageDataDir = imageDataDirs[entry];
 
@@ -334,7 +372,7 @@ void patchDataDirectory(const PEFile& pe, Patches& patches,
     const T* dir = (const T*)p;
 
     if (dir->TimeDateStamp != 0)
-        patches.add(&dir->TimeDateStamp, &timestamp, name);
+        patches.add(&dir->TimeDateStamp, &pe.timestamp, name);
 }
 
 /**
@@ -342,7 +380,7 @@ void patchDataDirectory(const PEFile& pe, Patches& patches,
  * all of them.
  */
 void patchDebugDataDirectories(const PEFile& pe, Patches& patches,
-        const IMAGE_DATA_DIRECTORY* imageDataDirs, uint32_t timestamp) {
+        const IMAGE_DATA_DIRECTORY* imageDataDirs) {
 
     const IMAGE_DATA_DIRECTORY& imageDataDir = imageDataDirs[IMAGE_DIRECTORY_ENTRY_DEBUG];
 
@@ -357,21 +395,46 @@ void patchDebugDataDirectories(const PEFile& pe, Patches& patches,
     // The first debug data directory
     const IMAGE_DEBUG_DIRECTORY* dir = (const IMAGE_DEBUG_DIRECTORY*)p;
 
-    // There can be multiple debug data directories in this section. This is how
-    // to calculate the number of them.
+    // There can be multiple debug data directories in this section.
     const size_t debugDirCount = imageDataDir.Size /
         sizeof(IMAGE_DEBUG_DIRECTORY);
 
+    // Information about the PDB.
+    const CV_INFO_PDB70* cvInfo = NULL;
+
+    // Patch all of the debug data directories. Note that, at most, one of these
+    // will be of type IMAGE_DEBUG_TYPE_CODEVIEW. We will use this to also patch
+    // the PDB.
     for (size_t i = 0; i < debugDirCount; ++i) {
 
         if (!pe.isValidReference(dir))
             throw InvalidImage("IMAGE_DEBUG_DIRECTORY is not valid");
 
         if (dir->TimeDateStamp != 0)
-            patches.add(&dir->TimeDateStamp, &timestamp,
+            patches.add(&dir->TimeDateStamp, &pe.timestamp,
                     "IMAGE_DEBUG_DIRECTORY.TimeDateStamp");
 
+        if (dir->Type == IMAGE_DEBUG_TYPE_CODEVIEW) {
+
+            if (cvInfo)
+                throw InvalidImage("found multiple CodeView debug entries");
+
+            cvInfo = (const CV_INFO_PDB70*)(pe.buf + dir->PointerToRawData);
+
+            if (!pe.isValidReference(cvInfo))
+                throw InvalidImage("invalid CodeView debug entry location");
+        }
+
         ++dir;
+    }
+
+    if (cvInfo) {
+
+        if (cvInfo->CvSignature != CV_INFO_SIGNATURE_PDB70)
+            throw InvalidImage("unsupported PDB format, only version 7.0 is supported");
+
+        patches.add(&cvInfo->Signature, &pe.pdbSignature, "PDB Signature");
+        patches.add(&cvInfo->Age, &pe.pdbAge, "PDB Age");
     }
 }
 
@@ -380,12 +443,11 @@ void patchDebugDataDirectories(const PEFile& pe, Patches& patches,
  * be either 32- or 64-bit.
  */
 template<typename T>
-void patchOptionalHeader(const PEFile& pe,
-        Patches& patches, uint32_t timestamp) {
+void patchOptionalHeader(const PEFile& pe, Patches& patches) {
 
     const T* optional = pe.optional<T>();
 
-    patches.add(&optional->CheckSum, &timestamp,
+    patches.add(&optional->CheckSum, &pe.timestamp,
             "OptionalHeader.CheckSum");
 
     const IMAGE_DATA_DIRECTORY* dataDirs = optional->DataDirectory;
@@ -393,25 +455,57 @@ void patchOptionalHeader(const PEFile& pe,
     // Patch exports directory timestamp
     patchDataDirectory<IMAGE_EXPORT_DIRECTORY>(pe, patches,
             dataDirs, IMAGE_DIRECTORY_ENTRY_EXPORT,
-            "IMAGE_EXPORT_DIRECTORY.TimeDateStamp", timestamp);
+            "IMAGE_EXPORT_DIRECTORY.TimeDateStamp");
 
     // Patch resource directory timestamp
     patchDataDirectory<IMAGE_RESOURCE_DIRECTORY>(pe, patches,
             dataDirs, IMAGE_DIRECTORY_ENTRY_RESOURCE,
-            "IMAGE_RESOURCE_DIRECTORY.TimeDateStamp", timestamp);
+            "IMAGE_RESOURCE_DIRECTORY.TimeDateStamp");
 
     // Patch the debug directories
-    patchDebugDataDirectories(pe, patches, dataDirs, timestamp);
+    patchDebugDataDirectories(pe, patches, dataDirs);
+}
+
+/**
+ * Calculates the checksum for the PE image, skipping over patched areas. This
+ * is used as the PDB signature.
+ *
+ * The list of patches is assumed to be sorted.
+ *
+ * Note that this uses the MD5 hashing algorithm, but any 128-bit hashing
+ * algorithm could be used instead. It might be a good idea to use a hashing
+ * algorithm with better distribution to avoid collisions. MurmurHash3 could be
+ * a good choice, but it can't incrementally hash chunks of data.
+ */
+void calculateChecksum(const uint8_t* buf, const size_t length,
+        const std::vector<Patch>& patches, uint8_t output[16]) {
+
+    size_t pos = 0;
+
+    md5_context ctx;
+    md5_starts(&ctx);
+
+    // Take the checksum of the regions between the patches to ensure a
+    // deterministic file checksum. Since the patches are sorted, we iterate
+    // over the file sequentially.
+    for (auto&& patch: patches) {
+        // Hash everything up to the patch
+        md5_update(&ctx, buf + pos, patch.offset - pos);
+
+        // Skip over the patch
+        pos += patch.length;
+    }
+
+    // Get everything after the last patch
+    md5_update(&ctx, buf + pos, length - pos);
+
+    md5_finish(&ctx, output);
 }
 
 }
 
 void patchImage(const char* imagePath, const char* pdbPath, bool dryRun) {
     MemMap image(imagePath);
-    MemMap pdb(pdbPath);
-
-    // Replacement for timestamps
-    const uint32_t timestamp = 0;
 
     uint8_t* buf = (uint8_t*)image.buf();
     const size_t length = image.length();
@@ -420,24 +514,33 @@ void patchImage(const char* imagePath, const char* pdbPath, bool dryRun) {
 
     Patches patches(buf);
 
-    patches.add(&pe.fileHeader->TimeDateStamp, &timestamp,
+    patches.add(&pe.fileHeader->TimeDateStamp, &pe.timestamp,
             "IMAGE_FILE_HEADER.TimeDateStamp");
 
     switch (pe.magic()) {
         case IMAGE_NT_OPTIONAL_HDR32_MAGIC:
             // Patch as a PE32 file
-            patchOptionalHeader<IMAGE_OPTIONAL_HEADER32>(pe, patches,
-                    timestamp);
+            patchOptionalHeader<IMAGE_OPTIONAL_HEADER32>(pe, patches);
             break;
 
         case IMAGE_NT_OPTIONAL_HDR64_MAGIC:
             // Patch as a PE32+ file
-            patchOptionalHeader<IMAGE_OPTIONAL_HEADER64>(pe, patches,
-                    timestamp);
+            patchOptionalHeader<IMAGE_OPTIONAL_HEADER64>(pe, patches);
             break;
 
         default:
             throw InvalidImage("unsupported IMAGE_NT_HEADERS.OptionalHeader");
+    }
+
+    patches.sort();
+
+    // Calculate the checksum of the PE file. Note that the checksum is stored
+    // in PDB signature. When the patches are applied, this checksum is what
+    // will be set in the file.
+    calculateChecksum(buf, length, patches.patches, pe.pdbSignature);
+
+    if (pdbPath) {
+        MemMap pdb(pdbPath);
     }
 
     patches.apply(dryRun);
