@@ -75,6 +75,7 @@
 #include <vector>
 #include <iostream>
 #include <iomanip>
+#include <tuple>
 
 #include "pefile.h"
 #include "pemap.h"

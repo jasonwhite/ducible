@@ -384,7 +384,7 @@ typedef struct {
 
     // Null-terminated name of the PDB file. It can also contain full or partial
     // path to the file.
-    char PdbFileName[0];
+    char PdbFileName[1];
 } CV_INFO_PDB70;
 
 #pragma pack(pop)

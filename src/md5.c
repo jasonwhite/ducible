@@ -182,7 +182,7 @@ void md5_update(md5_context *ctx, const unsigned char *input, size_t len)
     left = ctx->total[0] & 0x3F;
     fill = 64 - left;
 
-    ctx->total[0] += len;
+    ctx->total[0] += (unsigned int)len;
     ctx->total[0] &= 0xFFFFFFFF;
 
     if (ctx->total[0] < (unsigned int)len)

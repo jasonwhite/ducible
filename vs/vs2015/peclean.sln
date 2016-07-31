@@ -8,6 +8,10 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_dll", "test_dll\test_dll.vcxproj", "{9FFDDFFA-629B-4A15-9B09-9756D78F2095}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "peclean", "peclean\peclean.vcxproj", "{2C07E47D-CA17-4D0A-8C9A-336DB1256938}"
+	ProjectSection(ProjectDependencies) = postProject
+		{5454D84F-10E9-48E2-96F4-C96694BC9E0C} = {5454D84F-10E9-48E2-96F4-C96694BC9E0C}
+		{9FFDDFFA-629B-4A15-9B09-9756D78F2095} = {9FFDDFFA-629B-4A15-9B09-9756D78F2095}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
