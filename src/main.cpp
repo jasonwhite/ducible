@@ -241,7 +241,7 @@ int pepatch(int argc, CharT** argv)
         return 0;
     }
     catch (const CommandLineVersion&) {
-        std::cout << "pepatch version " << PEPATCH_GIT_PRETTY_VERSION <<
+        std::cout << "pepatch version " << PEPATCH_PRETTY_VERSION <<
             std::endl;
         return 0;
     }

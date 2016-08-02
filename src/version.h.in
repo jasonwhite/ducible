@@ -38,8 +38,9 @@
 #define PEPATCH_MINOR ${MINOR}
 #define PEPATCH_PATCH ${PATCH}
 
-// The output of `git describe --tags --always`.
-#define PEPATCH_GIT_PRETTY_VERSION "${GIT_VERSION}"
+// The output of `git describe --always --dirty`. Note that this does not
+// include the major, minor, and patch versions.
+#define PEPATCH_GIT_VERSION "${GIT_VERSION}"
 
 // A short version of the commit hash. This will be >=7 characters long. As many
 // characters as are needed to make the commit hash unique will be included.
@@ -50,4 +51,7 @@
 // HEAD`.
 #define PEPATCH_GIT_COMMIT_LONG "${GIT_COMMIT_LONG}"
 
-#define PEPATCH_VERSION_STRING "${MAJOR}.${MINOR}.${PATCH}-${GIT_COMMIT_SHORT}"
+#define PEPATCH_VERSION "${MAJOR}.${MINOR}.${PATCH}-${GIT_COMMIT_SHORT}"
+
+// A pretty version in the form of "v1.0.0-226f798-dirty"
+#define PEPATCH_PRETTY_VERSION "v${MAJOR}.${MINOR}.${PATCH}-${GIT_VERSION}"

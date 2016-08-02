@@ -34,7 +34,7 @@ def git_version():
     """
     Returns a short Git commit hash for the current repository.
     """
-    return subprocess.check_output(['git', 'describe', '--tags', '--always']) \
+    return subprocess.check_output(['git', 'describe', '--always', '--dirty']) \
             .decode('utf-8')\
             .strip()
 

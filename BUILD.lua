@@ -49,3 +49,9 @@ rule {
     task = {{pepatch:path(), "--help"}},
     outputs = {},
 }
+
+rule {
+    inputs = {pepatch:path()},
+    task = {{pepatch:path(), "--version"}},
+    outputs = {},
+}
