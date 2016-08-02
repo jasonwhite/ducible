@@ -27,6 +27,7 @@
 #include <string>
 
 #include "pepatch.h"
+#include "version.h"
 
 /**
  * Thrown when there is an error parsing the command line options.
@@ -68,6 +69,12 @@ class CommandLineHelp {
 };
 
 /**
+ * Thrown when version information is requested from the command line.
+ */
+class CommandLineVersion {
+};
+
+/**
  * String literals for the appropriate character type.
  *
  * FIXME: I'm sure there is a better way to do this...
@@ -79,6 +86,7 @@ template<>
 struct OptionNames<char> {
     const char* helpLong    = "--help";
     const char* helpShort   = "-h";
+    const char* versionLong = "--version";
     const char* dryrunLong  = "--dryrun";
     const char* dryrunShort = "-n";
     const char* dashDash    = "--";
@@ -88,6 +96,7 @@ template<>
 struct OptionNames<wchar_t> {
     const wchar_t* helpLong    = L"--help";
     const wchar_t* helpShort   = L"-h";
+    const wchar_t* versionLong = L"--version";
     const wchar_t* dryrunLong  = L"--dryrun";
     const wchar_t* dryrunShort = L"-n";
     const wchar_t* dashDash    = L"--";
@@ -123,6 +132,13 @@ public:
             if (argv[i] == string(opt.helpLong) ||
                 argv[i] == string(opt.helpShort)) {
                 throw CommandLineHelp();
+            }
+        }
+
+        // Look for the version option
+        for (int i = 1; i < argc; ++i) {
+            if (argv[i] == string(opt.versionLong)) {
+                throw CommandLineVersion();
             }
         }
 
@@ -217,6 +233,11 @@ int pepatch(int argc, CharT** argv)
     catch (const CommandLineHelp&) {
         std::cout << usage << std::endl;
         std::cout << help;
+        return 0;
+    }
+    catch (const CommandLineVersion&) {
+        std::cout << "pepatch version " << PEPATCH_GIT_PRETTY_VERSION <<
+            std::endl;
         return 0;
     }
 
