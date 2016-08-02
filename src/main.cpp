@@ -129,16 +129,21 @@ public:
 
         // Look for the help option
         for (int i = 1; i < argc; ++i) {
-            if (argv[i] == string(opt.helpLong) ||
-                argv[i] == string(opt.helpShort)) {
+            const string arg = argv[i];
+            if (arg == opt.helpLong || arg == opt.helpShort) {
                 throw CommandLineHelp();
+            } else if (arg == opt.dashDash) {
+                break;
             }
         }
 
         // Look for the version option
         for (int i = 1; i < argc; ++i) {
-            if (argv[i] == string(opt.versionLong)) {
+            const string arg = argv[i];
+            if (arg == opt.versionLong) {
                 throw CommandLineVersion();
+            } else if (arg == opt.dashDash) {
+                break;
             }
         }
 
