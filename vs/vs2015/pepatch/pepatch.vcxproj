@@ -71,15 +71,19 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <CustomBuildBeforeTargets>ClCompile</CustomBuildBeforeTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <CustomBuildBeforeTargets>ClCompile</CustomBuildBeforeTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <CustomBuildBeforeTargets>ClCompile</CustomBuildBeforeTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <CustomBuildBeforeTargets>ClCompile</CustomBuildBeforeTargets>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -95,6 +99,16 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <CustomBuildStep>
+      <Command>python ..\..\..\scripts\version.py ..\..\..\src\version.h.in ..\..\..\src\version.h --version-file ..\..\..\VERSION</Command>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Outputs>..\..\..\src\version.h;%(Outputs)</Outputs>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Inputs>..\..\..\src\version.h.in ..\..\..\VERSION;%(Inputs)</Inputs>
+      <Message>Generating version.h</Message>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -110,6 +124,16 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <CustomBuildStep>
+      <Command>python ..\..\..\scripts\version.py ..\..\..\src\version.h.in ..\..\..\src\version.h --version-file ..\..\..\VERSION</Command>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Outputs>..\..\..\src\version.h;%(Outputs)</Outputs>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Inputs>..\..\..\src\version.h.in ..\..\..\VERSION;%(Inputs)</Inputs>
+      <Message>Generating version.h</Message>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -129,6 +153,16 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <CustomBuildStep>
+      <Command>python ..\..\..\scripts\version.py ..\..\..\src\version.h.in ..\..\..\src\version.h --version-file ..\..\..\VERSION</Command>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Outputs>..\..\..\src\version.h;%(Outputs)</Outputs>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Inputs>..\..\..\src\version.h.in ..\..\..\VERSION;%(Inputs)</Inputs>
+      <Message>Generating version.h</Message>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -148,6 +182,16 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <CustomBuildStep>
+      <Command>python ..\..\..\scripts\version.py ..\..\..\src\version.h.in ..\..\..\src\version.h --version-file ..\..\..\VERSION</Command>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Outputs>..\..\..\src\version.h;%(Outputs)</Outputs>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Inputs>..\..\..\src\version.h.in ..\..\..\VERSION;%(Inputs)</Inputs>
+      <Message>Generating version.h</Message>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\main.cpp" />
