@@ -161,6 +161,9 @@
     <ClInclude Include="..\..\..\src\pemap.h" />
     <ClInclude Include="..\..\..\src\pepatch.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\..\src\version.rc" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
