@@ -36,7 +36,7 @@ should be buildable and runnable on any platform (even non-Windows!).
 Required build tools:
 
  1. **Python 3**
-    
+
     Python is used to generate `src/version.h`.
 
  2. **Git**
