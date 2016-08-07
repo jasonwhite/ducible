@@ -196,14 +196,24 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\src\main.cpp" />
     <ClCompile Include="..\..\..\src\md5.c" />
-    <ClCompile Include="..\..\..\src\pemap.cpp" />
-    <ClCompile Include="..\..\..\src\pepatch.cpp" />
+    <ClCompile Include="..\..\..\src\memmap.cpp" />
+    <ClCompile Include="..\..\..\src\msf.cpp" />
+    <ClCompile Include="..\..\..\src\msf_stream.cpp" />
+    <ClCompile Include="..\..\..\src\patch.cpp" />
+    <ClCompile Include="..\..\..\src\patches.cpp" />
+    <ClCompile Include="..\..\..\src\patch_image.cpp" />
+    <ClCompile Include="..\..\..\src\pe_file.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\md5.h" />
-    <ClInclude Include="..\..\..\src\pefile.h" />
-    <ClInclude Include="..\..\..\src\pemap.h" />
-    <ClInclude Include="..\..\..\src\pepatch.h" />
+    <ClInclude Include="..\..\..\src\memmap.h" />
+    <ClInclude Include="..\..\..\src\msf.h" />
+    <ClInclude Include="..\..\..\src\msf_stream.h" />
+    <ClInclude Include="..\..\..\src\patch.h" />
+    <ClInclude Include="..\..\..\src\patches.h" />
+    <ClInclude Include="..\..\..\src\patch_image.h" />
+    <ClInclude Include="..\..\..\src\pe_file.h" />
+    <ClInclude Include="..\..\..\src\pe_format.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\..\src\version.rc" />
