@@ -80,7 +80,7 @@
 #include "msf.h"
 #include "msf_stream.h"
 #include "pemap.h"
-#include "pepatch.h"
+#include "patch.h"
 #include "md5.h"
 
 namespace {
