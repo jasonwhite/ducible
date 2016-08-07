@@ -26,6 +26,8 @@
 #include <system_error>
 #include <cstring>
 
+#include "msf_stream.h"
+
 namespace {
 
 /**
@@ -78,8 +80,42 @@ MsfFile::MsfFile(FILE* f) {
     if (_header.pageSize * _header.pageCount != getFileSize(f))
         throw InvalidMsf("Invalid MSF file length");
 
-    // Read the list of stream table pages.
+    std::cout << "MSF Header info:\n";
+    std::cout << "  Page Size:         " << _header.pageSize << std::endl;
+    std::cout << "  Free Page Map:     " << _header.freePageMap << std::endl;
+    std::cout << "  Page Count:        " << _header.pageCount << std::endl;
+    std::cout << "  Stream Table Size: " << _header.streamTableInfo.size << std::endl;
 
+    // The number of pages required to store the pages of the stream table
+    // stream.
+    size_t stPagesPagesCount =
+        pageCount(_header.pageSize, _header.streamTableInfo.size);
+
+    MsfStream streamTablePagesStream(_header.pageSize, stPagesPagesCount * sizeof(uint32_t),
+            _header.streamTablePagesPages);
+
+    // Read the list of stream table pages.
+    std::vector<uint32_t> streamTablePages(stPagesPagesCount);
+    streamTablePagesStream.read(f, &streamTablePages[0]);
+
+    // Finally, read the stream table itself
+    MsfStream streamTableStream(_header.pageSize, _header.streamTableInfo.size,
+            &streamTablePages[0]);
+    std::vector<uint32_t> streamTable(_header.streamTableInfo.size / sizeof(uint32_t));
+    streamTableStream.read(f, &streamTable[0]);
+
+    // The first element in the stream table is the total number of streams.
+    const uint32_t& streamCount = streamTable[0];
+
+    // The sizes of each stream then follow.
+    const uint32_t* streamSizes = &(streamTable[1]);
+
+    std::cout << "Table size: " << streamTable.size() << std::endl;
+    std::cout << "Stream count: " << streamCount << std::endl;
+
+    for (uint32_t i = 0; i < streamCount; ++i) {
+        std::cout << "Stream " << i << ": size = " << streamSizes[i] << std::endl;
+    }
 }
 
 size_t MsfFile::addStream(const MsfStream* stream) {

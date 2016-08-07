@@ -61,29 +61,40 @@ struct STREAM_INFO {
     int32_t index;
 };
 
-struct MSF_HEADER {
-    // Magic version string. Used to check that we are indeed reading the MSF
-    // format.
-    char magic[32];
+// The initial assumption of the MSF page size. This is used to load the first
+// page of the MSF.
+const size_t kMsfPageSize = 0x1000;
 
-    // Page size. Always a power of 2. Usually 4096.
-    uint32_t pageSize;
+union MSF_HEADER {
+    struct {
+        // Magic version string. Used to check that we are indeed reading the MSF
+        // format.
+        char magic[32];
 
-    // Page number of the free page map.
-    uint32_t freePageMap;
+        // Page size. Always a power of 2. Usually 4096.
+        uint32_t pageSize;
 
-    // Number of pages. The length of the file should always be equal to the
-    // page size multiplied by the page count.
-    uint32_t pageCount;
+        // Page number of the free page map.
+        uint32_t freePageMap;
 
-    // Information about the "stream table" stream.
-    STREAM_INFO streamTableInfo;
+        // Number of pages. The length of the file should always be equal to the
+        // page size multiplied by the page count.
+        uint32_t pageCount;
 
-    // An array of pages numbers that constitutes the stream table stream. The
-    // stream table stream can potentially take up multiple pages, but it
-    // usually only takes up one page. It is also usually the last page in the
-    // file.
-    //uint32_t streamTablePages[0];
+        // Information about the "stream table" stream.
+        STREAM_INFO streamTableInfo;
+
+        // An array of pages numbers that constitutes the stream table stream
+        // pages list. The stream table stream can potentially take up multiple
+        // pages, but it usually only takes up one page. It is also usually the
+        // last page in the file.
+        uint32_t streamTablePagesPages[1];
+    };
+
+    // The rest of the page. Note that we assume this header is on a 4096-byte
+    // page even though the page size may not be 4096 bytes. Even the Microsoft
+    // MSF implementation does this.
+    uint8_t page[kMsfPageSize];
 };
 
 // Magic version string in the MSF header.
@@ -108,7 +119,6 @@ public:
         return _why;
     }
 };
-
 
 class MsfStream;
 

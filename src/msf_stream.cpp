@@ -38,7 +38,7 @@ size_t MsfStream::pageSize() const {
 }
 
 size_t MsfStream::pageCount() const {
-    return (_length + _pageSize - 1) / _pageSize;
+    return ::pageCount(_pageSize, _length);
 }
 
 void MsfStream::readFromPage(FILE* f, size_t page, size_t length, void* buf,

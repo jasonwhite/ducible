@@ -25,6 +25,14 @@
 #include <stdio.h> // For FILE*
 
 /**
+ * Helper function for computing the number of pages required to hold a length
+ * of bytes.
+ */
+inline uint32_t pageCount(uint32_t pageSize, uint32_t length) {
+    return (length + pageSize - 1) / pageSize;
+}
+
+/**
  * Represents an MSF stream.
  *
  * An MSF stream is made up of 1 or more pages. This class abstracts away the
