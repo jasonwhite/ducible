@@ -19,33 +19,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#pragma once
 
-#include "patch.h"
+/**
+ * Patches the given image and its associated PDB to eliminate the
+ * non-deterministic parts of the files.
+ */
+void patchImage(const char* imagePath, const char* pdbPath, bool dryRun = true);
 
-#include <iostream>
-#include <iomanip>
-#include <tuple>
-
-Patch::Patch(size_t offset, size_t length, const uint8_t* data, const char* name)
-    : offset(offset), length(length), data(data), name(name) {
-}
-
-void Patch::apply(uint8_t* buf, bool dryRun) {
-    std::cout << *this << std::endl;
-
-    if (!dryRun) {
-        for (size_t i = 0; i < length; ++i)
-            buf[offset+i] = data[i];
-    }
-}
-
-std::ostream& operator<<(std::ostream& os, const Patch& patch) {
-    os << "Patching '" << patch.name
-       << "' at offset 0x" << std::hex << patch.offset << std::dec
-       << " (" << patch.length << " bytes)";
-    return os;
-}
-
-bool operator<(const Patch& a, const Patch& b) {
-    return std::tie(a.offset, a.length) < std::tie(b.offset, b.length);
-}
+#ifdef _WIN32
+void patchImage(const wchar_t* imagePath, const wchar_t* pdbPath, bool dryRun = true);
+#endif

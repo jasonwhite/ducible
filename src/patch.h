@@ -21,25 +21,54 @@
  */
 #pragma once
 
-void patchImage(const char* imagePath, const char* pdbPath, bool dryRun = true);
-
-#ifdef _WIN32
-void patchImage(const wchar_t* imagePath, const wchar_t* pdbPath, bool dryRun = true);
-#endif
+#include <stdlib.h>
+#include <stdint.h>
+#include <ostream>
 
 /**
- * Thrown when an image is found to be invalid.
+ * A range of memory to patch. This is used to keep track of what needs to be
+ * patched in the PE file.
+ *
+ * All the patch locations need to be found before finishing parsing. If we
+ * patched while parsing, then parsing could fail and we could be left with an
+ * incomplete patch. Thus, we keep a list of patches and patch everything all at
+ * once to mitigate failure cases.
  */
-class InvalidImage
+class Patch
 {
-private:
-    const char* _why;
-
 public:
+    // Location to patch.
+    size_t offset;
 
-    InvalidImage(const char* why) : _why(why) {}
+    // Length of the data.
+    size_t length;
 
-    const char* why() const {
-        return _why;
+    // Data overwrite the given location with.
+    const uint8_t* data;
+
+    // Name of the patch. Useful to see what's going on.
+    const char* name;
+
+    Patch(size_t offset, size_t length, const uint8_t* data,
+            const char* name = NULL);
+
+    template<typename T>
+    Patch(size_t offset, const T* data, const char* name = NULL)
+        : offset(offset),
+          length(sizeof(T)),
+          data((const uint8_t*)data),
+          name(name)
+    {
     }
+
+    /**
+     * Applies the patch. Note that no bounds checking is done. It is assumed
+     * that it has already been done.
+     */
+    void apply(uint8_t* buf, bool dryRun);
+
+    friend std::ostream& operator<<(std::ostream& os, const Patch& patch);
+
+    // Implement ordering for sorting purposes.
+    friend bool operator<(const Patch& a, const Patch& b);
 };

@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-#include "pemap.h"
+#include "memmap.h"
 
 #if defined(_WIN32)
 

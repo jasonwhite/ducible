@@ -26,7 +26,8 @@
 #include <vector>
 #include <string>
 
-#include "patch.h"
+#include "patch_image.h"
+#include "pe_file.h"
 #include "version.h"
 
 /**

@@ -19,6 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#pragma once
 
 /**
  * MultiStream File (MSF) Format Overview:
@@ -47,7 +48,6 @@
  * the stream table stream, we need to know the page numbers for the stream
  * table. This information is in the MSF header.
  */
-#pragma once
 
 #include <stdint.h>
 #include <stdio.h> // For FILE*

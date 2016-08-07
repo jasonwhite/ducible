@@ -19,33 +19,49 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#pragma once
+
+#include <vector>
+#include <stdint.h>
 
 #include "patch.h"
 
-#include <iostream>
-#include <iomanip>
-#include <tuple>
+/**
+ * Keeps track of a list of patches to apply.
+ */
+class Patches
+{
+private:
 
-Patch::Patch(size_t offset, size_t length, const uint8_t* data, const char* name)
-    : offset(offset), length(length), data(data), name(name) {
-}
+    uint8_t* _buf;
 
-void Patch::apply(uint8_t* buf, bool dryRun) {
-    std::cout << *this << std::endl;
+public:
+    // List of patches
+    std::vector<Patch> patches;
 
-    if (!dryRun) {
-        for (size_t i = 0; i < length; ++i)
-            buf[offset+i] = data[i];
+    Patches(uint8_t* buf);
+
+    void add(Patch patch);
+
+    /**
+     * Convenience function for adding patches.
+     */
+    template<typename T>
+    void add(const T* addr, const T* data, const char* name = NULL) {
+        add(Patch((const uint8_t*)addr - _buf, data, name));
     }
-}
 
-std::ostream& operator<<(std::ostream& os, const Patch& patch) {
-    os << "Patching '" << patch.name
-       << "' at offset 0x" << std::hex << patch.offset << std::dec
-       << " (" << patch.length << " bytes)";
-    return os;
-}
+    /**
+     * Sort the patches. The patches will be ordered according to the offset in
+     * the file. This is useful once all the patches have been added, but not
+     * applied so that we can take the checksum of the file in the areas between
+     * the patches.
+     */
+    void sort();
 
-bool operator<(const Patch& a, const Patch& b) {
-    return std::tie(a.offset, a.length) < std::tie(b.offset, b.length);
-}
+    /**
+     * Applies the patches.
+     */
+    void apply(bool dryRun = false);
+};
+
