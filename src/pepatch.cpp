@@ -78,6 +78,8 @@
 #include <tuple>
 
 #include "pefile.h"
+#include "msf.h"
+#include "msf_stream.h"
 #include "pemap.h"
 #include "pepatch.h"
 #include "md5.h"
@@ -505,6 +507,33 @@ void calculateChecksum(const uint8_t* buf, const size_t length,
     md5_finish(&ctx, output);
 }
 
+/**
+ * Helper functions for opening a file generically.
+ */
+FILE* openFile(const char* path, const char* mode) {
+    return fopen(path, mode);
+}
+
+#ifdef _WIN32
+FILE* openFile(const wchar_t* path, const wchar_t* mode) {
+    return _wfopen(path, mode);
+}
+#endif
+
+/**
+ * Patches a PDB file.
+ */
+template<typename CharT>
+void patchPDB(const CharT* pdbPath) {
+    FILE* pdb = openFile(pdbPath, "rb");
+    if (!pdb) {
+        throw std::system_error(errno, std::system_category(),
+            "Failed to open PDB file");
+    }
+
+    MsfFile msfFile(pdb);
+}
+
 template<typename CharT>
 void patchImageImpl(const CharT* imagePath, const CharT* pdbPath, bool dryRun) {
     MemMap image(imagePath);
@@ -537,12 +566,13 @@ void patchImageImpl(const CharT* imagePath, const CharT* pdbPath, bool dryRun) {
     patches.sort();
 
     // Calculate the checksum of the PE file. Note that the checksum is stored
-    // in PDB signature. When the patches are applied, this checksum is what
+    // in the PDB signature. When the patches are applied, this checksum is what
     // will be set in the file.
     calculateChecksum(buf, length, patches.patches, pe.pdbSignature);
 
+    // Patch the PDB file.
     if (pdbPath) {
-        MemMap pdb(pdbPath);
+        patchPDB(pdbPath);
     }
 
     patches.apply(dryRun);
