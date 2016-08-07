@@ -22,6 +22,7 @@
 
 #include "msf_stream.h"
 
+#include <algorithm>
 #include <system_error>
 
 MsfStream::MsfStream(size_t pageSize, size_t length, const uint32_t* pages)
@@ -46,7 +47,7 @@ void MsfStream::readFromPage(FILE* f, size_t page, size_t length, void* buf,
         size_t offset) const {
 
     // Seek to the desired offset in the file.
-    if (fseek(f, _pageSize * page + offset, SEEK_SET) != 0) {
+    if (fseek(f, (long)(_pageSize * page + offset), SEEK_SET) != 0) {
         throw std::system_error(errno, std::system_category(),
                 "Failed to seek to MSF page");
     }

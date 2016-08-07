@@ -29,7 +29,8 @@
  * Helper function for computing the number of pages required to hold a length
  * of bytes.
  */
-inline uint32_t pageCount(uint32_t pageSize, uint32_t length) {
+template<typename T>
+inline T pageCount(T pageSize, T length) {
     return (length + pageSize - 1) / pageSize;
 }
 

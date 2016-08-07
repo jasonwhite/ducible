@@ -56,7 +56,7 @@ int64_t getFileSize(FILE* f) {
     }
 
     // Go back to our old spot
-    if (fseek(f, pos, SEEK_SET) == -1) {
+    if (fseek(f, (long)pos, SEEK_SET) == -1) {
         throw std::system_error(errno, std::system_category(),
             "fseek() failed");
     }
@@ -91,8 +91,17 @@ MsfFile::MsfFile(FILE* f) {
     size_t stPagesPagesCount =
         pageCount(_header.pageSize, _header.streamTableInfo.size);
 
+    // Read the stream table page directory
+    std::unique_ptr<uint32_t> streamTablePagesPages(
+        new uint32_t[stPagesPagesCount]);
+
+    if (fread(streamTablePagesPages.get(), sizeof(uint32_t), stPagesPagesCount, f) !=
+            stPagesPagesCount) {
+        throw InvalidMsf("Missing root MSF stream table page list");
+    }
+
     MsfStream streamTablePagesStream(_header.pageSize, stPagesPagesCount * sizeof(uint32_t),
-            _header.streamTablePagesPages);
+            streamTablePagesPages.get());
 
     // Read the list of stream table pages.
     std::vector<uint32_t> streamTablePages(stPagesPagesCount);
@@ -144,6 +153,6 @@ size_t MsfFile::streamCount() const {
     return _streams.size();
 }
 
-void MsfFile::write(FILE* f) const {
+/*void MsfFile::write(FILE* f) const {
     // TODO
-}
+}*/

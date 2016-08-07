@@ -243,22 +243,34 @@ void calculateChecksum(const uint8_t* buf, const size_t length,
 /**
  * Helper functions for opening a file generically.
  */
-FILE* openFile(const char* path, const char* mode) {
+#ifdef _WIN32
+
+FILE* openFile(const char* path, const char* mode = "rb") {
+    FILE* f = NULL;
+    fopen_s(&f, path, mode);
+    return f;
+}
+
+FILE* openFile(const wchar_t* path, const wchar_t* mode = L"rb") {
+    FILE* f = NULL;
+    _wfopen_s(&f, path, mode);
+    return f;
+}
+
+#else // _WIN32
+
+FILE* openFile(const char* path, const char* mode = "rb") {
     return fopen(path, mode);
 }
 
-#ifdef _WIN32
-FILE* openFile(const wchar_t* path, const wchar_t* mode) {
-    return _wfopen(path, mode);
-}
-#endif
+#endif // _WIN32
 
 /**
  * Patches a PDB file.
  */
 template<typename CharT>
 void patchPDB(const CharT* pdbPath) {
-    FILE* pdb = openFile(pdbPath, "rb");
+    FILE* pdb = openFile(pdbPath);
     if (!pdb) {
         throw std::system_error(errno, std::system_category(),
             "Failed to open PDB file");

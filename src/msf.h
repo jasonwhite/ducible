@@ -66,36 +66,29 @@ struct STREAM_INFO {
 // page of the MSF.
 const size_t kMsfPageSize = 0x1000;
 
-union MSF_HEADER {
-    struct {
-        // Magic version string. Used to check that we are indeed reading the MSF
-        // format.
-        char magic[32];
+struct MSF_HEADER {
+    // Magic version string. Used to check that we are indeed reading the MSF
+    // format.
+    char magic[32];
 
-        // Page size. Always a power of 2. Usually 4096.
-        uint32_t pageSize;
+    // Page size. Always a power of 2. Usually 4096.
+    uint32_t pageSize;
 
-        // Page number of the free page map.
-        uint32_t freePageMap;
+    // Page number of the free page map.
+    uint32_t freePageMap;
 
-        // Number of pages. The length of the file should always be equal to the
-        // page size multiplied by the page count.
-        uint32_t pageCount;
+    // Number of pages. The length of the file should always be equal to the
+    // page size multiplied by the page count.
+    uint32_t pageCount;
 
-        // Information about the "stream table" stream.
-        STREAM_INFO streamTableInfo;
+    // Information about the "stream table" stream.
+    STREAM_INFO streamTableInfo;
 
-        // An array of pages numbers that constitutes the stream table stream
-        // pages list. The stream table stream can potentially take up multiple
-        // pages, but it usually only takes up one page. It is also usually the
-        // last page in the file.
-        uint32_t streamTablePagesPages[1];
-    };
-
-    // The rest of the page. Note that we assume this header is on a 4096-byte
-    // page even though the page size may not be 4096 bytes. Even the Microsoft
-    // MSF implementation does this.
-    uint8_t page[kMsfPageSize];
+    // An array of pages numbers that constitutes the stream table stream
+    // pages list. The stream table stream can potentially take up multiple
+    // pages, but it usually only takes up one page. It is also usually the
+    // last page in the file.
+    //uint32_t streamTablePagesPages[0];
 };
 
 // Magic version string in the MSF header.
