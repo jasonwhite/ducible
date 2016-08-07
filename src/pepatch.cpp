@@ -44,19 +44,18 @@
  *     possible. Thus, we do not apply the patches until the very end. The main
  *     places to patch include:
  *
- *     a. Time stamps occur in few places in the main headers. We patch all of
- *        these with a semi-arbitrary timestamp of Jan 1, 2010, 0:00:00 GMT. We
- *        cannot use 0 as that has a special meaning. Rather than being
- *        inconsistent with prior work, we use the same one as Google's
- *        zap_timestamp utility.
- *     b. Next, we patch the data directories. There are three of them with
+ *     a. Timestamps that occur in the main headers. We patch all of these with
+ *        a semi-arbitrary timestamp of Jan 1, 2010, 0:00:00 GMT. We cannot use
+ *        0 as that has a special meaning. Rather than being inconsistent with
+ *        prior work, we use the same one as Google's zap_timestamp utility.
+ *     b. Timestamps in the data directories. There are three of them with
  *        non-reproducible data: IMAGE_EXPORT_DIRECTORY,
  *        IMAGE_RESOURCE_DIRECTORY, and IMAGE_DEBUG_DIRECTORY. The tricky one is
- *        the debug directory. This includes a signature to match the PE file
- *        with the PDB file. We patch this with an MD5 checksum of the PE file,
- *        skipping over the patched areas. This checksum is calculated after
- *        all of the patches are added. When the patches are applied, this is
- *        what will be set.
+ *        the debug directory. In addition to a timestamp, this includes a
+ *        signature to match the PE file with the PDB file. We patch this with
+ *        an MD5 checksum of the PE file, skipping over the patched areas. This
+ *        checksum is calculated after all of the patches are added. When the
+ *        patches are applied, this is what will be set.
  *
  *  4. Finally, the patches are applied.
  *
