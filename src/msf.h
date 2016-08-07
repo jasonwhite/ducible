@@ -54,48 +54,7 @@
 #include <vector>
 #include <memory>
 
-struct STREAM_INFO {
-    // Size of the stream, in bytes
-    uint32_t size;
-
-    // Index of the page number.
-    int32_t index;
-};
-
-// The initial assumption of the MSF page size. This is used to load the first
-// page of the MSF.
-const size_t kMsfPageSize = 0x1000;
-
-struct MSF_HEADER {
-    // Magic version string. Used to check that we are indeed reading the MSF
-    // format.
-    char magic[32];
-
-    // Page size. Always a power of 2. Usually 4096.
-    uint32_t pageSize;
-
-    // Page number of the free page map.
-    uint32_t freePageMap;
-
-    // Number of pages. The length of the file should always be equal to the
-    // page size multiplied by the page count.
-    uint32_t pageCount;
-
-    // Information about the "stream table" stream.
-    STREAM_INFO streamTableInfo;
-
-    // An array of pages numbers that constitutes the stream table stream
-    // pages list. The stream table stream can potentially take up multiple
-    // pages, but it usually only takes up one page. It is also usually the
-    // last page in the file.
-    //uint32_t streamTablePagesPages[0];
-};
-
-// Magic version string in the MSF header.
-const char kMsfHeaderMagic[] = "Microsoft C/C++ MSF 7.00\r\n\x1a\x44\x53\0\0";
-
-static_assert(sizeof(MSF_HEADER::magic) == sizeof(kMsfHeaderMagic),
-        "Invalid MSF header magic string size");
+#include "msf_format.h"
 
 /**
  * Thrown when an MSF is found to be invalid or unsupported.
