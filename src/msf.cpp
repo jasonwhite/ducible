@@ -108,23 +108,36 @@ MsfFile::MsfFile(FILE* f) {
     const uint32_t& streamCount = streamTable[0];
 
     // The sizes of each stream then follow.
-    const uint32_t* streamSizes = &(streamTable[1]);
+    const uint32_t* streamSizes = &streamTable[1];
 
-    std::cout << "Table size: " << streamTable.size() << std::endl;
-    std::cout << "Stream count: " << streamCount << std::endl;
+    // After all the sizes are the lists of pages for each stream. We calculate
+    // the number of pages required for the stream using the stream size.
+    const uint32_t* streamPages = streamSizes + streamCount;
 
+    uint32_t pagesIndex = 0;
     for (uint32_t i = 0; i < streamCount; ++i) {
-        std::cout << "Stream " << i << ": size = " << streamSizes[i] << std::endl;
+
+        // If we were given a bogus stream count, we could potentially overflow
+        // the stream table vector. Detect that here.
+        if (pagesIndex >= streamTable.size())
+            throw InvalidMsf("invalid stream count in stream table");
+
+        const uint32_t& size = streamSizes[i];
+
+        addStream(new MsfStream(_header.pageSize, size,
+                streamPages + pagesIndex));
+
+        pagesIndex += pageCount(_header.pageSize, size);
     }
 }
 
 size_t MsfFile::addStream(const MsfStream* stream) {
-    _streams.push_back(stream);
+    _streams.push_back(std::shared_ptr<const MsfStream>(stream));
     return _streams.size()-1;
 }
 
 void MsfFile::replaceStream(size_t index, const MsfStream* stream) {
-    _streams[index] = stream;
+    _streams[index] = std::shared_ptr<const MsfStream>(stream);
 }
 
 size_t MsfFile::streamCount() const {

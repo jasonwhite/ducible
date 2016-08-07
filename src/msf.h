@@ -52,6 +52,7 @@
 #include <stdint.h>
 #include <stdio.h> // For FILE*
 #include <vector>
+#include <memory>
 
 struct STREAM_INFO {
     // Size of the stream, in bytes
@@ -126,7 +127,7 @@ class MsfFile {
 private:
 
     MSF_HEADER _header;
-    std::vector<const MsfStream*> _streams;
+    std::vector<std::shared_ptr<const MsfStream> > _streams;
 
     void writeHeader(FILE* f);
 

@@ -23,6 +23,7 @@
 
 #include <stdint.h>
 #include <stdio.h> // For FILE*
+#include <vector>
 
 /**
  * Helper function for computing the number of pages required to hold a length
@@ -43,7 +44,7 @@ private:
 
     size_t _pageSize;
     size_t _length;
-    const uint32_t* _pages;
+    std::vector<uint32_t> _pages;
 
 public:
     /**

@@ -25,8 +25,9 @@
 #include <system_error>
 
 MsfStream::MsfStream(size_t pageSize, size_t length, const uint32_t* pages)
-    : _pageSize(pageSize), _length(length), _pages(pages)
+    : _pageSize(pageSize), _length(length)
 {
+    _pages.assign(pages, pages + pageCount());
 }
 
 size_t MsfStream::length() const {
