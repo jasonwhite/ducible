@@ -21,10 +21,12 @@
  */
 #pragma once
 
+#include <stdint.h>
+
 /**
  * PDB stream IDs.
  */
-enum PdbStream : size_t {
+enum PdbStreamType : size_t {
     // Stream table stream.
     streamTable = 0,
 
@@ -44,4 +46,59 @@ enum PdbStream : size_t {
     // There are more streams than this, but they are not accessed directly by a
     // stream ID constant. We are usually only interested in the above streams
     // anyway.
+};
+
+/**
+ * Implementation version of the PDB.
+ */
+enum PdbVersion {
+    vc2     = 19941610,
+    vc4     = 19950623,
+    vc41    = 19950814,
+    vc50    = 19960307,
+    vc98    = 19970604,
+    vc70Dep = 19990604, // deprecated vc70 implementation version
+    vc70    = 20000404,
+    vc80    = 20030901,
+    vc110   = 20091201,
+    vc140   = 20140508,
+};
+
+/**
+ * PDB stream.
+ */
+struct PdbStream {
+    // Implementation version number.
+    uint32_t version;
+
+    // Timestamp of when the PDB was created.
+    uint32_t timestamp;
+
+    // Number of times this PDB instance has been updated.
+    uint32_t age;
+};
+
+/**
+ * PDB 7.0 stream.
+ */
+struct PdbStream70 : public PdbStream {
+    // PDB GUID. This must match the PE file.
+    uint8_t sig70[16];
+};
+
+/**
+ * Thrown when a PDB is found to be invalid or unsupported.
+ */
+class InvalidPdb
+{
+private:
+    const char* _why;
+
+public:
+
+    InvalidPdb(const char* why) : _why(why) {}
+
+    const char* why() const {
+        return _why;
+    }
 };

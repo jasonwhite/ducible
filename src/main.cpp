@@ -28,6 +28,8 @@
 
 #include "patch_image.h"
 #include "pe_file.h"
+#include "msf.h"
+#include "pdb.h"
 #include "version.h"
 
 /**
@@ -252,6 +254,14 @@ int pepatch(int argc, CharT** argv)
     }
     catch (const InvalidImage& error) {
         std::cerr << "Error: Invalid image (" << error.why() << ")\n";
+        return 1;
+    }
+    catch (const InvalidMsf& error) {
+        std::cerr << "Error: Invalid PDB MSF format (" << error.why() << ")\n";
+        return 1;
+    }
+    catch (const InvalidPdb& error) {
+        std::cerr << "Error: Invalid PDB format (" << error.why() << ")\n";
         return 1;
     }
     catch (const std::system_error& error) {

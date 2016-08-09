@@ -285,7 +285,25 @@ void patchPDB(const CharT* pdbPath) {
     std::cout << "Page Size:  " << msf.pageSize() << std::endl;
     std::cout << "Page Count: " << msf.pageCount() << std::endl;
 
-    msf.replaceStream(PdbStream::streamTable, nullptr);
+    msf.replaceStream(PdbStreamType::streamTable, nullptr);
+
+    // Read the PDB header
+    auto pdbHeaderStream = msf.getStream(PdbStreamType::header);
+
+    if (!pdbHeaderStream)
+        throw InvalidPdb("missing PDB header stream");
+
+    if (pdbHeaderStream->length() < sizeof(PdbStream70))
+        throw InvalidPdb("missing PDB 7.0 header");
+
+    PdbStream70 pdbHeader;
+    pdbHeaderStream->read(pdb, sizeof(pdbHeader), &pdbHeader);
+
+    if (pdbHeader.version < PdbVersion::vc70)
+        throw InvalidPdb("unsupported PDB implementation version");
+
+    std::cout << "PDB Timestamp: " << pdbHeader.timestamp << std::endl;
+    std::cout << "PDB Age: " << pdbHeader.age << std::endl;
 }
 
 template<typename CharT>

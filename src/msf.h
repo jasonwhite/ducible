@@ -103,6 +103,12 @@ public:
     size_t addStream(const MsfStream* stream);
 
     /**
+     * Returns the stream with the given index. Returns nullptr if it doesn't
+     * exist.
+     */
+    std::shared_ptr<const MsfStream> getStream(size_t index);
+
+    /**
      * Replaces a stream. Set to NULL to remove it.
      */
     void replaceStream(size_t index, const MsfStream* stream);

@@ -146,6 +146,14 @@ size_t MsfFile::addStream(const MsfStream* stream) {
     return _streams.size()-1;
 }
 
+std::shared_ptr<const MsfStream> MsfFile::getStream(size_t index) {
+    if (index < _streams.size()) {
+        return _streams[index];
+    }
+
+    return nullptr;
+}
+
 void MsfFile::replaceStream(size_t index, const MsfStream* stream) {
     _streams[index] = std::shared_ptr<const MsfStream>(stream);
 }
