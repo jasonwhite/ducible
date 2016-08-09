@@ -22,7 +22,6 @@
 
 #include "msf.h"
 
-#include <iostream>
 #include <system_error>
 #include <cstring>
 
@@ -80,16 +79,10 @@ MsfFile::MsfFile(FILE* f) {
     if (_header.pageSize * _header.pageCount != getFileSize(f))
         throw InvalidMsf("Invalid MSF file length");
 
-    std::cout << "MSF Header info:\n";
-    std::cout << "  Page Size:         " << _header.pageSize << std::endl;
-    std::cout << "  Free Page Map:     " << _header.freePageMap << std::endl;
-    std::cout << "  Page Count:        " << _header.pageCount << std::endl;
-    std::cout << "  Stream Table Size: " << _header.streamTableInfo.size << std::endl;
-
     // The number of pages required to store the pages of the stream table
     // stream.
     size_t stPagesPagesCount =
-        pageCount(_header.pageSize, _header.streamTableInfo.size);
+        ::pageCount(_header.pageSize, _header.streamTableInfo.size);
 
     // Read the stream table page directory
     std::unique_ptr<uint32_t> streamTablePagesPages(
@@ -136,8 +129,16 @@ MsfFile::MsfFile(FILE* f) {
         addStream(new MsfStream(_header.pageSize, size,
                 streamPages + pagesIndex));
 
-        pagesIndex += pageCount(_header.pageSize, size);
+        pagesIndex += ::pageCount(_header.pageSize, size);
     }
+}
+
+uint32_t MsfFile::pageSize() const {
+    return _header.pageSize;
+}
+
+uint32_t MsfFile::pageCount() const {
+    return _header.pageCount;
 }
 
 size_t MsfFile::addStream(const MsfStream* stream) {

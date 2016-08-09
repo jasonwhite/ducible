@@ -88,6 +88,16 @@ public:
     MsfFile(FILE* f);
 
     /**
+     * Returns the page size.
+     */
+    uint32_t pageSize() const;
+
+    /**
+     * Returns the number of pages.
+     */
+    uint32_t pageCount() const;
+
+    /**
      * Adds a new stream. Returns the index of the stream.
      */
     size_t addStream(const MsfStream* stream);

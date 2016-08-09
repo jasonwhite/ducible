@@ -69,14 +69,18 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <iostream>
 #include <vector>
 
 #include "patch_image.h"
 
 #include "patches.h"
 #include "pe_file.h"
+
 #include "msf.h"
 #include "msf_stream.h"
+#include "pdb.h"
+
 #include "memmap.h"
 #include "md5.h"
 
@@ -276,7 +280,12 @@ void patchPDB(const CharT* pdbPath) {
             "Failed to open PDB file");
     }
 
-    MsfFile msfFile(pdb);
+    MsfFile msf(pdb);
+
+    std::cout << "Page Size:  " << msf.pageSize() << std::endl;
+    std::cout << "Page Count: " << msf.pageCount() << std::endl;
+
+    msf.replaceStream(PdbStream::streamTable, nullptr);
 }
 
 template<typename CharT>

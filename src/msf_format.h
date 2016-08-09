@@ -31,10 +31,6 @@ struct STREAM_INFO {
     int32_t index;
 };
 
-// The initial assumption of the MSF page size. This is used to load the first
-// page of the MSF.
-const uint32_t kMsfPageSize = 0x1000;
-
 struct MSF_HEADER {
     // Magic version string. Used to check that we are indeed reading the MSF
     // format.
