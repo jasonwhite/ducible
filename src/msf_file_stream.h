@@ -69,10 +69,8 @@ public:
      * Reads a length of the stream. This abstracts reading from multiple pages.
      *
      * Params:
-     *   f      = The file to read from.
      *   length = The number of bytes to read from the stream.
      *   buf    = The buffer to read the stream into.
-     *   offset = The offset to start reading from. Optional.
      *
      * Returns: The number of bytes read.
      */
@@ -82,10 +80,8 @@ public:
      * Reads the entire stream.
      *
      * Params:
-     *   f      = The file to read from.
-     *   buf    = The buffer to read the stream into. This must be large enough
-     *            to hold the entire stream.
-     *   offset = The offset to start reading from. Optional.
+     *   buf = The buffer to read the stream into. This must be large enough to
+     *         hold the entire stream.
      *
      * Returns: The number of bytes read.
      */
