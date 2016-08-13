@@ -76,4 +76,10 @@ public:
      * Returns: The number of bytes read.
      */
     virtual size_t read(void* buf) = 0;
+
+    /**
+     * Writes a buffer to the stream from the current position. Depending on the
+     * underlying stream implementation, this may or may not completely succeed.
+     */
+    virtual size_t write(size_t length, const void* buf) = 0;
 };

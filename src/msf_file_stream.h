@@ -87,6 +87,13 @@ public:
      */
     size_t read(void* buf);
 
+    /**
+     * Writes a buffer to the stream from the current position. If an attempt is
+     * made to write past the end of the last page, it will only partially
+     * succeed. No new pages will be allocated.
+     */
+    size_t write(size_t length, const void* buf);
+
 private:
 
     /**

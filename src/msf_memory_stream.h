@@ -86,4 +86,10 @@ public:
      * Returns: The number of bytes read.
      */
     size_t read(void* buf);
+
+    /**
+     * Writes a buffer to the stream from the current position. If attempting to
+     * write past the end of the stream, the length of the stream will grow.
+     */
+    size_t write(size_t length, const void* buf);
 };
