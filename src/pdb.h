@@ -21,48 +21,50 @@
  */
 #pragma once
 
+#include <stdlib.h>
 #include <stdint.h>
 
 /**
  * PDB stream IDs.
  */
-enum PdbStreamType : size_t {
+namespace PdbStreamType {
+
     // Stream table stream.
-    streamTable = 0,
+    const size_t streamTable = 0;
 
     // Version information, and information to connect this PDB to the EXE.
-    header = 1,
+    const size_t header = 1;
 
     // Type information stream. All the types used in the executable.
-    tbi = 2,
+    const size_t tbi = 2;
 
     // Debug information stream. Holds section contributions, and list of
     // ‘Mods’.
-    dbi = 3,
+    const size_t dbi = 3;
 
     // ID info stream. Holds a hashed string table.
-    ipi = 4,
+    const size_t ipi = 4;
 
     // There are more streams than this, but they are not accessed directly by a
     // stream ID constant. We are usually only interested in the above streams
     // anyway.
-};
+}
 
 /**
  * Implementation version of the PDB.
  */
-enum PdbVersion {
-    vc2     = 19941610,
-    vc4     = 19950623,
-    vc41    = 19950814,
-    vc50    = 19960307,
-    vc98    = 19970604,
-    vc70Dep = 19990604, // deprecated vc70 implementation version
-    vc70    = 20000404,
-    vc80    = 20030901,
-    vc110   = 20091201,
-    vc140   = 20140508,
-};
+namespace PdbVersion {
+    const uint32_t vc2     = 19941610;
+    const uint32_t vc4     = 19950623;
+    const uint32_t vc41    = 19950814;
+    const uint32_t vc50    = 19960307;
+    const uint32_t vc98    = 19970604;
+    const uint32_t vc70Dep = 19990604; // deprecated vc70 implementation version
+    const uint32_t vc70    = 20000404;
+    const uint32_t vc80    = 20030901;
+    const uint32_t vc110   = 20091201;
+    const uint32_t vc140   = 20140508;
+}
 
 /**
  * PDB stream.
