@@ -25,7 +25,7 @@
 #include <system_error>
 #include <cstring>
 
-#include "msf_stream.h"
+#include "msf_file_stream.h"
 
 namespace {
 
@@ -93,18 +93,18 @@ MsfFile::MsfFile(FILE* f) {
         throw InvalidMsf("Missing root MSF stream table page list");
     }
 
-    MsfStream streamTablePagesStream(_header.pageSize, stPagesPagesCount * sizeof(uint32_t),
+    MsfFileStream streamTablePagesStream(f, _header.pageSize, stPagesPagesCount * sizeof(uint32_t),
             streamTablePagesPages.get());
 
     // Read the list of stream table pages.
     std::vector<uint32_t> streamTablePages(stPagesPagesCount);
-    streamTablePagesStream.read(f, &streamTablePages[0]);
+    streamTablePagesStream.read(&streamTablePages[0]);
 
     // Finally, read the stream table itself
-    MsfStream streamTableStream(_header.pageSize, _header.streamTableInfo.size,
+    MsfFileStream streamTableStream(f, _header.pageSize, _header.streamTableInfo.size,
             &streamTablePages[0]);
     std::vector<uint32_t> streamTable(_header.streamTableInfo.size / sizeof(uint32_t));
-    streamTableStream.read(f, &streamTable[0]);
+    streamTableStream.read(&streamTable[0]);
 
     // The first element in the stream table is the total number of streams.
     const uint32_t& streamCount = streamTable[0];
@@ -126,7 +126,7 @@ MsfFile::MsfFile(FILE* f) {
 
         const uint32_t& size = streamSizes[i];
 
-        addStream(new MsfStream(_header.pageSize, size,
+        addStream(new MsfFileStream(f, _header.pageSize, size,
                 streamPages + pagesIndex));
 
         pagesIndex += ::pageCount(_header.pageSize, size);

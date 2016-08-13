@@ -21,39 +21,49 @@
  */
 #pragma once
 
-#include <stdlib.h>
+#include <stdint.h>
+#include <stdio.h> // For FILE*
+#include <vector>
+
+#include "msf_stream.h"
 
 /**
- * Helper function for computing the number of pages required to hold a length
- * of bytes.
+ * Represents an MSF file stream.
  */
-template<typename T>
-inline T pageCount(T pageSize, T length) {
-    return (length + pageSize - 1) / pageSize;
-}
+class MsfFileStream : public MsfStream {
+private:
 
-/**
- * Represents an MSF stream.
- *
- * An MSF stream is made up of 1 or more pages. This class abstracts away the
- * task of reading from a stream to make it seem as if the data is sequential.
- */
-class MsfStream {
+    FILE* _f;
+    size_t _pageSize;
+    size_t _pos;
+    size_t _length;
+    std::vector<uint32_t> _pages;
+
 public:
+    /**
+     * Params:
+     *   f        = FILE pointer.
+     *   pageSize = Length of one page, in bytes.
+     *   length   = Length of the stream, in bytes.
+     *   pages    = List of pages. The length of this array is calculated using
+     *              the page size and stream length.
+     */
+    MsfFileStream(FILE* f, size_t pageSize, size_t length, const uint32_t* pages);
+
     /**
      * Returns the length of the stream, in bytes.
      */
-    virtual size_t length() const = 0;
+    size_t length() const;
 
     /**
      * Gets the current position, in bytes, in the stream.
      */
-    virtual size_t getPos() const = 0;
+    size_t getPos() const;
 
     /**
      * Sets the current position, in bytes, in the stream.
      */
-    virtual void setPos(size_t p) = 0;
+    void setPos(size_t p);
 
     /**
      * Reads a length of the stream. This abstracts reading from multiple pages.
@@ -66,7 +76,7 @@ public:
      *
      * Returns: The number of bytes read.
      */
-    virtual size_t read(size_t length, void* buf) = 0;
+    size_t read(size_t length, void* buf);
 
     /**
      * Reads the entire stream.
@@ -79,5 +89,21 @@ public:
      *
      * Returns: The number of bytes read.
      */
-    virtual size_t read(void* buf) = 0;
+    size_t read(void* buf);
+
+private:
+
+    /**
+     * Reads a single page from the stream.
+     *
+     * Params:
+     *   f    = The file to read from. The seek location is not guaranteed to be
+     *          the same after this function is finished.
+     *   page = The page number to read from.
+     *   length = The number of bytes to read from the page.
+     *   buf  = The buffer to read the page into.
+     *
+     * Returns: The number of bytes read.
+     */
+    size_t readFromPage(size_t page, size_t length, void* buf, size_t offset = 0);
 };

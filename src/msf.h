@@ -98,7 +98,8 @@ public:
     uint32_t pageCount() const;
 
     /**
-     * Adds a new stream. Returns the index of the stream.
+     * Adds a new stream and takes ownership of it. Returns the index of the
+     * stream.
      */
     size_t addStream(MsfStream* stream);
 

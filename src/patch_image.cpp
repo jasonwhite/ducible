@@ -297,7 +297,7 @@ void patchPDB(const CharT* pdbPath) {
         throw InvalidPdb("missing PDB 7.0 header");
 
     PdbStream70 pdbHeader;
-    if (pdbHeaderStream->read(pdb, sizeof(pdbHeader), &pdbHeader) !=
+    if (pdbHeaderStream->read(sizeof(pdbHeader), &pdbHeader) !=
             sizeof(pdbHeader))
         throw InvalidPdb("missing PDB header");
 
