@@ -26,13 +26,21 @@
 #include <system_error>
 
 MsfStream::MsfStream(size_t pageSize, size_t length, const uint32_t* pages)
-    : _pageSize(pageSize), _length(length)
+    : _pageSize(pageSize), _pos(0), _length(length)
 {
     _pages.assign(pages, pages + pageCount());
 }
 
 size_t MsfStream::length() const {
     return _length;
+}
+
+size_t MsfStream::getPos() const {
+    return _pos;
+}
+
+void MsfStream::setPos(size_t pos) {
+    _pos = pos;
 }
 
 size_t MsfStream::pageSize() const {
@@ -43,7 +51,7 @@ size_t MsfStream::pageCount() const {
     return ::pageCount(_pageSize, _length);
 }
 
-void MsfStream::readFromPage(FILE* f, size_t page, size_t length, void* buf,
+size_t MsfStream::readFromPage(FILE* f, size_t page, size_t length, void* buf,
         size_t offset) const {
 
     // Seek to the desired offset in the file.
@@ -52,26 +60,33 @@ void MsfStream::readFromPage(FILE* f, size_t page, size_t length, void* buf,
                 "Failed to seek to MSF page");
     }
 
-    // Read from the page
-    if (fread(buf, 1, length, f) != length) {
-        throw std::system_error(errno, std::system_category(),
-                "Failed to read from MSF page");
-    }
+    return fread(buf, 1, length, f);
 }
 
-void MsfStream::read(FILE* f, size_t length, void* buf, size_t pos) const {
+size_t MsfStream::read(FILE* f, size_t length, void* buf) {
+
+    size_t bytesRead = 0;
+
     while (length > 0) {
-        size_t i = pos / _pageSize;
-        size_t offset = pos % _pageSize;
+        size_t i = _pos / _pageSize;
+        size_t offset = _pos % _pageSize;
         size_t chunkSize = std::min(length, _pageSize - offset);
-        readFromPage(f, _pages[i], chunkSize, buf, offset);
+
+        size_t chunkRead = readFromPage(f, _pages[i], chunkSize, buf, offset);
+        bytesRead += chunkRead;
+
+        _pos += bytesRead;
+
+        if (chunkRead != chunkSize)
+            break;
 
         length -= chunkSize;
-        pos += chunkSize;
         buf = (uint8_t*)buf + chunkSize;
     }
+
+    return bytesRead;
 }
 
-void MsfStream::read(FILE* f, void* buf, size_t pos) const {
-    read(f, _length - pos, buf, pos);
+size_t MsfStream::read(FILE* f, void* buf) {
+    return read(f, _length - _pos, buf);
 }

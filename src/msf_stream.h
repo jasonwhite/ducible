@@ -44,6 +44,7 @@ class MsfStream {
 private:
 
     size_t _pageSize;
+    size_t _pos;
     size_t _length;
     std::vector<uint32_t> _pages;
 
@@ -61,6 +62,16 @@ public:
      * Returns the length of the stream, in bytes.
      */
     size_t length() const;
+
+    /**
+     * Gets the current position, in bytes, in the stream.
+     */
+    size_t getPos() const;
+
+    /**
+     * Sets the current position, in bytes, in the stream.
+     */
+    void setPos(size_t p);
 
     /**
      * Returns the page size, in bytes.
@@ -81,8 +92,10 @@ public:
      *   page = The page number to read from.
      *   length = The number of bytes to read from the page.
      *   buf  = The buffer to read the page into.
+     *
+     * Returns: The number of bytes read.
      */
-    void readFromPage(FILE* f, size_t page, size_t length, void* buf, size_t offset = 0) const;
+    size_t readFromPage(FILE* f, size_t page, size_t length, void* buf, size_t offset = 0) const;
 
     /**
      * Reads a length of the stream. This abstracts reading from multiple pages.
@@ -92,8 +105,10 @@ public:
      *   length = The number of bytes to read from the stream.
      *   buf    = The buffer to read the stream into.
      *   offset = The offset to start reading from. Optional.
+     *
+     * Returns: The number of bytes read.
      */
-    void read(FILE* f, size_t length, void* buf, size_t pos = 0) const;
+    size_t read(FILE* f, size_t length, void* buf);
 
     /**
      * Reads the entire stream.
@@ -103,6 +118,8 @@ public:
      *   buf    = The buffer to read the stream into. This must be large enough
      *            to hold the entire stream.
      *   offset = The offset to start reading from. Optional.
+     *
+     * Returns: The number of bytes read.
      */
-    void read(FILE* f, void* buf, size_t pos = 0) const;
+    size_t read(FILE* f, void* buf);
 };

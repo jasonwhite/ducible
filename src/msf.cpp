@@ -141,12 +141,12 @@ uint32_t MsfFile::pageCount() const {
     return _header.pageCount;
 }
 
-size_t MsfFile::addStream(const MsfStream* stream) {
-    _streams.push_back(std::shared_ptr<const MsfStream>(stream));
+size_t MsfFile::addStream(MsfStream* stream) {
+    _streams.push_back(std::shared_ptr<MsfStream>(stream));
     return _streams.size()-1;
 }
 
-std::shared_ptr<const MsfStream> MsfFile::getStream(size_t index) {
+std::shared_ptr<MsfStream> MsfFile::getStream(size_t index) {
     if (index < _streams.size()) {
         return _streams[index];
     }
@@ -154,8 +154,8 @@ std::shared_ptr<const MsfStream> MsfFile::getStream(size_t index) {
     return nullptr;
 }
 
-void MsfFile::replaceStream(size_t index, const MsfStream* stream) {
-    _streams[index] = std::shared_ptr<const MsfStream>(stream);
+void MsfFile::replaceStream(size_t index, MsfStream* stream) {
+    _streams[index] = std::shared_ptr<MsfStream>(stream);
 }
 
 size_t MsfFile::streamCount() const {

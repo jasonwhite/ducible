@@ -297,7 +297,9 @@ void patchPDB(const CharT* pdbPath) {
         throw InvalidPdb("missing PDB 7.0 header");
 
     PdbStream70 pdbHeader;
-    pdbHeaderStream->read(pdb, sizeof(pdbHeader), &pdbHeader);
+    if (pdbHeaderStream->read(pdb, sizeof(pdbHeader), &pdbHeader) !=
+            sizeof(pdbHeader))
+        throw InvalidPdb("missing PDB header");
 
     if (pdbHeader.version < PdbVersion::vc70)
         throw InvalidPdb("unsupported PDB implementation version");
