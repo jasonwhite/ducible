@@ -67,22 +67,24 @@ int64_t getFileSize(FILE* f) {
 
 MsfFile::MsfFile(FILE* f) {
 
+    MSF_HEADER header;
+
     // Read the header
-    if (fread(&_header, sizeof(_header), 1, f) != 1)
+    if (fread(&header, sizeof(header), 1, f) != 1)
         throw InvalidMsf("Missing MSF header");
 
     // Check that this is indeed an MSF header
-    if (memcmp(_header.magic, kMsfHeaderMagic, sizeof(kMsfHeaderMagic)) != 0)
+    if (memcmp(header.magic, kMsfHeaderMagic, sizeof(kMsfHeaderMagic)) != 0)
         throw InvalidMsf("Invalid MSF header");
 
     // Check that the file size makes sense
-    if (_header.pageSize * _header.pageCount != getFileSize(f))
+    if (header.pageSize * header.pageCount != getFileSize(f))
         throw InvalidMsf("Invalid MSF file length");
 
     // The number of pages required to store the pages of the stream table
     // stream.
     size_t stPagesPagesCount =
-        ::pageCount(_header.pageSize, _header.streamTableInfo.size);
+        ::pageCount(header.pageSize, header.streamTableInfo.size);
 
     // Read the stream table page directory
     std::unique_ptr<uint32_t> streamTablePagesPages(
@@ -93,7 +95,7 @@ MsfFile::MsfFile(FILE* f) {
         throw InvalidMsf("Missing root MSF stream table page list");
     }
 
-    MsfFileStream streamTablePagesStream(f, _header.pageSize, stPagesPagesCount * sizeof(uint32_t),
+    MsfFileStream streamTablePagesStream(f, header.pageSize, stPagesPagesCount * sizeof(uint32_t),
             streamTablePagesPages.get());
 
     // Read the list of stream table pages.
@@ -101,9 +103,9 @@ MsfFile::MsfFile(FILE* f) {
     streamTablePagesStream.read(&streamTablePages[0]);
 
     // Finally, read the stream table itself
-    MsfFileStream streamTableStream(f, _header.pageSize, _header.streamTableInfo.size,
+    MsfFileStream streamTableStream(f, header.pageSize, header.streamTableInfo.size,
             &streamTablePages[0]);
-    std::vector<uint32_t> streamTable(_header.streamTableInfo.size / sizeof(uint32_t));
+    std::vector<uint32_t> streamTable(header.streamTableInfo.size / sizeof(uint32_t));
     streamTableStream.read(&streamTable[0]);
 
     // The first element in the stream table is the total number of streams.
@@ -126,19 +128,11 @@ MsfFile::MsfFile(FILE* f) {
 
         const uint32_t& size = streamSizes[i];
 
-        addStream(new MsfFileStream(f, _header.pageSize, size,
+        addStream(new MsfFileStream(f, header.pageSize, size,
                 streamPages + pagesIndex));
 
-        pagesIndex += ::pageCount(_header.pageSize, size);
+        pagesIndex += ::pageCount(header.pageSize, size);
     }
-}
-
-uint32_t MsfFile::pageSize() const {
-    return _header.pageSize;
-}
-
-uint32_t MsfFile::pageCount() const {
-    return _header.pageCount;
 }
 
 size_t MsfFile::addStream(MsfStream* stream) {

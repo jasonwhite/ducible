@@ -119,11 +119,11 @@ public:
      * is, if the object it points to fits inside as well.
      */
     template<typename T>
-    bool isValidReference(const T* p) const {
-        return isValidReference((const uint8_t*)p, sizeof(T));
+    bool isValidRef(const T* p) const {
+        return isValidRef((const uint8_t*)p, sizeof(T));
     }
 
-    bool isValidReference(const uint8_t* p, size_t length) const {
+    bool isValidRef(const uint8_t* p, size_t length) const {
         return (p >= buf) && (p + length <= buf + this->length);
     }
 
@@ -146,7 +146,7 @@ public:
         }
 
         const T* dir = (const T*)translate(dd.VirtualAddress);
-        if (!isValidReference(dir))
+        if (!isValidRef(dir))
             throw InvalidImage("IMAGE_DATA_DIRECTORY.VirtualAddress is invalid");
 
         return dir;
@@ -165,7 +165,7 @@ public:
 
         const uint8_t* p = translate(dd.VirtualAddress);
 
-        if (!isValidReference(p, dd.Size))
+        if (!isValidRef(p, dd.Size))
             throw InvalidImage("IMAGE_DATA_DIRECTORY.VirtualAddress is invalid");
 
         // There can be multiple debug data directories in this section.
@@ -196,7 +196,7 @@ public:
 
                 cvInfo = (const CV_INFO_PDB70*)(buf + dir->PointerToRawData);
 
-                if (!isValidReference(cvInfo))
+                if (!isValidRef(cvInfo))
                     throw InvalidImage("invalid CodeView debug entry location");
             }
 

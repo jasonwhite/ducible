@@ -115,7 +115,7 @@ void patchDebugDataDirectories(const PEFile& pe, Patches& patches,
 
             cvInfo = (const CV_INFO_PDB70*)(pe.buf + dir->PointerToRawData);
 
-            if (!pe.isValidReference(cvInfo))
+            if (!pe.isValidRef(cvInfo))
                 throw InvalidImage("invalid CodeView debug entry location");
         }
 
@@ -246,9 +246,6 @@ void patchPDB(const CharT* pdbPath, const CV_INFO_PDB70* pdbInfo) {
     }
 
     MsfFile msf(pdb);
-
-    std::cout << "Page Size:  " << msf.pageSize() << std::endl;
-    std::cout << "Page Count: " << msf.pageCount() << std::endl;
 
     msf.replaceStream(PdbStreamType::streamTable, nullptr);
 
