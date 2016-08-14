@@ -205,7 +205,8 @@ This is a simple tool to make builds of Portable Executables (PEs) reproducible.
 
 Timestamps and other non-deterministic data are embedded in DLLs, EXEs, and
 PDBs. If a DLL or EXE is compiled and linked twice in a row, without changing
-any of the source, the files will not be bit-for-bit identical. This tool fixes that.
+any of the source, the files will not be bit-for-bit identical. This tool fixes
+that.
 
 Files are modified in-place.
 

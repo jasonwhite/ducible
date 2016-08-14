@@ -69,6 +69,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <cstring>
 #include <iostream>
 #include <vector>
 
@@ -87,59 +88,15 @@
 namespace {
 
 /**
- * Patches the timestamp associated with a data directory.
- */
-template<typename T>
-void patchDataDirectory(const PEFile& pe, Patches& patches,
-        const IMAGE_DATA_DIRECTORY* imageDataDirs,
-        uint32_t entry, const char* name) {
-
-    const IMAGE_DATA_DIRECTORY& imageDataDir = imageDataDirs[entry];
-
-    // Doesn't exist? Nothing to patch.
-    if (imageDataDir.VirtualAddress == 0)
-        return;
-
-    if (imageDataDir.Size < sizeof(T)) {
-        // Note that we check if the size is less than our defined struct.
-        // Microsoft is free to add elements to the end of the struct in future
-        // versions as that still maintains ABI compatibility.
-        throw InvalidImage("IMAGE_DATA_DIRECTORY.Size is invalid");
-    }
-
-    const uint8_t* p = pe.translate(imageDataDir.VirtualAddress);
-    if (!pe.isValidReference(p))
-        throw InvalidImage("IMAGE_DATA_DIRECTORY.VirtualAddress is invalid");
-
-    const T* dir = (const T*)p;
-
-    if (dir->TimeDateStamp != 0)
-        patches.add(&dir->TimeDateStamp, &pe.timestamp, name);
-}
-
-/**
  * There are 0 or more debug data directories. We need to patch the timestamp in
  * all of them.
  */
+template<typename OptHeader>
 void patchDebugDataDirectories(const PEFile& pe, Patches& patches,
-        const IMAGE_DATA_DIRECTORY* imageDataDirs) {
+        const OptHeader* opt) {
 
-    const IMAGE_DATA_DIRECTORY& imageDataDir = imageDataDirs[IMAGE_DIRECTORY_ENTRY_DEBUG];
-
-    // Doesn't exist? Nothing to patch.
-    if (imageDataDir.VirtualAddress == 0)
-        return;
-
-    const uint8_t* p = pe.translate(imageDataDir.VirtualAddress);
-    if (!pe.isValidReference(p))
-        throw InvalidImage("invalid IMAGE_DATA_DIRECTORY.VirtualAddress is invalid");
-
-    // The first debug data directory
-    const IMAGE_DEBUG_DIRECTORY* dir = (const IMAGE_DEBUG_DIRECTORY*)p;
-
-    // There can be multiple debug data directories in this section.
-    const size_t debugDirCount = imageDataDir.Size /
-        sizeof(IMAGE_DEBUG_DIRECTORY);
+    size_t debugDirCount;
+    auto dir = pe.getDebugDataDirs(opt, debugDirCount);
 
     // Information about the PDB.
     const CV_INFO_PDB70* cvInfo = NULL;
@@ -148,16 +105,11 @@ void patchDebugDataDirectories(const PEFile& pe, Patches& patches,
     // will be of type IMAGE_DEBUG_TYPE_CODEVIEW. We will use this to also patch
     // the PDB.
     for (size_t i = 0; i < debugDirCount; ++i) {
-
-        if (!pe.isValidReference(dir))
-            throw InvalidImage("IMAGE_DEBUG_DIRECTORY is not valid");
-
         if (dir->TimeDateStamp != 0)
             patches.add(&dir->TimeDateStamp, &pe.timestamp,
                     "IMAGE_DEBUG_DIRECTORY.TimeDateStamp");
 
         if (dir->Type == IMAGE_DEBUG_TYPE_CODEVIEW) {
-
             if (cvInfo)
                 throw InvalidImage("found multiple CodeView debug entries");
 
@@ -171,7 +123,6 @@ void patchDebugDataDirectories(const PEFile& pe, Patches& patches,
     }
 
     if (cvInfo) {
-
         if (cvInfo->CvSignature != CV_INFO_SIGNATURE_PDB70)
             throw InvalidImage("unsupported PDB format, only version 7.0 is supported");
 
@@ -185,27 +136,27 @@ void patchDebugDataDirectories(const PEFile& pe, Patches& patches,
  * be either 32- or 64-bit.
  */
 template<typename T>
-void patchOptionalHeader(const PEFile& pe, Patches& patches) {
-
-    const T* optional = pe.optional<T>();
+void patchOptionalHeader(const PEFile& pe, Patches& patches, const T* optional) {
 
     patches.add(&optional->CheckSum, &pe.timestamp,
             "OptionalHeader.CheckSum");
 
-    const IMAGE_DATA_DIRECTORY* dataDirs = optional->DataDirectory;
-
     // Patch exports directory timestamp
-    patchDataDirectory<IMAGE_EXPORT_DIRECTORY>(pe, patches,
-            dataDirs, IMAGE_DIRECTORY_ENTRY_EXPORT,
-            "IMAGE_EXPORT_DIRECTORY.TimeDateStamp");
+    if (auto dir = pe.getDataDir<IMAGE_EXPORT_DIRECTORY>(optional,
+                IMAGE_DIRECTORY_ENTRY_EXPORT)) {
+        patches.add(&dir->TimeDateStamp, &pe.timestamp,
+                "IMAGE_EXPORT_DIRECTORY.TimeDateStamp");
+    }
 
     // Patch resource directory timestamp
-    patchDataDirectory<IMAGE_RESOURCE_DIRECTORY>(pe, patches,
-            dataDirs, IMAGE_DIRECTORY_ENTRY_RESOURCE,
-            "IMAGE_RESOURCE_DIRECTORY.TimeDateStamp");
+    if (auto dir = pe.getDataDir<IMAGE_RESOURCE_DIRECTORY>(optional,
+                IMAGE_DIRECTORY_ENTRY_RESOURCE)) {
+        patches.add(&dir->TimeDateStamp, &pe.timestamp,
+                "IMAGE_RESOURCE_DIRECTORY.TimeDateStamp");
+    }
 
     // Patch the debug directories
-    patchDebugDataDirectories(pe, patches, dataDirs);
+    patchDebugDataDirectories(pe, patches, optional);
 }
 
 /**
@@ -245,6 +196,20 @@ void calculateChecksum(const uint8_t* buf, const size_t length,
 }
 
 /**
+ * Compares the PE and PDB signatures to see if they match.
+ */
+bool matchingSignatures(const CV_INFO_PDB70& pdbInfo,
+                        const PdbStream70& pdbHeader) {
+    if (pdbInfo.Age != pdbHeader.age ||
+        memcmp(pdbInfo.Signature, pdbHeader.sig70, sizeof(pdbHeader.sig70)) != 0
+        ) {
+        return false;
+    }
+
+    return true;
+}
+
+/**
  * Helper functions for opening a file generically.
  */
 #ifdef _WIN32
@@ -273,7 +238,7 @@ FILE* openFile(const char* path, const char* mode = "rb") {
  * Patches a PDB file.
  */
 template<typename CharT>
-void patchPDB(const CharT* pdbPath) {
+void patchPDB(const CharT* pdbPath, const CV_INFO_PDB70* pdbInfo) {
     FILE* pdb = openFile(pdbPath);
     if (!pdb) {
         throw std::system_error(errno, std::system_category(),
@@ -304,12 +269,16 @@ void patchPDB(const CharT* pdbPath) {
     if (pdbHeader.version < PdbVersion::vc70)
         throw InvalidPdb("unsupported PDB implementation version");
 
+    // Check that this PDB matches what the PE file expects
+    if (!pdbInfo || !matchingSignatures(*pdbInfo, pdbHeader))
+        throw InvalidPdb("PE and PDB signatures do not match");
+
     std::cout << "PDB Timestamp: " << pdbHeader.timestamp << std::endl;
     std::cout << "PDB Age: " << pdbHeader.age << std::endl;
 }
 
 template<typename CharT>
-void patchImageImpl(const CharT* imagePath, const CharT* pdbPath, bool dryRun) {
+void patchImageImpl(const CharT* imagePath, const CharT* pdbPath, bool dryrun) {
     MemMap image(imagePath);
 
     uint8_t* buf = (uint8_t*)image.buf();
@@ -322,16 +291,24 @@ void patchImageImpl(const CharT* imagePath, const CharT* pdbPath, bool dryRun) {
     patches.add(&pe.fileHeader->TimeDateStamp, &pe.timestamp,
             "IMAGE_FILE_HEADER.TimeDateStamp");
 
-    switch (pe.magic()) {
-        case IMAGE_NT_OPTIONAL_HDR32_MAGIC:
-            // Patch as a PE32 file
-            patchOptionalHeader<IMAGE_OPTIONAL_HEADER32>(pe, patches);
-            break;
+    const CV_INFO_PDB70* pdbInfo = NULL;
 
-        case IMAGE_NT_OPTIONAL_HDR64_MAGIC:
-            // Patch as a PE32+ file
-            patchOptionalHeader<IMAGE_OPTIONAL_HEADER64>(pe, patches);
+    switch (pe.magic()) {
+        case IMAGE_NT_OPTIONAL_HDR32_MAGIC: {
+            // Patch as a PE32 file
+            auto opt = pe.optionalHeader<IMAGE_OPTIONAL_HEADER32>();
+            pdbInfo = pe.pdbInfo(opt);
+            patchOptionalHeader(pe, patches, opt);
             break;
+        }
+
+        case IMAGE_NT_OPTIONAL_HDR64_MAGIC: {
+            // Patch as a PE32+ file
+            auto opt = pe.optionalHeader<IMAGE_OPTIONAL_HEADER64>();
+            pdbInfo = pe.pdbInfo(opt);
+            patchOptionalHeader(pe, patches, opt);
+            break;
+        }
 
         default:
             throw InvalidImage("unsupported IMAGE_NT_HEADERS.OptionalHeader");
@@ -346,10 +323,10 @@ void patchImageImpl(const CharT* imagePath, const CharT* pdbPath, bool dryRun) {
 
     // Patch the PDB file.
     if (pdbPath) {
-        patchPDB(pdbPath);
+        patchPDB(pdbPath, pdbInfo);
     }
 
-    patches.apply(dryRun);
+    patches.apply(dryrun);
 }
 
 }

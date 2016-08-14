@@ -99,7 +99,7 @@ public:
      * Returns the optional header of the given type.
      */
     template<typename T>
-    const T* optional() const {
+    const T* optionalHeader() const {
         // Bounds check
         if (_optional + sizeof(T) >= buf + length)
             throw InvalidImage("missing IMAGE_OPTIONAL_HEADER");
@@ -120,7 +120,92 @@ public:
      */
     template<typename T>
     bool isValidReference(const T* p) const {
-        return ((const uint8_t*)p >= buf) &&
-               ((const uint8_t*)p + sizeof(T) <= buf + length);
+        return isValidReference((const uint8_t*)p, sizeof(T));
+    }
+
+    bool isValidReference(const uint8_t* p, size_t length) const {
+        return (p >= buf) && (p + length <= buf + this->length);
+    }
+
+    /**
+     * Returns a data directory. If it does not exist, returns NULL.
+     */
+    template<typename T, typename OptHeader>
+    const T* getDataDir(const OptHeader* opt, uint32_t entry) const {
+        const IMAGE_DATA_DIRECTORY& dd = opt->DataDirectory[entry];
+
+        if (dd.VirtualAddress == 0)
+            return NULL;
+
+        if (dd.Size < sizeof(T)) {
+            // Note that we only check if the size is less than our defined
+            // struct (not equal). Microsoft is free to add elements to the end
+            // of the struct in future versions as that still maintains ABI
+            // compatibility.
+            throw InvalidImage("IMAGE_DATA_DIRECTORY.Size is invalid");
+        }
+
+        const T* dir = (const T*)translate(dd.VirtualAddress);
+        if (!isValidReference(dir))
+            throw InvalidImage("IMAGE_DATA_DIRECTORY.VirtualAddress is invalid");
+
+        return dir;
+    }
+
+    /**
+     * Returns a list of debug data directories. If non exist, returns NULL.
+     */
+    template<typename OptHeader>
+    const IMAGE_DEBUG_DIRECTORY* getDebugDataDirs(const OptHeader* opt, size_t& count) const {
+        const IMAGE_DATA_DIRECTORY& dd =
+            opt->DataDirectory[IMAGE_DIRECTORY_ENTRY_DEBUG];
+
+        if (dd.VirtualAddress == 0)
+            return NULL;
+
+        const uint8_t* p = translate(dd.VirtualAddress);
+
+        if (!isValidReference(p, dd.Size))
+            throw InvalidImage("IMAGE_DATA_DIRECTORY.VirtualAddress is invalid");
+
+        // There can be multiple debug data directories in this section.
+        count = dd.Size / sizeof(IMAGE_DEBUG_DIRECTORY);
+
+        return (const IMAGE_DEBUG_DIRECTORY*)p;
+    }
+
+    /**
+     * Returns the PDB information in the PE file. If it doesn't exist, returns
+     * NULL.
+     */
+    template<typename OptHeader>
+    const CV_INFO_PDB70* pdbInfo(const OptHeader* opt) const {
+
+        size_t debugDirCount;
+        auto dir = getDebugDataDirs(opt, debugDirCount);
+        if (!dir)
+            return NULL;
+
+        // Information about the PDB that we're looking for.
+        const CV_INFO_PDB70* cvInfo = NULL;
+
+        for (size_t i = 0; i < debugDirCount; ++i) {
+            if (!isValidReference(dir))
+                throw InvalidImage("IMAGE_DEBUG_DIRECTORY is not valid");
+
+            if (dir->Type == IMAGE_DEBUG_TYPE_CODEVIEW) {
+                if (cvInfo)
+                    throw InvalidImage("found multiple CodeView debug entries");
+
+                cvInfo = (const CV_INFO_PDB70*)(buf + dir->PointerToRawData);
+
+                if (!isValidReference(cvInfo))
+                    throw InvalidImage("invalid CodeView debug entry location");
+            }
+
+            ++dir;
+        }
+
+        return cvInfo;
     }
 };

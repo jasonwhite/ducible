@@ -56,6 +56,13 @@ public:
     size_t length() const;
 
     /**
+     * Returns a pointer to the underlying data.
+     */
+    uint8_t* data() {
+        return &_data[0];
+    }
+
+    /**
      * Gets the current position, in bytes, in the stream.
      */
     size_t getPos() const;
