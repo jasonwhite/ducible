@@ -190,9 +190,6 @@ public:
         const CV_INFO_PDB70* cvInfo = NULL;
 
         for (size_t i = 0; i < debugDirCount; ++i) {
-            if (!isValidReference(dir))
-                throw InvalidImage("IMAGE_DEBUG_DIRECTORY is not valid");
-
             if (dir->Type == IMAGE_DEBUG_TYPE_CODEVIEW) {
                 if (cvInfo)
                     throw InvalidImage("found multiple CodeView debug entries");
