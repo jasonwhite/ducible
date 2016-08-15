@@ -23,72 +23,49 @@
 #include <algorithm>
 #include <cstring>
 
-#include "msf_memory_stream.h"
+#include "msf_readonly_stream.h"
 
-MsfMemoryStream::MsfMemoryStream(size_t length, const void* buf)
-    : _pos(0)
+MsfReadOnlyStream::MsfReadOnlyStream(size_t length, const void* buf)
+    : _pos(0), _length(length), _data((const uint8_t*)buf)
 {
-    _data.resize(length);
-    memcpy(&_data[0], buf, length);
 }
 
-MsfMemoryStream::MsfMemoryStream(MsfStream* stream)
-    : _pos(0)
-{
-    const size_t length = stream->length();
-
-    _data.resize(length);
-
-    const size_t pos = stream->getPos();
-    stream->setPos(0);
-
-    stream->read(length, &_data[0]);
-
-    stream->setPos(pos);
+size_t MsfReadOnlyStream::length() const {
+    return _length;
 }
 
-size_t MsfMemoryStream::length() const {
-    return _data.size();
-}
-
-size_t MsfMemoryStream::getPos() const {
+size_t MsfReadOnlyStream::getPos() const {
     return _pos;
 }
 
-void MsfMemoryStream::setPos(size_t pos) {
+void MsfReadOnlyStream::setPos(size_t pos) {
     // Don't allow setting the position past the end of the stream.
-    _pos = std::min(_data.size(), pos);
+    _pos = std::min(_length, pos);
 }
 
-size_t MsfMemoryStream::read(size_t length, void* buf) {
+size_t MsfReadOnlyStream::read(size_t length, void* buf) {
 
-    if (_pos >= _data.size())
+    if (_pos >= _length)
         return 0;
 
-    size_t available = std::min(_data.size() - _pos, length);
+    size_t available = std::min(_length - _pos, length);
 
-    memcpy(buf, &_data[_pos], available);
+    memcpy(buf, _data + _pos, available);
 
     _pos += available;
 
     return available;
 }
 
-size_t MsfMemoryStream::read(void* buf) {
-    return read(_data.size() - _pos, buf);
+size_t MsfReadOnlyStream::read(void* buf) {
+    return read(_length - _pos, buf);
 }
 
-size_t MsfMemoryStream::write(size_t length, const void* buf) {
+size_t MsfReadOnlyStream::write(size_t length, const void* buf) {
 
-    const size_t available = _data.size() - _pos;
+    // TODO: Throw an exception instead
+    (void)length;
+    (void)buf;
 
-    // Not enough room, need to grow the stream.
-    if (available < length)
-        _data.resize(_pos + length);
-
-    memcpy(&_data[_pos], buf, length);
-
-    _pos += length;
-
-    return length;
+    return 0;
 }

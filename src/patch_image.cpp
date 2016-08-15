@@ -279,6 +279,7 @@ void patchPDB(const CharT* pdbPath, const CV_INFO_PDB70* pdbInfo,
 
     msf.write(tmpPdb);
 
+    // Close the file handles so we can delete/rename them.
     tmpPdb.reset();
     pdb.reset();
 

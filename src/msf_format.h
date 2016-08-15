@@ -21,6 +21,34 @@
  */
 #pragma once
 
+/**
+ * MultiStream File (MSF) Format Overview:
+ *
+ * At a high level, the MSF format is used to implement *streams*. A stream
+ * consists of one or more *pages*. Each stream can be thought of as a
+ * standalone file embedded in a regular file. The pages in a stream are not
+ * necessarily sequential in the file; they can be located anywhere in the file
+ * and in any order.
+ *
+ * PDBs are implemented in this format for a couple of reasons:
+ *
+ *  1. The developers of the PDB format wanted a single file on disk for debug
+ *     information instead of having a multitude of similar files on disk. This
+ *     also simplifies things for the user.
+ *  2. Changes to the PDB file can be atomically committed just as with a
+ *     database. This simplifies things for the compiler/linker when updating
+ *     the PDB file.
+ *
+ * The first page in the MSF is special. It contains the MSF header
+ * (`MSF_HEADER`) and the list of pages that comprise the stream table. The MSF
+ * header is documented below, but the stream table needs further explanation.
+ *
+ * The stream table lists the different streams and the pages that constitute
+ * each stream. The stream table itself is also a stream. Thus, in order to read
+ * the stream table stream, we need to know the page numbers for the stream
+ * table. This information is in the MSF header.
+ */
+
 #include <stdint.h>
 
 struct STREAM_INFO {

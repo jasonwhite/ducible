@@ -22,18 +22,18 @@
 #pragma once
 
 #include <stdint.h>
-#include <vector>
 
 #include "msf_stream.h"
 
 /**
- * Represents an MSF file stream.
+ * A lightweight read-only memory stream.
  */
-class MsfMemoryStream : public MsfStream {
+class MsfReadOnlyStream : public MsfStream {
 private:
 
     size_t _pos;
-    std::vector<uint8_t> _data;
+    size_t _length;
+    const uint8_t* _data;
 
 public:
     /**
@@ -43,12 +43,7 @@ public:
      *   length = Length of the buffer, in bytes.
      *   buf    = The buffer.
      */
-    MsfMemoryStream(size_t length, const void* buf);
-
-    /**
-     * Initialize the stream with another stream.
-     */
-    MsfMemoryStream(MsfStream* stream);
+    MsfReadOnlyStream(size_t length, const void* buf);
 
     /**
      * Returns the length of the stream, in bytes.
@@ -59,7 +54,7 @@ public:
      * Returns a pointer to the underlying data.
      */
     const uint8_t* data() const {
-        return &_data[0];
+        return _data;
     }
 
     /**
@@ -100,3 +95,4 @@ public:
      */
     size_t write(size_t length, const void* buf);
 };
+
