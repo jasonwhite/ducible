@@ -211,7 +211,7 @@ bool matchingSignatures(const CV_INFO_PDB70& pdbInfo,
 }
 
 template<typename CharT>
-constexpr CharT tmpSuffix[];
+constexpr CharT tmpSuffix[] = {};
 
 template<> constexpr char tmpSuffix<char>[] = ".tmp";
 template<> constexpr wchar_t tmpSuffix<wchar_t>[] = L".tmp";
@@ -233,6 +233,8 @@ std::basic_string<CharT> getTempPdbPath(const CharT* pdbPath) {
 template<typename CharT>
 void patchPDB(const CharT* pdbPath, const CV_INFO_PDB70* pdbInfo,
         const uint8_t signature[16], bool dryrun) {
+
+    (void)signature;
 
     auto pdb = openFile(pdbPath, FileMode<CharT>::readExisting);
     if (!pdb) {

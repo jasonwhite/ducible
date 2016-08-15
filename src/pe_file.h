@@ -123,8 +123,8 @@ public:
         return isValidRef((const uint8_t*)p, sizeof(T));
     }
 
-    bool isValidRef(const uint8_t* p, size_t length) const {
-        return (p >= buf) && (p + length <= buf + this->length);
+    bool isValidRef(const uint8_t* p, size_t len) const {
+        return (p >= buf) && (p + len <= buf + this->length);
     }
 
     /**

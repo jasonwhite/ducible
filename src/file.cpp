@@ -34,11 +34,8 @@ template<> const FileMode<wchar_t> FileMode<wchar_t>::writeEmpty(L"wb");
  */
 class FileCloser {
 public:
-    FileCloser(const char* name) : name(name) {}
-
-    const char* name;
     void operator()(FILE* f) const {
-        //std::cout << "Closing file " << name << std::endl;
+        //std::cout << "Closing file\n";
         fclose(f);
     }
 };
@@ -60,7 +57,7 @@ FileRef openFile(const wchar_t* path, FileMode<wchar_t> mode) {
 #else // !_WIN32
 
 FileRef openFile(const char* path, FileMode<char> mode) {
-    return FileRef(fopen(path, mode.mode), FileCloser(path));
+    return FileRef(fopen(path, mode.mode), FileCloser());
 }
 
 #endif // _WIN32

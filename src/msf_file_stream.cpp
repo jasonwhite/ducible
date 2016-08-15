@@ -94,5 +94,7 @@ size_t MsfFileStream::read(void* buf) {
 
 size_t MsfFileStream::write(size_t length, const void* buf) {
     // TODO
+    (void)length;
+    (void)buf;
     return 0;
 }
