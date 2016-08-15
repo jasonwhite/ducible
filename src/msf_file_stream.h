@@ -22,10 +22,10 @@
 #pragma once
 
 #include <stdint.h>
-#include <stdio.h> // For FILE*
 #include <vector>
 
 #include "msf_stream.h"
+#include "file.h"
 
 /**
  * Represents an MSF file stream.
@@ -33,7 +33,7 @@
 class MsfFileStream : public MsfStream {
 private:
 
-    FILE* _f;
+    FileRef _f;
     size_t _pageSize;
     size_t _pos;
     size_t _length;
@@ -48,7 +48,9 @@ public:
      *   pages    = List of pages. The length of this array is calculated using
      *              the page size and stream length.
      */
-    MsfFileStream(FILE* f, size_t pageSize, size_t length, const uint32_t* pages);
+    MsfFileStream(FileRef f, size_t pageSize, size_t length, const uint32_t* pages);
+
+    virtual ~MsfFileStream();
 
     /**
      * Returns the length of the stream, in bytes.

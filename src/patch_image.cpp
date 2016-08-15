@@ -77,6 +77,7 @@
 
 #include "patches.h"
 #include "pe_file.h"
+#include "file.h"
 
 #include "msf.h"
 #include "msf_stream.h"
@@ -209,40 +210,41 @@ bool matchingSignatures(const CV_INFO_PDB70& pdbInfo,
     return true;
 }
 
+template<typename CharT>
+constexpr CharT tmpSuffix[];
+
+template<> constexpr char tmpSuffix<char>[] = ".tmp";
+template<> constexpr wchar_t tmpSuffix<wchar_t>[] = L".tmp";
+
 /**
- * Helper functions for opening a file generically.
+ * Returns a temporary PDB path name. The PDB will be written here first and
+ * then renamed to the original after everything succeeds.
  */
-#ifdef _WIN32
-
-FILE* openFile(const char* path, const char* mode = "rb") {
-    FILE* f = NULL;
-    fopen_s(&f, path, mode);
-    return f;
+template<typename CharT>
+std::basic_string<CharT> getTempPdbPath(const CharT* pdbPath) {
+    std::basic_string<CharT> temp(pdbPath);
+    temp.append(tmpSuffix<CharT>);
+    return temp;
 }
-
-FILE* openFile(const wchar_t* path, const wchar_t* mode = L"rb") {
-    FILE* f = NULL;
-    _wfopen_s(&f, path, mode);
-    return f;
-}
-
-#else // _WIN32
-
-FILE* openFile(const char* path, const char* mode = "rb") {
-    return fopen(path, mode);
-}
-
-#endif // _WIN32
 
 /**
  * Patches a PDB file.
  */
 template<typename CharT>
-void patchPDB(const CharT* pdbPath, const CV_INFO_PDB70* pdbInfo) {
-    FILE* pdb = openFile(pdbPath);
+void patchPDB(const CharT* pdbPath, const CV_INFO_PDB70* pdbInfo,
+        const uint8_t signature[16], bool dryrun) {
+
+    auto pdb = openFile(pdbPath, FileMode<CharT>::readExisting);
     if (!pdb) {
         throw std::system_error(errno, std::system_category(),
             "Failed to open PDB file");
+    }
+
+    auto tmpPdbPath = getTempPdbPath(pdbPath);
+    auto tmpPdb = openFile(tmpPdbPath.c_str(), FileMode<CharT>::writeEmpty);
+    if (!tmpPdb) {
+        throw std::system_error(errno, std::system_category(),
+            "Failed to open file");
     }
 
     MsfFile msf(pdb);
@@ -272,6 +274,29 @@ void patchPDB(const CharT* pdbPath, const CV_INFO_PDB70* pdbInfo) {
 
     std::cout << "PDB Timestamp: " << pdbHeader.timestamp << std::endl;
     std::cout << "PDB Age: " << pdbHeader.age << std::endl;
+
+    msf.write(tmpPdb);
+
+    tmpPdb.reset();
+    pdb.reset();
+
+#ifdef _WIN32
+    if (dryrun) {
+        // TODO
+    } else {
+        // TODO
+    }
+#else
+    if (dryrun) {
+        // Delete the temporary file
+        if (remove(tmpPdbPath.c_str()) != 0) {
+            throw std::system_error(errno, std::system_category(),
+                "Failed to delete temporary PDB");
+        }
+    } else {
+        // TODO: Rename the new PDB over top of the old one.
+    }
+#endif
 }
 
 template<typename CharT>
@@ -320,7 +345,7 @@ void patchImageImpl(const CharT* imagePath, const CharT* pdbPath, bool dryrun) {
 
     // Patch the PDB file.
     if (pdbPath) {
-        patchPDB(pdbPath, pdbInfo);
+        patchPDB(pdbPath, pdbInfo, pe.pdbSignature, dryrun);
     }
 
     patches.apply(dryrun);

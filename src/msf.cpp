@@ -24,6 +24,8 @@
 
 #include <system_error>
 #include <cstring>
+#include <iostream>
+#include "file.h"
 
 #include "msf_file_stream.h"
 
@@ -65,12 +67,12 @@ int64_t getFileSize(FILE* f) {
 
 }
 
-MsfFile::MsfFile(FILE* f) {
+MsfFile::MsfFile(FileRef f) {
 
     MSF_HEADER header;
 
     // Read the header
-    if (fread(&header, sizeof(header), 1, f) != 1)
+    if (fread(&header, sizeof(header), 1, f.get()) != 1)
         throw InvalidMsf("Missing MSF header");
 
     // Check that this is indeed an MSF header
@@ -78,7 +80,7 @@ MsfFile::MsfFile(FILE* f) {
         throw InvalidMsf("Invalid MSF header");
 
     // Check that the file size makes sense
-    if (header.pageSize * header.pageCount != getFileSize(f))
+    if (header.pageSize * header.pageCount != getFileSize(f.get()))
         throw InvalidMsf("Invalid MSF file length");
 
     // The number of pages required to store the pages of the stream table
@@ -90,7 +92,7 @@ MsfFile::MsfFile(FILE* f) {
     std::unique_ptr<uint32_t> streamTablePagesPages(
         new uint32_t[stPagesPagesCount]);
 
-    if (fread(streamTablePagesPages.get(), sizeof(uint32_t), stPagesPagesCount, f) !=
+    if (fread(streamTablePagesPages.get(), sizeof(uint32_t), stPagesPagesCount, f.get()) !=
             stPagesPagesCount) {
         throw InvalidMsf("Missing root MSF stream table page list");
     }
@@ -100,13 +102,17 @@ MsfFile::MsfFile(FILE* f) {
 
     // Read the list of stream table pages.
     std::vector<uint32_t> streamTablePages(stPagesPagesCount);
-    streamTablePagesStream.read(&streamTablePages[0]);
+    if (streamTablePagesStream.read(&streamTablePages[0])
+            != stPagesPagesCount * sizeof(uint32_t)) {
+        throw InvalidMsf("failed to read stream table page list");
+    }
 
     // Finally, read the stream table itself
     MsfFileStream streamTableStream(f, header.pageSize, header.streamTableInfo.size,
             &streamTablePages[0]);
     std::vector<uint32_t> streamTable(header.streamTableInfo.size / sizeof(uint32_t));
-    streamTableStream.read(&streamTable[0]);
+    if (streamTableStream.read(&streamTable[0]) != header.streamTableInfo.size)
+        throw InvalidMsf("failed to read stream table");
 
     // The first element in the stream table is the total number of streams.
     const uint32_t& streamCount = streamTable[0];
@@ -135,6 +141,9 @@ MsfFile::MsfFile(FILE* f) {
     }
 }
 
+MsfFile::~MsfFile() {
+}
+
 size_t MsfFile::addStream(MsfStream* stream) {
     _streams.push_back(std::shared_ptr<MsfStream>(stream));
     return _streams.size()-1;
@@ -156,6 +165,23 @@ size_t MsfFile::streamCount() const {
     return _streams.size();
 }
 
-/*void MsfFile::write(FILE* f) const {
-    // TODO
-}*/
+namespace {
+
+// A good page size to use when writing out the MSF.
+const size_t kPageSize = 4096;
+
+// A blank page. Used to write uninitialized pages to the MSF file.
+const uint8_t kBlankPage[kPageSize] = {0};
+
+}
+
+void MsfFile::write(FileRef f) const {
+
+    // Write out 4 blank pages.
+    for (size_t i = 0; i < 4; ++i) {
+        if (fwrite(kBlankPage, 1, kPageSize, f.get()) != kPageSize) {
+            throw std::system_error(errno, std::system_category(),
+                "failed writing MSF preamble");
+        }
+    }
+}

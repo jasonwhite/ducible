@@ -20,37 +20,47 @@
  * SOFTWARE.
  */
 
-#include "patch.h"
-
+#include "file.h"
 #include <iostream>
-#include <iomanip>
-#include <tuple>
-#include <cstring>
 
-Patch::Patch(size_t offset, size_t length, const uint8_t* data, const char* name)
-    : offset(offset), length(length), data(data), name(name) {
+template<> const FileMode<char> FileMode<char>::readExisting("rb");
+template<> const FileMode<char> FileMode<char>::writeEmpty("wb");
+
+template<> const FileMode<wchar_t> FileMode<wchar_t>::readExisting(L"rb");
+template<> const FileMode<wchar_t> FileMode<wchar_t>::writeEmpty(L"wb");
+
+/**
+ * Deletion object to be used with shared_ptr.
+ */
+class FileCloser {
+public:
+    FileCloser(const char* name) : name(name) {}
+
+    const char* name;
+    void operator()(FILE* f) const {
+        //std::cout << "Closing file " << name << std::endl;
+        fclose(f);
+    }
+};
+
+#ifdef _WIN32
+
+FileRef openFile(const char* path, FileMode<char> mode) {
+    FILE* f = NULL;
+    fopen_s(&f, path, mode.mode);
+    return FileRef(f, FileCloser());
 }
 
-void Patch::apply(uint8_t* buf, bool dryRun) {
-
-    // Only apply the patch if necessary. This makes it easier to see what
-    // actually changed in the output.
-    if (memcmp(buf + offset, data, length) == 0)
-        return;
-
-    std::cout << *this << std::endl;
-
-    if (!dryRun)
-        memcpy(buf + offset, data, length);
+FileRef openFile(const wchar_t* path, FileMode<wchar_t> mode) {
+    FILE* f = NULL;
+    _wfopen_s(&f, path, mode.mode);
+    return FileRef(f, FileCloser());
 }
 
-std::ostream& operator<<(std::ostream& os, const Patch& patch) {
-    os << "Patching '" << patch.name
-       << "' at offset 0x" << std::hex << patch.offset << std::dec
-       << " (" << patch.length << " bytes)";
-    return os;
+#else // !_WIN32
+
+FileRef openFile(const char* path, FileMode<char> mode) {
+    return FileRef(fopen(path, mode.mode), FileCloser(path));
 }
 
-bool operator<(const Patch& a, const Patch& b) {
-    return std::tie(a.offset, a.length) < std::tie(b.offset, b.length);
-}
+#endif // _WIN32

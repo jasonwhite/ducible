@@ -25,10 +25,16 @@
 #include <algorithm>
 #include <system_error>
 
-MsfFileStream::MsfFileStream(FILE* f, size_t pageSize, size_t length, const uint32_t* pages)
+#include <iostream>
+
+MsfFileStream::MsfFileStream(FileRef f, size_t pageSize, size_t length, const uint32_t* pages)
     : _f(f), _pageSize(pageSize), _pos(0), _length(length)
 {
     _pages.assign(pages, pages + ::pageCount(pageSize, length));
+}
+
+MsfFileStream::~MsfFileStream() {
+    //std::cout << "Destroying MsfFileStream" << std::endl;
 }
 
 size_t MsfFileStream::length() const {
@@ -47,12 +53,12 @@ size_t MsfFileStream::readFromPage(size_t page, size_t length, void* buf,
         size_t offset) {
 
     // Seek to the desired offset in the file.
-    if (fseek(_f, (long)(_pageSize * page + offset), SEEK_SET) != 0) {
+    if (fseek(_f.get(), (long)(_pageSize * page + offset), SEEK_SET) != 0) {
         throw std::system_error(errno, std::system_category(),
                 "Failed to seek to MSF page");
     }
 
-    return fread(buf, 1, length, _f);
+    return fread(buf, 1, length, _f.get());
 }
 
 size_t MsfFileStream::read(size_t length, void* buf) {
@@ -64,10 +70,13 @@ size_t MsfFileStream::read(size_t length, void* buf) {
         size_t offset = _pos % _pageSize;
         size_t chunkSize = std::min(length, _pageSize - offset);
 
+        if (i >= _pages.size())
+            break;
+
         size_t chunkRead = readFromPage(_pages[i], chunkSize, buf, offset);
         bytesRead += chunkRead;
 
-        _pos += bytesRead;
+        _pos += chunkRead;
 
         if (chunkRead != chunkSize)
             break;

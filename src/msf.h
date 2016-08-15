@@ -55,6 +55,7 @@
 #include <memory>
 
 #include "msf_format.h"
+#include "file.h"
 
 /**
  * Thrown when an MSF is found to be invalid or unsupported.
@@ -80,11 +81,11 @@ private:
 
     std::vector<std::shared_ptr<MsfStream> > _streams;
 
-    void writeHeader(FILE* f);
-
 public:
 
-    MsfFile(FILE* f);
+    MsfFile(FileRef f);
+
+    virtual ~MsfFile();
 
     /**
      * Adds a new stream and takes ownership of it. Returns the index of the
@@ -109,7 +110,10 @@ public:
     size_t streamCount() const;
 
     /**
-     * Writes this MsfFile out to a new file.
+     * Writes this MsfFile out to a new file. A new header, FPM, and stream
+     * table will be created.
+     *
+     * Throws: MsfWriteError if the write fails.
      */
-    void write(FILE* f) const;
+    void write(FileRef f) const;
 };

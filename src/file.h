@@ -19,38 +19,37 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#pragma once
 
-#include "patch.h"
+#include <cstdio>
+#include <memory>
 
-#include <iostream>
-#include <iomanip>
-#include <tuple>
-#include <cstring>
+/**
+ * Abstracts file mode so we can use them generically with other templates.
+ */
+template<typename CharT>
+struct FileMode {
+    const CharT* mode;
 
-Patch::Patch(size_t offset, size_t length, const uint8_t* data, const char* name)
-    : offset(offset), length(length), data(data), name(name) {
-}
+    FileMode(const CharT* mode) : mode(mode) {}
 
-void Patch::apply(uint8_t* buf, bool dryRun) {
+    static const FileMode<CharT> readExisting;
+    static const FileMode<CharT> writeEmpty;
+};
 
-    // Only apply the patch if necessary. This makes it easier to see what
-    // actually changed in the output.
-    if (memcmp(buf + offset, data, length) == 0)
-        return;
 
-    std::cout << *this << std::endl;
+typedef std::shared_ptr<FILE> FileRef;
 
-    if (!dryRun)
-        memcpy(buf + offset, data, length);
-}
+/**
+ * Helper functions for opening a file generically and with reference counting.
+ */
+#ifdef _WIN32
 
-std::ostream& operator<<(std::ostream& os, const Patch& patch) {
-    os << "Patching '" << patch.name
-       << "' at offset 0x" << std::hex << patch.offset << std::dec
-       << " (" << patch.length << " bytes)";
-    return os;
-}
+FileRef openFile(const char* path, FileMode<char> mode = FileMode<char>::readExisting);
+FileRef openFile(const wchar_t* path, FileMode<wchar_t> mode = FileMode<wchar_t>::readExisting);
 
-bool operator<(const Patch& a, const Patch& b) {
-    return std::tie(a.offset, a.length) < std::tie(b.offset, b.length);
-}
+#else // _WIN32
+
+FileRef openFile(const char* path, FileMode<char> mode = FileMode<char>::readExisting);
+
+#endif // _WIN32
