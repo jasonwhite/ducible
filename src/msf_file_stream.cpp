@@ -33,10 +33,6 @@ MsfFileStream::MsfFileStream(FileRef f, size_t pageSize, size_t length, const ui
     _pages.assign(pages, pages + ::pageCount(pageSize, length));
 }
 
-MsfFileStream::~MsfFileStream() {
-    //std::cout << "Destroying MsfFileStream" << std::endl;
-}
-
 size_t MsfFileStream::length() const {
     return _length;
 }

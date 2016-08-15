@@ -50,8 +50,6 @@ public:
      */
     MsfFileStream(FileRef f, size_t pageSize, size_t length, const uint32_t* pages);
 
-    virtual ~MsfFileStream();
-
     /**
      * Returns the length of the stream, in bytes.
      */

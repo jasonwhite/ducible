@@ -40,6 +40,9 @@ inline T pageCount(T pageSize, T length) {
  */
 class MsfStream {
 public:
+
+    virtual ~MsfStream() {}
+
     /**
      * Returns the length of the stream, in bytes.
      */

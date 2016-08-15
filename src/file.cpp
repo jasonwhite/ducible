@@ -35,7 +35,6 @@ template<> const FileMode<wchar_t> FileMode<wchar_t>::writeEmpty(L"wb");
 class FileCloser {
 public:
     void operator()(FILE* f) const {
-        //std::cout << "Closing file\n";
         fclose(f);
     }
 };
