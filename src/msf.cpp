@@ -143,6 +143,112 @@ void writeStream(FileRef f, MsfStreamRef stream,
     }
 }
 
+/**
+ * The Free Page Map (FPM). This is used to keep track of free pages in the MSF.
+ *
+ * A page is "free" if its index is a 1 in this bit map. Conversely, a page is
+ * "used" if its index is a 0 in this bit map.
+ */
+class FreePageMap {
+private:
+    size_t _pageCount;
+    std::vector<uint8_t> _data;
+
+public:
+    /**
+     * Initialize the free page map. By default, all pages are initially marked
+     * as "used".
+     */
+    FreePageMap(size_t pageCount, uint8_t initValue = 0x00)
+        : _pageCount(pageCount), _data((pageCount+7)/8, initValue) {
+
+        // Mark the left over bits at the end as free
+        _data.back() |= ~(0xFF >> (_data.size() * 8 - pageCount));
+    }
+
+    /**
+     * Mark a page as free.
+     */
+    void setFree(size_t page) {
+        _data[page / 8] |= 1 << (page % 8);
+    }
+
+    /**
+     * Mark a page as used.
+     */
+    void setUsed(size_t page) {
+        _data[page / 8] &= ~(1 << (page % 8));
+    }
+
+    /**
+     * Writes the FPM to the MSF.
+     */
+    void write(FILE* f, size_t pageSize = kPageSize) const;
+};
+
+void FreePageMap::write(FILE* f, size_t pageSize) const {
+    // The FPM is spread out across the MSF at regular intervals. There are two
+    // FPM pages every 4096 pages (or whatever the page size is), starting at
+    // page index 1. We do not write to the second FPM page in each pair.
+    // The second page in each pair is used by Microsoft's PDB updater to do
+    // atomic commits. That is, after new pages of a stream are written, the
+    // updated free page map is written to every second page of each FPM pair.
+    // Then, to commit the changes, the FPM page is set to 2 in the MSF header.
+    //
+    // Note also that there are 8 times as many FPM pages as necessary. Thus, a
+    // large portion of them are never used and are just wasted space in the
+    // file. This is due to a bug in Microsoft's PDB implementation and is
+    // unlikely to be fixed in the future.
+
+
+    // Start at the first page.
+    size_t page = 1;
+
+    size_t chunks = _data.size() / pageSize;
+
+    const uint8_t* data = _data.data();
+
+    for (size_t i = 0; i < chunks; ++i) {
+
+        // Seek to the FPM page
+        if (fseek(f, (long)(page * pageSize), SEEK_SET) != 0) {
+            throw std::system_error(errno, std::system_category(),
+                    "Failed to seek to MSF page");
+        }
+
+        // Write a page of the FPM
+        if (fwrite(data, 1, pageSize, f) != pageSize) {;
+            throw std::system_error(errno, std::system_category(),
+                    "Failed to write FPM page");
+        }
+
+        page += pageSize;
+        data += pageSize;
+    }
+
+    // Write the remainder of the FPM and fill with 0xFF.
+    if (const size_t leftOver = _data.size() % pageSize) {
+        // Seek to the FPM page
+        if (fseek(f, (long)(page * pageSize), SEEK_SET) != 0) {
+            throw std::system_error(errno, std::system_category(),
+                    "Failed to seek to final MSF page");
+        }
+
+        // Write a partial page of the FPM
+        if (fwrite(data, 1, leftOver, f) != leftOver) {;
+            throw std::system_error(errno, std::system_category(),
+                    "Failed to write final FPM page");
+        }
+
+        // Fill the rest with 1s to indicate free pages.
+        std::vector<uint8_t> ones(pageSize - leftOver, 0xFF);
+        if (fwrite(ones.data(), 1, ones.size(), f) != ones.size()) {;
+            throw std::system_error(errno, std::system_category(),
+                    "Failed to write final FPM page");
+        }
+    }
+}
+
 }
 
 MsfFile::MsfFile(FileRef f) {
@@ -271,7 +377,8 @@ void MsfFile::write(FileRef f) const {
     }
 
     // Write out each stream and add the stream's page numbers to the stream
-    // table.
+    // table. Stream 0 is special, we need to keep track of which pages it was
+    // written to so we can mark them as free later.
     for (auto&& stream: _streams) {
         writeStream(f, stream, streamTable, pageCount);
     }
@@ -315,11 +422,11 @@ void MsfFile::write(FileRef f) const {
                 "failed writing MSF header");
     }
 
+    // Make sure there aren't too many root stream table pages. This could only
+    // happen for ridiculously large PDBs or if there is a bug in this program.
     const size_t streamTablePgPgLength =
         streamTablePgPg.size() * sizeof(streamTablePgPg[0]);
 
-    // Make sure there aren't too many root stream table pages. This could only
-    // happen for ridiculously large PDBs or if there is a bug in this program.
     if (streamTablePgPgLength > kPageSize - sizeof(header)) {
         throw InvalidMsf(
                 "root stream table pages are too large to fit in one page");
@@ -332,5 +439,12 @@ void MsfFile::write(FileRef f) const {
                 "failed writing MSF header");
     }
 
-    // TODO: Write the free page map.
+    // Construct the free page map.
+    FreePageMap fpm(pageCount);
+    fpm.setFree(3); // The omnipresent superfluous page
+
+    // TODO: Mark stream 0 as free
+
+    // Write the free page map.
+    fpm.write(f.get());
 }
