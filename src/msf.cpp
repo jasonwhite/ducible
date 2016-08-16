@@ -253,7 +253,7 @@ void MsfFile::write(FileRef f) const {
     for (size_t i = 0; i < 4; ++i) {
         if (fwrite(kBlankPage, 1, kPageSize, f.get()) != kPageSize) {
             throw std::system_error(errno, std::system_category(),
-                "failed writing MSF preamble");
+                    "failed writing MSF preamble");
         }
     }
 
@@ -280,9 +280,57 @@ void MsfFile::write(FileRef f) const {
     // which pages were written.
     std::vector<uint32_t> streamTablePages;
     MsfStreamRef streamTableStream(new MsfReadOnlyStream(
-            streamTablePages.size() * sizeof(uint32_t),
-            streamTablePages.data())
+            streamTable.size() * sizeof(streamTable[0]),
+            streamTable.data())
             );
 
     writeStream(f, streamTableStream, streamTablePages, pageCount);
+
+    // Write the stream table pages, keeping track of which pages were written.
+    // These pages in turn will be written after the MSF header.
+    std::vector<uint32_t> streamTablePgPg;
+    MsfStreamRef streamTableStreamPages(new MsfReadOnlyStream(
+            streamTablePages.size() * sizeof(uint32_t),
+            streamTablePages.data()
+            ));
+
+    writeStream(f, streamTableStreamPages, streamTablePgPg, pageCount);
+
+    // Write the header
+    MSF_HEADER header = {0};
+    memcpy(header.magic, kMsfHeaderMagic, sizeof(kMsfHeaderMagic));
+    header.pageSize = kPageSize;
+    header.freePageMap = 1;
+    header.pageCount = pageCount;
+    header.streamTableInfo.size = streamTable.size() * sizeof(streamTable[0]);
+    header.streamTableInfo.index = 0;
+
+    if (fseek(f.get(), 0, SEEK_SET) != 0) {
+        throw std::system_error(errno, std::system_category(),
+                "fseek() failed");
+    }
+
+    if (fwrite(&header, sizeof(header), 1, f.get()) != 1) {
+        throw std::system_error(errno, std::system_category(),
+                "failed writing MSF header");
+    }
+
+    const size_t streamTablePgPgLength =
+        streamTablePgPg.size() * sizeof(streamTablePgPg[0]);
+
+    // Make sure there aren't too many root stream table pages. This could only
+    // happen for ridiculously large PDBs or if there is a bug in this program.
+    if (streamTablePgPgLength > kPageSize - sizeof(header)) {
+        throw InvalidMsf(
+                "root stream table pages are too large to fit in one page");
+    }
+
+    // Write the root pages for the stream table.
+    if (fwrite(streamTablePgPg.data(), sizeof(streamTablePgPg[0]),
+                streamTablePgPg.size(), f.get()) != streamTablePgPg.size()) {
+        throw std::system_error(errno, std::system_category(),
+                "failed writing MSF header");
+    }
+
+    // TODO: Write the free page map.
 }
