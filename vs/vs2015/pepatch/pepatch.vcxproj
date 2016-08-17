@@ -201,6 +201,7 @@
     <ClCompile Include="..\..\..\src\msf.cpp" />
     <ClCompile Include="..\..\..\src\msf_file_stream.cpp" />
     <ClCompile Include="..\..\..\src\msf_memory_stream.cpp" />
+    <ClCompile Include="..\..\..\src\msf_readonly_stream.cpp" />
     <ClCompile Include="..\..\..\src\patch.cpp" />
     <ClCompile Include="..\..\..\src\patches.cpp" />
     <ClCompile Include="..\..\..\src\patch_image.cpp" />
@@ -214,6 +215,7 @@
     <ClInclude Include="..\..\..\src\msf_file_stream.h" />
     <ClInclude Include="..\..\..\src\msf_format.h" />
     <ClInclude Include="..\..\..\src\msf_memory_stream.h" />
+    <ClInclude Include="..\..\..\src\msf_readonly_stream.h" />
     <ClInclude Include="..\..\..\src\msf_stream.h" />
     <ClInclude Include="..\..\..\src\patch.h" />
     <ClInclude Include="..\..\..\src\patches.h" />
