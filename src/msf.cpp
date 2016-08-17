@@ -375,10 +375,16 @@ void MsfFile::write(FileRef f) const {
     }
 
     // Write out each stream and add the stream's page numbers to the stream
-    // table. Stream 0 is special, we need to keep track of which pages it was
-    // written to so we can mark them as free later.
-    for (auto&& stream: _streams) {
-        writeStream(f, stream, streamTable, pageCount);
+    // table. Note that stream 0 is special, we need to keep track of which
+    // pages it was written to so we can mark them as free later.
+    size_t streamZeroStart = streamTable.size();
+    if (_streams.size() > 0) {
+        writeStream(f, _streams[0], streamTable, pageCount);
+    }
+    size_t streamZeroEnd = streamTable.size();
+
+    for (size_t i = 1; i < _streams.size(); ++i) {
+        writeStream(f, _streams[i], streamTable, pageCount);
     }
 
     // Write the stream table stream at the end of the file, keeping track of
@@ -441,7 +447,10 @@ void MsfFile::write(FileRef f) const {
     FreePageMap fpm(pageCount);
     fpm.setFree(3); // The omnipresent superfluous page
 
-    // TODO: Mark stream 0 as free
+    // Mark stream 0 pages as free
+    for (size_t i = streamZeroStart; i < streamZeroEnd; ++i) {
+        fpm.setFree(streamTable[i]);
+    }
 
     // Write the free page map.
     fpm.write(f.get());
