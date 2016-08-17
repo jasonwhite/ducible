@@ -81,6 +81,7 @@
 
 #include "msf.h"
 #include "msf_stream.h"
+#include "msf_memory_stream.h"
 #include "pdb.h"
 
 #include "memmap.h"
@@ -234,8 +235,6 @@ template<typename CharT>
 void patchPDB(const CharT* pdbPath, const CV_INFO_PDB70* pdbInfo,
         const uint8_t signature[16], bool dryrun) {
 
-    (void)signature;
-
     auto pdb = openFile(pdbPath, FileMode<CharT>::readExisting);
     if (!pdb) {
         throw std::system_error(errno, std::system_category(),
@@ -274,8 +273,17 @@ void patchPDB(const CharT* pdbPath, const CV_INFO_PDB70* pdbInfo,
     if (!pdbInfo || !matchingSignatures(*pdbInfo, pdbHeader))
         throw InvalidPdb("PE and PDB signatures do not match");
 
-    std::cout << "PDB Timestamp: " << pdbHeader.timestamp << std::endl;
-    std::cout << "PDB Age: " << pdbHeader.age << std::endl;
+    // Fix PDB header stream.
+    pdbHeader.age = 1;
+    memcpy(pdbHeader.sig70, signature, sizeof(signature));
+
+    auto newPdbHeaderStream = new MsfMemoryStream(pdbHeaderStream.get());
+    if (newPdbHeaderStream->write(sizeof(pdbHeader), &pdbHeader) !=
+            sizeof(pdbHeader)) {
+        throw InvalidPdb("failed to rewrite PDB header");
+    }
+
+    msf.replaceStream(PdbStreamType::header, newPdbHeaderStream);
 
     msf.write(tmpPdb);
 
