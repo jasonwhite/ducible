@@ -96,13 +96,11 @@ bool isFpmPage(size_t page, size_t pageSize = kPageSize) noexcept {
 
 /**
  * Writes a page to the given file handle.
- *
- * If we are to write a free page map page, two blank FPMs are written instead.
  */
 void writePage(FileRef f, const uint8_t* data, size_t pageSize,
         std::vector<uint32_t>& pagesWritten, uint32_t& pageCount) {
 
-    if (fwrite(kBlankPage, 1, kPageSize, f.get()) != kPageSize) {
+    if (fwrite(data, 1, pageSize, f.get()) != pageSize) {
         throw std::system_error(errno, std::system_category(),
             "failed writing page");
     }
