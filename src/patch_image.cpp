@@ -275,7 +275,7 @@ void patchPDB(const CharT* pdbPath, const CV_INFO_PDB70* pdbInfo,
 
     // Fix PDB header stream.
     pdbHeader.age = 1;
-    memcpy(pdbHeader.sig70, signature, sizeof(signature));
+    memcpy(pdbHeader.sig70, signature, sizeof(pdbHeader.sig70));
 
     auto newPdbHeaderStream = new MsfMemoryStream(pdbHeaderStream.get());
     if (newPdbHeaderStream->write(sizeof(pdbHeader), &pdbHeader) !=
