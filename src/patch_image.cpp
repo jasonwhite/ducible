@@ -476,11 +476,19 @@ void patchPDB(const CharT* pdbPath, const CV_INFO_PDB70* pdbInfo,
     tmpPdb.reset();
     pdb.reset();
 
-#ifdef _WIN32
+#if defined(_WIN32) && defined(UNICODE)
     if (dryrun) {
-        // TODO
+        // Delete the temporary file
+        if (_wremove(tmpPdbPath.c_str()) != 0) {
+            throw std::system_error(errno, std::system_category(),
+                "Failed to delete temporary PDB");
+        }
     } else {
-        // TODO
+        // Rename the new PDB file over the old one
+        if (_wrename(tmpPdbPath.c_str(), pdbPath) != 0) {
+            throw std::system_error(errno, std::system_category(),
+                "Failed to rename temporary PDB");
+        }
     }
 #else
     if (dryrun) {
@@ -490,7 +498,11 @@ void patchPDB(const CharT* pdbPath, const CV_INFO_PDB70* pdbInfo,
                 "Failed to delete temporary PDB");
         }
     } else {
-        // TODO: Rename the new PDB over top of the old one.
+        // Rename the new PDB file over the old one
+        if (rename(tmpPdbPath.c_str(), pdbPath) != 0) {
+            throw std::system_error(errno, std::system_category(),
+                "Failed to rename temporary PDB");
+        }
     }
 #endif
 }
