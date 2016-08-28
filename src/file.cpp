@@ -27,6 +27,10 @@
 #include <string>
 #include <sstream>
 
+#ifdef _WIN32
+#   include <Windows.h>
+#endif
+
 template<> const FileMode<char> FileMode<char>::readExisting("rb");
 template<> const FileMode<char> FileMode<char>::writeEmpty("wb");
 
@@ -44,8 +48,6 @@ public:
 };
 
 #ifdef _WIN32
-
-#include <windows.h>
 
 FileRef openFile(const char* path, FileMode<char> mode) {
     FILE* f = NULL;
