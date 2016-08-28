@@ -379,7 +379,7 @@ void patchPublicSymbolStream(MsfMemoryStream* stream) {
  * Rewrites a PDB, eliminating non-determinism.
  */
 void patchPDB(MsfFile& msf, const CV_INFO_PDB70* pdbInfo,
-        const uint8_t signature[16]) {
+        uint32_t timestamp, const uint8_t signature[16]) {
 
     msf.replaceStream(PdbStreamType::streamTable, nullptr);
 
@@ -405,6 +405,7 @@ void patchPDB(MsfFile& msf, const CV_INFO_PDB70* pdbInfo,
         throw InvalidPdb("PE and PDB signatures do not match");
 
     // Patch the PDB header stream
+    pdbHeader.timestamp = timestamp;
     pdbHeader.age = 1;
     memcpy(pdbHeader.sig70, signature, sizeof(pdbHeader.sig70));
 
@@ -459,7 +460,7 @@ void patchPDB(MsfFile& msf, const CV_INFO_PDB70* pdbInfo,
  */
 template<typename CharT>
 void patchPDB(const CharT* pdbPath, const CV_INFO_PDB70* pdbInfo,
-        const uint8_t signature[16], bool dryrun) {
+        uint32_t timestamp, const uint8_t signature[16], bool dryrun) {
 
     auto tmpPdbPath = getTempPdbPath(pdbPath);
 
@@ -469,7 +470,7 @@ void patchPDB(const CharT* pdbPath, const CV_INFO_PDB70* pdbInfo,
 
         MsfFile msf(pdb);
 
-        patchPDB(msf, pdbInfo, signature);
+        patchPDB(msf, pdbInfo, timestamp, signature);
 
         // Write out the rewritten PDB to disk.
         msf.write(tmpPdb);
@@ -530,7 +531,7 @@ void patchImageImpl(const CharT* imagePath, const CharT* pdbPath, bool dryrun) {
 
     // Patch the PDB file.
     if (pdbPath) {
-        patchPDB(pdbPath, pdbInfo, pe.pdbSignature, dryrun);
+        patchPDB(pdbPath, pdbInfo, pe.timestamp, pe.pdbSignature, dryrun);
     }
 
     patches.apply(dryrun);
