@@ -376,26 +376,10 @@ void patchPublicSymbolStream(MsfMemoryStream* stream) {
 }
 
 /**
- * Patches a PDB file.
+ * Rewrites a PDB, eliminating non-determinism.
  */
-template<typename CharT>
-void patchPDB(const CharT* pdbPath, const CV_INFO_PDB70* pdbInfo,
-        const uint8_t signature[16], bool dryrun) {
-
-    auto pdb = openFile(pdbPath, FileMode<CharT>::readExisting);
-    if (!pdb) {
-        throw std::system_error(errno, std::system_category(),
-            "Failed to open PDB file");
-    }
-
-    auto tmpPdbPath = getTempPdbPath(pdbPath);
-    auto tmpPdb = openFile(tmpPdbPath.c_str(), FileMode<CharT>::writeEmpty);
-    if (!tmpPdb) {
-        throw std::system_error(errno, std::system_category(),
-            "Failed to open file");
-    }
-
-    MsfFile msf(pdb);
+void patchPDB(MsfFile& msf, const CV_INFO_PDB70* pdbInfo,
+        const uint8_t signature[16]) {
 
     msf.replaceStream(PdbStreamType::streamTable, nullptr);
 
@@ -468,8 +452,33 @@ void patchPDB(const CharT* pdbPath, const CV_INFO_PDB70* pdbInfo,
             msf.replaceStream(dbiHeader->publicSymbolStream, pubSymStream);
         }
     }
+}
 
-    // Finally, write out the new PDB to disk.
+/**
+ * Patches a PDB file.
+ */
+template<typename CharT>
+void patchPDB(const CharT* pdbPath, const CV_INFO_PDB70* pdbInfo,
+        const uint8_t signature[16], bool dryrun) {
+
+    auto pdb = openFile(pdbPath, FileMode<CharT>::readExisting);
+    if (!pdb) {
+        throw std::system_error(errno, std::system_category(),
+            "Failed to open PDB file");
+    }
+
+    auto tmpPdbPath = getTempPdbPath(pdbPath);
+    auto tmpPdb = openFile(tmpPdbPath.c_str(), FileMode<CharT>::writeEmpty);
+    if (!tmpPdb) {
+        throw std::system_error(errno, std::system_category(),
+            "Failed to open file");
+    }
+
+    MsfFile msf(pdb);
+
+    patchPDB(msf, pdbInfo, signature);
+
+    // Write out the rewritten PDB to disk.
     msf.write(tmpPdb);
 
     // Close the file handles so we can delete/rename them.
