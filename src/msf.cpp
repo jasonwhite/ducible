@@ -369,7 +369,7 @@ void MsfFile::write(FileRef f) const {
 
     for (auto&& stream: _streams) {
         if (stream)
-            streamTable.push_back(stream->length());
+            streamTable.push_back((uint32_t)stream->length());
         else
             streamTable.push_back(0);
     }
@@ -413,7 +413,7 @@ void MsfFile::write(FileRef f) const {
     header.pageSize = kPageSize;
     header.freePageMap = 1;
     header.pageCount = pageCount;
-    header.streamTableInfo.size = streamTable.size() * sizeof(streamTable[0]);
+    header.streamTableInfo.size = (uint32_t)streamTable.size() * sizeof(streamTable[0]);
     header.streamTableInfo.index = 0;
 
     if (fseek(f.get(), 0, SEEK_SET) != 0) {
