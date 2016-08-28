@@ -126,8 +126,8 @@ struct DbiHeader {
     uint32_t version;
     uint32_t age;
 
-    // Stream number of the global symbols
-    uint16_t globalSymbolsStream;
+    // The global symbols info (GSI) stream
+    uint16_t globalSymbolStream;
 
     // PDB DLL version
     struct PdbDllVersion {
@@ -136,8 +136,8 @@ struct DbiHeader {
         uint16_t format : 1;
     } pdbDllVersion;
 
-    // Stream number of the public symbols
-    uint16_t publicSymbolsStream;
+    // The public symbols info (PSI) stream
+    uint16_t publicSymbolStream;
 
     uint16_t pdbDllBuildVersionMajor;
 
@@ -299,6 +299,69 @@ struct SymbolRecord {
 };
 
 static_assert(sizeof(SymbolRecord) == 4);
+
+/**
+ * Global stream info hash signature
+ */
+const uint32_t gsiHashSignature = -1;
+
+/**
+ * Global stream info hash header version
+ */
+const uint32_t gsiHashVersion = 0xeffe0000 + 19990810;
+
+/**
+ * Global stream info hash header
+ */
+struct GsiHashHeader {
+    uint32_t signature; // Equal to gsiHashSignature
+    uint32_t version;   // Equal to gsiHashVersion
+
+    // Total size of the hash records, in bytes
+    uint32_t recordsSize;
+
+    // Size of the buckets, in bytes
+    uint32_t bucketsSize;
+};
+
+/**
+ * A single hash record.
+ */
+struct HashRecord {
+    int32_t offset;
+
+    // Reference count of the record
+    int32_t references;
+};
+
+/**
+ * Public symbol stream header
+ */
+struct PublicSymbolHeader {
+    // Size of the symbol hash table, in bytes
+    uint32_t hashTableSize;
+
+    // Size of the address map, in bytes
+    uint32_t addrMapSize;
+
+    // Number of thunks
+    uint32_t thunks;
+
+    // Size of each thunk, in bytes
+    uint32_t thunkSize;
+
+    // Section index of the thunk table
+    uint16_t thunkTableSecIndex;
+
+    uint16_t padding1;
+
+    // Offset of the thunk table
+    int32_t thunkTableOffset;
+
+    uint32_t sectionCount;
+};
+
+static_assert(sizeof(PublicSymbolHeader) == 28);
 
 /**
  * Thrown when a PDB is found to be invalid or unsupported.

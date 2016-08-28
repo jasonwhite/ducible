@@ -233,9 +233,8 @@ std::basic_string<CharT> getTempPdbPath(const CharT* pdbPath) {
  */
 void patchDbiStream(MsfMemoryStream* stream) {
 
-    if (stream->length() < sizeof(DbiHeader)) {
+    if (stream->length() < sizeof(DbiHeader))
         throw InvalidPdb("DBI stream too short");
-    }
 
     uint8_t* data = stream->data();
     const size_t length = stream->length();
@@ -314,7 +313,6 @@ void patchSymbolRecordsStream(MsfMemoryStream* stream) {
 
     uint8_t* data = stream->data();
     const size_t length = stream->length();
-    //size_t offset = 0;
 
     for (size_t i = 0; i < length; ) {
         SymbolRecord* rec = (SymbolRecord*)(data + i);
@@ -349,6 +347,32 @@ void patchSymbolRecordsStream(MsfMemoryStream* stream) {
         // Skip to next symbol record
         i += sizeof(SymbolRecord) + dataLength;
     }
+}
+
+/**
+ * Patch the public symbol info stream.
+ */
+void patchPublicSymbolStream(MsfMemoryStream* stream) {
+
+    // The public symbol info stream starts with the public symbol header
+    // followed by the (Global Symbol Info) GSI hash header. We only care about
+    // the public symbol header.
+    if (stream->length() < sizeof(PublicSymbolHeader))
+        throw InvalidPdb("public symbol stream too short");
+
+    PublicSymbolHeader* header = (PublicSymbolHeader*)stream->data();
+
+    // Struct alignment padding
+    header->padding1 = 0;
+
+    // Microsoft's PDB writer has a bug where this field is not initialized in
+    // the constructor. However, there are other code paths that do initialize
+    // this value, but only sometimes. Thus, since Microsoft's tools are already
+    // broken because of this, we zero this out without worrying about it.
+    //
+    // Since fixing this would be a trivial one-liner for Microsoft, this patch
+    // could become silently obsolete in the future.
+    header->sectionCount = 0;
 }
 
 /**
@@ -431,6 +455,17 @@ void patchPDB(const CharT* pdbPath, const CV_INFO_PDB70* pdbInfo,
             patchSymbolRecordsStream(symRecStream.get());
 
             msf.replaceStream(dbiHeader->symbolRecordsStream, symRecStream);
+        }
+
+        // Patch the public symbols info stream
+        if (auto origPubSymStream =
+                msf.getStream(dbiHeader->publicSymbolStream)) {
+            auto pubSymStream = std::shared_ptr<MsfMemoryStream>(
+                    new MsfMemoryStream(origPubSymStream.get()));
+
+            patchPublicSymbolStream(pubSymStream.get());
+
+            msf.replaceStream(dbiHeader->publicSymbolStream, pubSymStream);
         }
     }
 
