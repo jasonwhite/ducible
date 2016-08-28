@@ -27,8 +27,6 @@
 #include <string>
 #include <sstream>
 
-#include <windows.h>
-
 template<> const FileMode<char> FileMode<char>::readExisting("rb");
 template<> const FileMode<char> FileMode<char>::writeEmpty("wb");
 
@@ -46,6 +44,8 @@ public:
 };
 
 #ifdef _WIN32
+
+#include <windows.h>
 
 FileRef openFile(const char* path, FileMode<char> mode) {
     FILE* f = NULL;
@@ -167,15 +167,13 @@ void renameFile(const char* src, const char* dest) {
 }
 
 void deleteFile(const char* path) {
-    if (remove(tmpPdbPath.c_str()) != 0) {
+    if (remove(path) != 0) {
         auto err = errno;
-
-        std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 
         std::stringbuf buf;
         std::ostream msg(&buf);
 
-        msg << "failed to delete file '" << converter.to_bytes(path) << "'";
+        msg << "failed to delete file '" << path << "'";
 
         throw std::system_error(err, std::system_category(), buf.str());
     }
