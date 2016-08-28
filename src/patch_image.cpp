@@ -305,6 +305,53 @@ void patchDbiStream(MsfMemoryStream* stream) {
 }
 
 /**
+ * Patches the symbol record stream.
+ *
+ * There is up to 3 bytes of padding at the end of each symbol record. Since
+ * garbage just lives there, it needs to be zeroed out.
+ */
+void patchSymbolRecordsStream(MsfMemoryStream* stream) {
+
+    uint8_t* data = stream->data();
+    const size_t length = stream->length();
+    //size_t offset = 0;
+
+    for (size_t i = 0; i < length; ) {
+        SymbolRecord* rec = (SymbolRecord*)(data + i);
+
+        // The symbol record length must be at least the size of
+        // SymbolRecord::type and the size of the entire record must be a
+        // multiple of 4.
+        if (rec->length < sizeof(rec->type) ||
+            (rec->length + sizeof(rec->length)) % 4 != 0) {
+            throw InvalidPdb("invalid symbol record size");
+        }
+
+        const size_t dataLength = rec->length - sizeof(rec->type);
+
+        // Bounds check.
+        if (i + sizeof(SymbolRecord) + dataLength > length)
+            throw InvalidPdb("symbol record size too large");
+
+        // There is a maximum of 3 bytes of padding at the end of the data.
+        // Note that if the data length is < 3 and this overflows,
+        size_t tail = dataLength - 3;
+
+        // Find the null terminator at the end. The padding (if any) will be
+        // after this point.
+        while (tail + 1 < dataLength && rec->data[tail] != 0)
+            ++tail;
+
+        // Zero out the padding.
+        while (tail < dataLength)
+            rec->data[tail++] = 0;
+
+        // Skip to next symbol record
+        i += sizeof(SymbolRecord) + dataLength;
+    }
+}
+
+/**
  * Patches a PDB file.
  */
 template<typename CharT>
@@ -363,10 +410,29 @@ void patchPDB(const CharT* pdbPath, const CV_INFO_PDB70* pdbInfo,
     msf.replaceStream(PdbStreamType::header, newPdbHeaderStream);
 
     // Patch the DBI stream
-    auto dbiStream = std::shared_ptr<MsfMemoryStream>(
-            new MsfMemoryStream(msf.getStream(PdbStreamType::dbi).get()));
-    patchDbiStream(dbiStream.get());
-    msf.replaceStream(PdbStreamType::dbi, dbiStream);
+    if (auto origDbiStream = msf.getStream(PdbStreamType::dbi)) {
+
+        auto dbiStream = std::shared_ptr<MsfMemoryStream>(
+                new MsfMemoryStream(origDbiStream.get()));
+
+        patchDbiStream(dbiStream.get());
+
+        msf.replaceStream(PdbStreamType::dbi, dbiStream);
+
+        // We need the DBI header to get the symbol record stream. Note that bounds
+        // checking has already been done at this point.
+        const DbiHeader* dbiHeader = (const DbiHeader*)dbiStream->data();
+
+        // Patch the symbol records stream
+        if (auto origSymRecStream = msf.getStream(dbiHeader->symbolRecordsStream)) {
+            auto symRecStream = std::shared_ptr<MsfMemoryStream>(
+                    new MsfMemoryStream(origSymRecStream.get()));
+
+            patchSymbolRecordsStream(symRecStream.get());
+
+            msf.replaceStream(dbiHeader->symbolRecordsStream, symRecStream);
+        }
+    }
 
     // Finally, write out the new PDB to disk.
     msf.write(tmpPdb);

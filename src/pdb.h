@@ -290,6 +290,17 @@ struct ModuleInfo {
 static_assert(sizeof(ModuleInfo) == 64);
 
 /**
+ * A symbol record.
+ */
+struct SymbolRecord {
+    uint16_t length;
+    uint16_t type;
+    uint8_t data[];
+};
+
+static_assert(sizeof(SymbolRecord) == 4);
+
+/**
  * Thrown when a PDB is found to be invalid or unsupported.
  */
 class InvalidPdb
