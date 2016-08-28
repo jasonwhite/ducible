@@ -461,59 +461,27 @@ template<typename CharT>
 void patchPDB(const CharT* pdbPath, const CV_INFO_PDB70* pdbInfo,
         const uint8_t signature[16], bool dryrun) {
 
-    auto pdb = openFile(pdbPath, FileMode<CharT>::readExisting);
-    if (!pdb) {
-        throw std::system_error(errno, std::system_category(),
-            "Failed to open PDB file");
-    }
-
     auto tmpPdbPath = getTempPdbPath(pdbPath);
-    auto tmpPdb = openFile(tmpPdbPath.c_str(), FileMode<CharT>::writeEmpty);
-    if (!tmpPdb) {
-        throw std::system_error(errno, std::system_category(),
-            "Failed to open file");
+
+    {
+        auto pdb = openFile(pdbPath, FileMode<CharT>::readExisting);
+        auto tmpPdb = openFile(tmpPdbPath.c_str(), FileMode<CharT>::writeEmpty);
+
+        MsfFile msf(pdb);
+
+        patchPDB(msf, pdbInfo, signature);
+
+        // Write out the rewritten PDB to disk.
+        msf.write(tmpPdb);
     }
 
-    MsfFile msf(pdb);
-
-    patchPDB(msf, pdbInfo, signature);
-
-    // Write out the rewritten PDB to disk.
-    msf.write(tmpPdb);
-
-    // Close the file handles so we can delete/rename them.
-    tmpPdb.reset();
-    pdb.reset();
-
-#if defined(_WIN32) && defined(UNICODE)
     if (dryrun) {
         // Delete the temporary file
-        if (_wremove(tmpPdbPath.c_str()) != 0) {
-            throw std::system_error(errno, std::system_category(),
-                "Failed to delete temporary PDB");
-        }
+        deleteFile(tmpPdbPath.c_str());
     } else {
         // Rename the new PDB file over the old one
-        if (_wrename(tmpPdbPath.c_str(), pdbPath) != 0) {
-            throw std::system_error(errno, std::system_category(),
-                "Failed to rename temporary PDB");
-        }
+        renameFile(tmpPdbPath.c_str(), pdbPath);
     }
-#else
-    if (dryrun) {
-        // Delete the temporary file
-        if (remove(tmpPdbPath.c_str()) != 0) {
-            throw std::system_error(errno, std::system_category(),
-                "Failed to delete temporary PDB");
-        }
-    } else {
-        // Rename the new PDB file over the old one
-        if (rename(tmpPdbPath.c_str(), pdbPath) != 0) {
-            throw std::system_error(errno, std::system_category(),
-                "Failed to rename temporary PDB");
-        }
-    }
-#endif
 }
 
 template<typename CharT>

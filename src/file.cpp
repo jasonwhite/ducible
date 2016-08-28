@@ -21,7 +21,13 @@
  */
 
 #include "file.h"
+
 #include <iostream>
+#include <codecvt>
+#include <string>
+#include <sstream>
+
+#include <windows.h>
 
 template<> const FileMode<char> FileMode<char>::readExisting("rb");
 template<> const FileMode<char> FileMode<char>::writeEmpty("wb");
@@ -43,20 +49,136 @@ public:
 
 FileRef openFile(const char* path, FileMode<char> mode) {
     FILE* f = NULL;
-    fopen_s(&f, path, mode.mode);
+
+    if (fopen_s(&f, path, mode.mode) != 0) {
+        auto err = errno;
+
+        std::stringbuf buf;
+        std::ostream msg(&buf);
+
+        msg << "Failed to open file '" << path << "'";
+
+        throw std::system_error(err, std::system_category(), buf.str());
+    }
+
     return FileRef(f, FileCloser());
 }
 
 FileRef openFile(const wchar_t* path, FileMode<wchar_t> mode) {
     FILE* f = NULL;
-    _wfopen_s(&f, path, mode.mode);
+
+    if (_wfopen_s(&f, path, mode.mode) != 0) {
+        auto err = errno;
+
+        std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+
+        std::stringbuf buf;
+        std::ostream msg(&buf);
+
+        msg << "Failed to open file '" << converter.to_bytes(path) << "'";
+
+        throw std::system_error(err, std::system_category(), buf.str());
+    }
+
     return FileRef(f, FileCloser());
+}
+
+void renameFile(const char* src, const char* dest) {
+    if (!MoveFileExA(src, dest, MOVEFILE_REPLACE_EXISTING)) {
+        throw std::system_error(GetLastError(), std::system_category(),
+            "failed to rename file");
+    }
+}
+
+void renameFile(const wchar_t* src, const wchar_t* dest) {
+    if (!MoveFileExW(src, dest, MOVEFILE_REPLACE_EXISTING)) {
+        auto err = GetLastError();
+
+        std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+
+        std::stringbuf buf;
+        std::ostream msg(&buf);
+
+        msg << "failed to rename file '" << converter.to_bytes(src)
+            << "' to '" << converter.to_bytes(dest) << "'";
+
+        throw std::system_error(err, std::system_category(), buf.str());
+    }
+}
+
+void deleteFile(const char* path) {
+    if (!DeleteFileA(path)) {
+        auto err = GetLastError();
+
+        std::stringbuf buf;
+        std::ostream msg(&buf);
+
+        msg << "failed to delete file '" << path << "'";
+
+        throw std::system_error(err, std::system_category(), buf.str());
+    }
+}
+
+void deleteFile(const wchar_t* path) {
+    if (!DeleteFileW(path)) {
+        auto err = GetLastError();
+
+        std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+
+        std::stringbuf buf;
+        std::ostream msg(&buf);
+
+        msg << "failed to delete file '" << converter.to_bytes(path) << "'";
+
+        throw std::system_error(err, std::system_category(), buf.str());
+    }
 }
 
 #else // !_WIN32
 
 FileRef openFile(const char* path, FileMode<char> mode) {
-    return FileRef(fopen(path, mode.mode), FileCloser());
+    FILE* f = fopen(path, mode.mode);
+
+    if (!f) {
+        auto err = errno;
+
+        std::stringbuf buf;
+        std::ostream msg(&buf);
+
+        msg << "Failed to open file '" << path << "'";
+
+        throw std::system_error(err, std::system_category(), buf.str());
+    }
+
+    return FileRef(f, FileCloser());
+}
+
+void renameFile(const char* src, const char* dest) {
+    if (rename(src, dest) != 0) {
+        auto err = errno;
+
+        std::stringbuf buf;
+        std::ostream msg(&buf);
+
+        msg << "failed to rename file '" << src << "' to '" << dest << "'";
+
+        throw std::system_error(err, std::system_category(), buf.str());
+    }
+}
+
+void deleteFile(const char* path) {
+    if (remove(tmpPdbPath.c_str()) != 0) {
+        auto err = errno;
+
+        std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+
+        std::stringbuf buf;
+        std::ostream msg(&buf);
+
+        msg << "failed to delete file '" << converter.to_bytes(path) << "'";
+
+        throw std::system_error(err, std::system_category(), buf.str());
+    }
 }
 
 #endif // _WIN32

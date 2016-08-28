@@ -43,13 +43,27 @@ typedef std::shared_ptr<FILE> FileRef;
 /**
  * Helper functions for opening a file generically and with reference counting.
  */
+FileRef openFile(const char* path, FileMode<char> mode = FileMode<char>::readExisting);
+
+/*
+ * Renames a file in a platform independent way.
+ *
+ * Throws std::system_error if it failed.
+ */
+void renameFile(const char* src, const char* dest);
+
+/*
+ * Deletes a file in a platform independent way.
+ *
+ * Throws std::system_error if it failed.
+ */
+void deleteFile(const char* path);
+
 #ifdef _WIN32
 
-FileRef openFile(const char* path, FileMode<char> mode = FileMode<char>::readExisting);
 FileRef openFile(const wchar_t* path, FileMode<wchar_t> mode = FileMode<wchar_t>::readExisting);
 
-#else // _WIN32
-
-FileRef openFile(const char* path, FileMode<char> mode = FileMode<char>::readExisting);
+void renameFile(const wchar_t* src, const wchar_t* dest);
+void deleteFile(const wchar_t* path);
 
 #endif // _WIN32
