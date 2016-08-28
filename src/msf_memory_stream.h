@@ -58,7 +58,7 @@ public:
     /**
      * Returns a pointer to the underlying data.
      */
-    const uint8_t* data() const {
+    uint8_t* data() {
         return &_data[0];
     }
 

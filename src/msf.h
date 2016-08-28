@@ -76,7 +76,7 @@ public:
     /**
      * Replaces a stream. Set to NULL to remove it.
      */
-    void replaceStream(size_t index, MsfStream* stream);
+    void replaceStream(size_t index, MsfStreamRef stream);
 
     /**
      * Returns the number of streams.

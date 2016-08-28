@@ -229,6 +229,82 @@ std::basic_string<CharT> getTempPdbPath(const CharT* pdbPath) {
 }
 
 /**
+ * Patches the DBI stream.
+ */
+void patchDbiStream(MsfMemoryStream* stream) {
+
+    if (stream->length() < sizeof(DbiHeader)) {
+        throw InvalidPdb("DBI stream too short");
+    }
+
+    uint8_t* data = stream->data();
+    const size_t length = stream->length();
+    size_t offset = 0;
+
+    DbiHeader* dbiHeader = (DbiHeader*)data;
+
+    // Sanity checks
+    if (dbiHeader->signature != dbiHeaderSignature)
+        throw InvalidPdb("invalid DBI header signature");
+
+    if (dbiHeader->version != DbiVersion::v70)
+        throw InvalidPdb("Unsupported DBI stream version");
+
+    // Patch the age. This must match the age in the PDB stream.
+    dbiHeader->age = 1;
+
+    offset += sizeof(*dbiHeader);
+
+    // The module info immediately follows the header.
+
+    // Check bounds
+    if (offset + dbiHeader->gpModInfoSize > length)
+        throw InvalidPdb("DBI module info size exceeds stream length");
+
+    // Patch the module info entries
+    for (size_t i = 0; i < dbiHeader->gpModInfoSize; ) {
+        if (dbiHeader->gpModInfoSize - i < sizeof(ModuleInfo))
+            throw InvalidPdb("got partial DBI module info");
+
+        ModuleInfo* info = (ModuleInfo*)(data + offset + i);
+
+        // Patch the offsets "array". This is not used directly by Microsoft's
+        // DBI implementation and may contain non-deterministic data (e.g., the
+        // memory address of the actual allocated array). Thus, we need to zero
+        // it out.
+        info->offsets = 0;
+
+        i += info->size();
+    }
+
+    offset += dbiHeader->gpModInfoSize;
+
+    // Skip over the signature
+    offset += sizeof(uint32_t);
+
+    // The section contributions follow the module info entries. These contain
+    // garbage due to struct alignment. They needed to be zeroed out.
+
+    if (offset + dbiHeader->sectionContributionSize > length) {
+        throw InvalidPdb(
+                "DBI section contributions size exceeds stream length");
+    }
+
+    const size_t scCount = dbiHeader->sectionContributionSize /
+        sizeof(SectionContribution);
+
+    SectionContribution* sectionContribs = (SectionContribution*)(data + offset);
+
+    for (size_t i = 0; i < scCount; ++i) {
+        SectionContribution& sc = sectionContribs[i];
+        sc.padding1 = 0;
+        sc.padding2 = 0;
+    }
+
+    offset += dbiHeader->sectionContributionSize;
+}
+
+/**
  * Patches a PDB file.
  */
 template<typename CharT>
@@ -273,11 +349,12 @@ void patchPDB(const CharT* pdbPath, const CV_INFO_PDB70* pdbInfo,
     if (!pdbInfo || !matchingSignatures(*pdbInfo, pdbHeader))
         throw InvalidPdb("PE and PDB signatures do not match");
 
-    // Fix PDB header stream.
+    // Patch the PDB header stream
     pdbHeader.age = 1;
     memcpy(pdbHeader.sig70, signature, sizeof(pdbHeader.sig70));
 
-    auto newPdbHeaderStream = new MsfMemoryStream(pdbHeaderStream.get());
+    auto newPdbHeaderStream = std::shared_ptr<MsfMemoryStream>(
+            new MsfMemoryStream(pdbHeaderStream.get()));
     if (newPdbHeaderStream->write(sizeof(pdbHeader), &pdbHeader) !=
             sizeof(pdbHeader)) {
         throw InvalidPdb("failed to rewrite PDB header");
@@ -285,6 +362,13 @@ void patchPDB(const CharT* pdbPath, const CV_INFO_PDB70* pdbInfo,
 
     msf.replaceStream(PdbStreamType::header, newPdbHeaderStream);
 
+    // Patch the DBI stream
+    auto dbiStream = std::shared_ptr<MsfMemoryStream>(
+            new MsfMemoryStream(msf.getStream(PdbStreamType::dbi).get()));
+    patchDbiStream(dbiStream.get());
+    msf.replaceStream(PdbStreamType::dbi, dbiStream);
+
+    // Finally, write out the new PDB to disk.
     msf.write(tmpPdb);
 
     // Close the file handles so we can delete/rename them.

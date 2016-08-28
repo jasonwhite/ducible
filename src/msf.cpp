@@ -340,8 +340,8 @@ MsfStreamRef MsfFile::getStream(size_t index) {
     return nullptr;
 }
 
-void MsfFile::replaceStream(size_t index, MsfStream* stream) {
-    _streams[index] = MsfStreamRef(stream);
+void MsfFile::replaceStream(size_t index, MsfStreamRef stream) {
+    _streams[index] = stream;
 }
 
 size_t MsfFile::streamCount() const {
