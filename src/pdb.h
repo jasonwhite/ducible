@@ -24,6 +24,13 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#ifdef _WIN32
+#   pragma warning(push)
+
+    // Disable "nonstandard extension used: zero-sized array in struct/union"
+#   pragma warning(disable : 4200)
+#endif
+
 /**
  * PDB stream IDs.
  */
@@ -84,7 +91,7 @@ struct PdbStream {
     uint32_t age;
 };
 
-static_assert(sizeof(PdbStream) == 12);
+static_assert(sizeof(PdbStream) == 12, "invalid struct size");
 
 /**
  * PDB 7.0 stream.
@@ -94,12 +101,12 @@ struct PdbStream70 : public PdbStream {
     uint8_t sig70[16];
 };
 
-static_assert(sizeof(PdbStream70) == 28);
+static_assert(sizeof(PdbStream70) == 28, "invalid struct size");
 
 /**
  * The DBI header signature.
  */
-const uint32_t dbiHeaderSignature = -1;
+const uint32_t dbiHeaderSignature = (uint32_t)-1;
 
 /**
  * The DBI implementation version.
@@ -186,7 +193,7 @@ struct DbiHeader {
     uint32_t reserved[1];
 };
 
-static_assert(sizeof(DbiHeader) == 64);
+static_assert(sizeof(DbiHeader) == 64, "invalid struct size");
 
 /**
  * Section contribution.
@@ -214,7 +221,7 @@ struct SectionContribution {
     uint32_t relocCrc;
 };
 
-static_assert(sizeof(SectionContribution) == 28);
+static_assert(sizeof(SectionContribution) == 28, "invalid struct size");
 
 /**
  * Module info.
@@ -287,7 +294,7 @@ struct ModuleInfo {
     }
 };
 
-static_assert(sizeof(ModuleInfo) == 64);
+static_assert(sizeof(ModuleInfo) == 64, "invalid struct size");
 
 /**
  * A symbol record.
@@ -298,12 +305,12 @@ struct SymbolRecord {
     uint8_t data[];
 };
 
-static_assert(sizeof(SymbolRecord) == 4);
+static_assert(sizeof(SymbolRecord) == 4, "invalid struct size");
 
 /**
  * Global stream info hash signature
  */
-const uint32_t gsiHashSignature = -1;
+const uint32_t gsiHashSignature = (uint32_t)-1;
 
 /**
  * Global stream info hash header version
@@ -361,7 +368,7 @@ struct PublicSymbolHeader {
     uint32_t sectionCount;
 };
 
-static_assert(sizeof(PublicSymbolHeader) == 28);
+static_assert(sizeof(PublicSymbolHeader) == 28, "invalid struct size");
 
 /**
  * Thrown when a PDB is found to be invalid or unsupported.
@@ -379,3 +386,7 @@ public:
         return _why;
     }
 };
+
+#ifdef _WIN32
+#   pragma warning(pop)
+#endif

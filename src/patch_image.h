@@ -25,8 +25,12 @@
  * Patches the given image and its associated PDB to eliminate the
  * non-deterministic parts of the files.
  */
+#if defined(_WIN32) && defined(UNICODE)
+
+void patchImage(const wchar_t* imagePath, const wchar_t* pdbPath, bool dryrun = true);
+
+#else
+
 void patchImage(const char* imagePath, const char* pdbPath, bool dryrun = true);
 
-#ifdef _WIN32
-void patchImage(const wchar_t* imagePath, const wchar_t* pdbPath, bool dryrun = true);
 #endif

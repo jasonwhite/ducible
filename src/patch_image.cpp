@@ -570,12 +570,16 @@ void patchImageImpl(const CharT* imagePath, const CharT* pdbPath, bool dryrun) {
 
 }
 
+#if defined(_WIN32) && defined(UNICODE)
+
+void patchImage(const wchar_t* imagePath, const wchar_t* pdbPath, bool dryrun) {
+    patchImageImpl(imagePath, pdbPath, dryrun);
+}
+
+#else
+
 void patchImage(const char* imagePath, const char* pdbPath, bool dryrun) {
     patchImageImpl(imagePath, pdbPath, dryrun);
 }
 
-#ifdef _WIN32
-void patchImage(const wchar_t* imagePath, const wchar_t* pdbPath, bool dryrun) {
-    patchImageImpl(imagePath, pdbPath, dryrun);
-}
 #endif
