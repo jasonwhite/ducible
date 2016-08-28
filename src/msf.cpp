@@ -350,18 +350,18 @@ size_t MsfFile::streamCount() const {
 
 void MsfFile::write(FileRef f) const {
 
+    uint32_t pageCount = 0;
+
     // Write out 4 blank pages: one for the header, two for the FPM, and one
     // superfluous blank page. We'll come back at the end and write in the
     // header and free page map. We can't do it now, because we don't have that
     // information yet.
-    for (size_t i = 0; i < 4; ++i) {
+    for (; pageCount < 4; ++pageCount) {
         if (fwrite(kBlankPage, 1, kPageSize, f.get()) != kPageSize) {
             throw std::system_error(errno, std::system_category(),
                     "failed writing MSF preamble");
         }
     }
-
-    uint32_t pageCount = 4;
 
     // Initialize the stream table.
     std::vector<uint32_t> streamTable;
