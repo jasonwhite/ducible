@@ -121,7 +121,7 @@ public:
     const CharT* pdb;
     bool dryrun;
 
-    CommandOptions() : image(NULL), pdb(NULL), dryrun(true) {}
+    CommandOptions() : image(NULL), pdb(NULL), dryrun(false) {}
 
     /**
      * Parses the command line arguments.
