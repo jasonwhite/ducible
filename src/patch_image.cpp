@@ -300,7 +300,14 @@ void patchDbiStream(MsfMemoryStream* stream) {
         sc.padding2 = 0;
     }
 
+    // Skip to the file info
     offset += dbiHeader->sectionContributionSize;
+    offset += dbiHeader->sectionMapSize;
+
+    if (offset + dbiHeader->fileInfoSize > length)
+        throw InvalidPdb("Missing file info in DBI stream");
+
+    // TODO: There are some temporary files with GUIDs in the name.
 }
 
 /**
