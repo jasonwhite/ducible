@@ -34,55 +34,51 @@
 /**
  * PDB stream IDs.
  */
-namespace PdbStreamType {
-    enum {
+enum class PdbStreamType {
 
-        // Stream table stream.
-        streamTable = 0,
+    // Stream table stream.
+    streamTable = 0,
 
-        // Version information, and information to connect this PDB to the EXE.
-        header = 1,
+    // Version information, and information to connect this PDB to the EXE.
+    header = 1,
 
-        // Type information stream. All the types used in the executable.
-        tbi = 2,
+    // Type information stream. All the types used in the executable.
+    tbi = 2,
 
-        // Debug information stream. Holds section contributions, and list of
-        // ‘Mods’.
-        dbi = 3,
+    // Debug information stream. Holds section contributions, and list of
+    // ‘Mods’.
+    dbi = 3,
 
-        // ID info stream. Holds a hashed string table.
-        ipi = 4,
+    // ID info stream. Holds a hashed string table.
+    ipi = 4,
 
-        // There are more streams than this, but they are not accessed directly
-        // by a stream ID constant. We are usually only interested in the above
-        // streams anyway.
-    };
-}
+    // There are more streams than this, but they are not accessed directly
+    // by a stream ID constant. We are usually only interested in the above
+    // streams anyway.
+};
 
 /**
  * Implementation version of the PDB.
  */
-namespace PdbVersion {
-    enum {
-        vc2     = 19941610,
-        vc4     = 19950623,
-        vc41    = 19950814,
-        vc50    = 19960307,
-        vc98    = 19970604,
-        vc70Dep = 19990604, // deprecated vc70 implementation version
-        vc70    = 20000404,
-        vc80    = 20030901,
-        vc110   = 20091201,
-        vc140   = 20140508,
-    };
-}
+enum class PdbVersion : uint32_t {
+    vc2     = 19941610,
+    vc4     = 19950623,
+    vc41    = 19950814,
+    vc50    = 19960307,
+    vc98    = 19970604,
+    vc70Dep = 19990604, // deprecated vc70 implementation version
+    vc70    = 20000404,
+    vc80    = 20030901,
+    vc110   = 20091201,
+    vc140   = 20140508,
+};
 
 /**
  * PDB stream.
  */
 struct PdbStream {
     // Implementation version number.
-    uint32_t version;
+    PdbVersion version;
 
     // Timestamp of when the PDB was created.
     uint32_t timestamp;
@@ -111,15 +107,13 @@ const uint32_t dbiHeaderSignature = (uint32_t)-1;
 /**
  * The DBI implementation version.
  */
-namespace DbiVersion {
-    enum {
-        v41  = 930803,
-        v50  = 19960307,
-        v60  = 19970606,
-        v70  = 19990903,
-        v110 = 20091201,
-    };
-}
+enum class DbiVersion : uint32_t {
+    v41  = 930803,
+    v50  = 19960307,
+    v60  = 19970606,
+    v70  = 19990903,
+    v110 = 20091201,
+};
 
 /**
  * The Debug Information Stream (DBI) header.
@@ -130,7 +124,7 @@ struct DbiHeader {
     uint32_t signature;
 
     // The header version
-    uint32_t version;
+    DbiVersion version;
     uint32_t age;
 
     // The global symbols info (GSI) stream

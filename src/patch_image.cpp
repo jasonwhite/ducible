@@ -388,10 +388,10 @@ void patchPublicSymbolStream(MsfMemoryStream* stream) {
 void patchPDB(MsfFile& msf, const CV_INFO_PDB70* pdbInfo,
         uint32_t timestamp, const uint8_t signature[16]) {
 
-    msf.replaceStream(PdbStreamType::streamTable, nullptr);
+    msf.replaceStream((size_t)PdbStreamType::streamTable, nullptr);
 
     // Read the PDB header
-    auto pdbHeaderStream = msf.getStream(PdbStreamType::header);
+    auto pdbHeaderStream = msf.getStream((size_t)PdbStreamType::header);
 
     if (!pdbHeaderStream)
         throw InvalidPdb("missing PDB header stream");
@@ -423,17 +423,17 @@ void patchPDB(MsfFile& msf, const CV_INFO_PDB70* pdbInfo,
         throw InvalidPdb("failed to rewrite PDB header");
     }
 
-    msf.replaceStream(PdbStreamType::header, newPdbHeaderStream);
+    msf.replaceStream((size_t)PdbStreamType::header, newPdbHeaderStream);
 
     // Patch the DBI stream
-    if (auto origDbiStream = msf.getStream(PdbStreamType::dbi)) {
+    if (auto origDbiStream = msf.getStream((size_t)PdbStreamType::dbi)) {
 
         auto dbiStream = std::shared_ptr<MsfMemoryStream>(
                 new MsfMemoryStream(origDbiStream.get()));
 
         patchDbiStream(dbiStream.get());
 
-        msf.replaceStream(PdbStreamType::dbi, dbiStream);
+        msf.replaceStream((size_t)PdbStreamType::dbi, dbiStream);
 
         // We need the DBI header to get the symbol record stream. Note that bounds
         // checking has already been done at this point.
