@@ -72,6 +72,7 @@
 #include <cstring>
 #include <iostream>
 #include <vector>
+#include <regex>
 
 #include "patch_image.h"
 
@@ -228,6 +229,34 @@ std::basic_string<CharT> getTempPdbPath(const CharT* pdbPath) {
     return temp;
 }
 
+template<typename CharT>
+constexpr CharT nullGuid[] = {};
+
+template<> constexpr char nullGuid<char>[] = "{00000000-0000-0000-0000-000000000000}";
+template<> constexpr wchar_t nullGuid<wchar_t>[] = L"{00000000-0000-0000-0000-000000000000}";
+
+/**
+ * Helper function for normalizing a GUID in a NULL terminated file name.
+ */
+template <typename CharT>
+void normalizeFileNameGuid(CharT* path, size_t length) {
+    static const std::regex guidRegex("\\{"
+            "[0-9a-fA-F]{8}-"
+            "[0-9a-fA-F]{4}-"
+            "[0-9a-fA-F]{4}-"
+            "[0-9a-fA-F]{4}-"
+            "[0-9a-fA-F]{12}"
+        "\\}");
+
+    std::match_results<const CharT*> match;
+
+    if (std::regex_search((const CharT*)path, (const CharT*)path + length,
+                match, guidRegex)) {
+        memcpy(path + match.position(0), nullGuid<CharT>,
+                sizeof(nullGuid<CharT>));
+    }
+}
+
 /**
  * Patches the DBI stream.
  */
@@ -260,6 +289,9 @@ void patchDbiStream(MsfMemoryStream* stream) {
     if (offset + dbiHeader->gpModInfoSize > length)
         throw InvalidPdb("DBI module info size exceeds stream length");
 
+    // Number of modules
+    size_t moduleCount = 0;
+
     // Patch the module info entries
     for (size_t i = 0; i < dbiHeader->gpModInfoSize; ) {
         if (dbiHeader->gpModInfoSize - i < sizeof(ModuleInfo))
@@ -274,12 +306,10 @@ void patchDbiStream(MsfMemoryStream* stream) {
         info->offsets = 0;
 
         i += info->size();
+        ++moduleCount;
     }
 
     offset += dbiHeader->gpModInfoSize;
-
-    // Skip over the signature
-    offset += sizeof(uint32_t);
 
     // The section contributions follow the module info entries. These contain
     // garbage due to struct alignment. They needed to be zeroed out.
@@ -300,14 +330,64 @@ void patchDbiStream(MsfMemoryStream* stream) {
         sc.padding2 = 0;
     }
 
-    // Skip to the file info
     offset += dbiHeader->sectionContributionSize;
+
+    // Skip over the section map
     offset += dbiHeader->sectionMapSize;
 
-    if (offset + dbiHeader->fileInfoSize > length)
-        throw InvalidPdb("Missing file info in DBI stream");
+    // In the list of files, there are some temporary files with random GUIDs in
+    // the name.
+    if (dbiHeader->fileInfoSize > 0) {
 
-    // TODO: There are some temporary files with GUIDs in the name.
+        if (offset + dbiHeader->fileInfoSize > length)
+            throw InvalidPdb("Missing file info in DBI stream");
+
+        uint8_t* p = data + offset;
+        uint8_t* pEnd = p + dbiHeader->fileInfoSize;
+
+        // Skip over the header as it doesn't always provide correct
+        // information.
+        p += sizeof(FileInfoHeader);
+
+        // File indices array
+        uint16_t* fileIndices = (uint16_t*)p;
+        p += moduleCount * sizeof(*fileIndices);
+
+        // File counts array
+        uint16_t* fileCounts = (uint16_t*)p;
+        p += moduleCount * sizeof(*fileCounts);
+
+        if (p >= pEnd)
+            throw InvalidPdb("got partial file info in DBI stream");
+
+        uint32_t* offsets = (uint32_t*)p;
+
+        uint32_t offsetCount = 0;
+        for (size_t i = 0; i < moduleCount; ++i)
+            offsetCount += fileCounts[i];
+
+        p += offsetCount * sizeof(*offsets);
+
+        if (p >= pEnd)
+            throw InvalidPdb("got partial file info in DBI stream");
+
+        char* names = (char*)p;
+
+        for (size_t i = 0; i < offsetCount; ++i) {
+            uint32_t offset = offsets[i];
+
+            if ((uint8_t*)names + offset + 1 > pEnd)
+                throw InvalidPdb("invalid offset for file info name");
+
+            char* name = names + offset;
+            size_t len = strlen(name);
+
+            if ((uint8_t*)name + len + 1 > pEnd)
+                throw InvalidPdb("file name exceeds file info section size");
+
+            normalizeFileNameGuid(name, len);
+        }
+    }
 }
 
 /**
@@ -322,6 +402,10 @@ void patchSymbolRecordsStream(MsfMemoryStream* stream) {
     const size_t length = stream->length();
 
     for (size_t i = 0; i < length; ) {
+
+        if (length - i < sizeof(SymbolRecord))
+            throw InvalidPdb("got partial symbol record");
+
         SymbolRecord* rec = (SymbolRecord*)(data + i);
 
         // The symbol record length must be at least the size of

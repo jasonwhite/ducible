@@ -365,6 +365,24 @@ struct PublicSymbolHeader {
 static_assert(sizeof(PublicSymbolHeader) == 28, "invalid struct size");
 
 /**
+ * File info header.
+ *
+ * The file info is the last section of the DBI stream and lists all the source
+ * files and the header files that go into those source files.
+ */
+struct FileInfoHeader {
+
+    // Module index
+    uint16_t modiref;
+
+    // Module count
+    uint16_t modcref;
+};
+
+static_assert(sizeof(FileInfoHeader) == 4, "invalid struct size");
+
+
+/**
  * Thrown when a PDB is found to be invalid or unsupported.
  */
 class InvalidPdb
