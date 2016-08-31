@@ -349,9 +349,8 @@ void patchDbiStream(MsfMemoryStream* stream) {
         // information.
         p += sizeof(FileInfoHeader);
 
-        // File indices array
-        uint16_t* fileIndices = (uint16_t*)p;
-        p += moduleCount * sizeof(*fileIndices);
+        // Skip over file indices array. We don't need them.
+        p += moduleCount * sizeof(uint16_t);
 
         // File counts array
         uint16_t* fileCounts = (uint16_t*)p;
@@ -374,12 +373,12 @@ void patchDbiStream(MsfMemoryStream* stream) {
         char* names = (char*)p;
 
         for (size_t i = 0; i < offsetCount; ++i) {
-            uint32_t offset = offsets[i];
+            const uint32_t& off = offsets[i];
 
-            if ((uint8_t*)names + offset + 1 > pEnd)
+            if ((uint8_t*)names + off + 1 > pEnd)
                 throw InvalidPdb("invalid offset for file info name");
 
-            char* name = names + offset;
+            char* name = names + off;
             size_t len = strlen(name);
 
             if ((uint8_t*)name + len + 1 > pEnd)
