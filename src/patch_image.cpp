@@ -499,8 +499,8 @@ void patchPDB(MsfFile& msf, const CV_INFO_PDB70* pdbInfo,
     pdbHeader.age = 1;
     memcpy(pdbHeader.sig70, signature, sizeof(pdbHeader.sig70));
 
-    auto newPdbHeaderStream = std::shared_ptr<MsfMemoryStream>(
-            new MsfMemoryStream(pdbHeaderStream.get()));
+    auto newPdbHeaderStream = std::make_shared<MsfMemoryStream>(
+            pdbHeaderStream.get());
     if (newPdbHeaderStream->write(sizeof(pdbHeader), &pdbHeader) !=
             sizeof(pdbHeader)) {
         throw InvalidPdb("failed to rewrite PDB header");
@@ -511,8 +511,8 @@ void patchPDB(MsfFile& msf, const CV_INFO_PDB70* pdbInfo,
     // Patch the DBI stream
     if (auto origDbiStream = msf.getStream((size_t)PdbStreamType::dbi)) {
 
-        auto dbiStream = std::shared_ptr<MsfMemoryStream>(
-                new MsfMemoryStream(origDbiStream.get()));
+        auto dbiStream = std::make_shared<MsfMemoryStream>(
+                origDbiStream.get());
 
         patchDbiStream(dbiStream.get());
 
@@ -524,8 +524,8 @@ void patchPDB(MsfFile& msf, const CV_INFO_PDB70* pdbInfo,
 
         // Patch the symbol records stream
         if (auto origSymRecStream = msf.getStream(dbiHeader->symbolRecordsStream)) {
-            auto symRecStream = std::shared_ptr<MsfMemoryStream>(
-                    new MsfMemoryStream(origSymRecStream.get()));
+            auto symRecStream = std::make_shared<MsfMemoryStream>(
+                    origSymRecStream.get());
 
             patchSymbolRecordsStream(symRecStream.get());
 
