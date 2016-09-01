@@ -299,6 +299,9 @@ void patchDbiStream(MsfMemoryStream* stream) {
 
         ModuleInfo* info = (ModuleInfo*)(data + offset + i);
 
+        info->sc.padding1 = 0;
+        info->sc.padding2 = 0;
+
         // Patch the offsets "array". This is not used directly by Microsoft's
         // DBI implementation and may contain non-deterministic data (e.g., the
         // memory address of the actual allocated array). Thus, we need to zero
