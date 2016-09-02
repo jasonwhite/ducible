@@ -269,21 +269,21 @@ void patchHeaderStream(MsfMemoryStream* stream, const CV_INFO_PDB70* pdbInfo,
     if (size_t(dataEnd - data) < sizeof(PdbStream70))
         throw InvalidPdb("missing PDB 7.0 header");
 
-    PdbStream70* pdbHeader = (PdbStream70*)data;
+    PdbStream70* header = (PdbStream70*)data;
 
-    data += sizeof(*pdbHeader);
+    data += sizeof(*header);
 
-    if (pdbHeader->version < PdbVersion::vc70)
+    if (header->version < PdbVersion::vc70)
         throw InvalidPdb("unsupported PDB implementation version");
 
     // Check that this PDB matches what the PE file expects
-    if (!pdbInfo || !matchingSignatures(*pdbInfo, *pdbHeader))
+    if (!pdbInfo || !matchingSignatures(*pdbInfo, *header))
         throw InvalidPdb("PE and PDB signatures do not match");
 
     // Patch the PDB header stream
-    pdbHeader->timestamp = timestamp;
-    pdbHeader->age = 1;
-    memcpy(pdbHeader->sig70, signature, sizeof(pdbHeader->sig70));
+    header->timestamp = timestamp;
+    header->age = 1;
+    memcpy(header->sig70, signature, sizeof(header->sig70));
 }
 
 /**
@@ -309,6 +309,11 @@ void patchDbiStream(MsfMemoryStream* stream) {
 
     // Patch the age. This must match the age in the PDB stream.
     dbi->age = 1;
+
+    std::cout << "DBI Header:\n";
+    std::cout << "  globalSymbolStream = " << dbi->globalSymbolStream << std::endl;
+    std::cout << "  publicSymbolStream = " << dbi->publicSymbolStream << std::endl;
+    std::cout << "  symbolRecordsStream = " << dbi->symbolRecordsStream << std::endl;
 
     offset += sizeof(*dbi);
 
@@ -336,6 +341,11 @@ void patchDbiStream(MsfMemoryStream* stream) {
         // memory address of the actual allocated array). Thus, we need to zero
         // it out.
         info->offsets = 0;
+
+        std::cout << "Module Info:\n";
+        std::cout << "  moduleName = " << info->moduleName() << std::endl;
+        std::cout << "  objectName = " << info->objectName() << std::endl;
+        std::cout << "  stream     = " << info->stream << std::endl;
 
         i += info->size();
         ++moduleCount;
@@ -419,6 +429,35 @@ void patchDbiStream(MsfMemoryStream* stream) {
             normalizeFileNameGuid(name, len);
         }
     }
+
+    // Skip past the file info
+    offset += dbi->fileInfoSize;
+
+    // Skip past the TSM substream
+    offset += dbi->typeServerMapSize;
+
+    // Skip past the EC info
+    offset += dbi->ecInfoSize;
+
+    // Parse the debug header
+    if (dbi->debugHeaderSize > 0) {
+        if (offset + dbi->debugHeaderSize > length)
+            throw InvalidPdb("missing debug header at end of DBI stream");
+
+        // The debug header is just a list of stream IDs.
+        uint16_t* debugStreams = (uint16_t*)(data + offset);
+        size_t debugStreamCount = dbi->debugHeaderSize / sizeof(*debugStreams);
+
+        std::cout << "Debug streams:\n";
+        for (size_t i = 0; i < debugStreamCount; ++i) {
+            if (debugStreams[i] != invalidStream)
+                std::cout << debugStreams[i] << std::endl;
+        }
+    }
+
+    // Skip past the debug header. This should be the last substream in the DBI
+    // stream.
+    offset += dbi->debugHeaderSize;
 }
 
 /**
