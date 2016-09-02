@@ -258,6 +258,35 @@ void normalizeFileNameGuid(CharT* path, size_t length) {
 }
 
 /**
+ * Patches the PDB header stream.
+ */
+void patchHeaderStream(MsfMemoryStream* stream, const CV_INFO_PDB70* pdbInfo,
+        uint32_t timestamp, const uint8_t signature[16]) {
+
+    uint8_t* data = stream->data();
+    const uint8_t* dataEnd = stream->data() + stream->length();
+
+    if (size_t(dataEnd - data) < sizeof(PdbStream70))
+        throw InvalidPdb("missing PDB 7.0 header");
+
+    PdbStream70* pdbHeader = (PdbStream70*)data;
+
+    data += sizeof(*pdbHeader);
+
+    if (pdbHeader->version < PdbVersion::vc70)
+        throw InvalidPdb("unsupported PDB implementation version");
+
+    // Check that this PDB matches what the PE file expects
+    if (!pdbInfo || !matchingSignatures(*pdbInfo, *pdbHeader))
+        throw InvalidPdb("PE and PDB signatures do not match");
+
+    // Patch the PDB header stream
+    pdbHeader->timestamp = timestamp;
+    pdbHeader->age = 1;
+    memcpy(pdbHeader->sig70, signature, sizeof(pdbHeader->sig70));
+}
+
+/**
  * Patches the DBI stream.
  */
 void patchDbiStream(MsfMemoryStream* stream) {
@@ -269,32 +298,32 @@ void patchDbiStream(MsfMemoryStream* stream) {
     const size_t length = stream->length();
     size_t offset = 0;
 
-    DbiHeader* dbiHeader = (DbiHeader*)data;
+    DbiHeader* dbi = (DbiHeader*)data;
 
     // Sanity checks
-    if (dbiHeader->signature != dbiHeaderSignature)
+    if (dbi->signature != dbiHeaderSignature)
         throw InvalidPdb("invalid DBI header signature");
 
-    if (dbiHeader->version != DbiVersion::v70)
+    if (dbi->version != DbiVersion::v70)
         throw InvalidPdb("Unsupported DBI stream version");
 
     // Patch the age. This must match the age in the PDB stream.
-    dbiHeader->age = 1;
+    dbi->age = 1;
 
-    offset += sizeof(*dbiHeader);
+    offset += sizeof(*dbi);
 
     // The module info immediately follows the header.
 
     // Check bounds
-    if (offset + dbiHeader->gpModInfoSize > length)
+    if (offset + dbi->gpModInfoSize > length)
         throw InvalidPdb("DBI module info size exceeds stream length");
 
     // Number of modules
     size_t moduleCount = 0;
 
     // Patch the module info entries
-    for (size_t i = 0; i < dbiHeader->gpModInfoSize; ) {
-        if (dbiHeader->gpModInfoSize - i < sizeof(ModuleInfo))
+    for (size_t i = 0; i < dbi->gpModInfoSize; ) {
+        if (dbi->gpModInfoSize - i < sizeof(ModuleInfo))
             throw InvalidPdb("got partial DBI module info");
 
         ModuleInfo* info = (ModuleInfo*)(data + offset + i);
@@ -312,17 +341,17 @@ void patchDbiStream(MsfMemoryStream* stream) {
         ++moduleCount;
     }
 
-    offset += dbiHeader->gpModInfoSize;
+    offset += dbi->gpModInfoSize;
 
     // The section contributions follow the module info entries. These contain
     // garbage due to struct alignment. They needed to be zeroed out.
 
-    if (offset + dbiHeader->sectionContributionSize > length) {
+    if (offset + dbi->sectionContributionSize > length) {
         throw InvalidPdb(
                 "DBI section contributions size exceeds stream length");
     }
 
-    const size_t scCount = dbiHeader->sectionContributionSize /
+    const size_t scCount = dbi->sectionContributionSize /
         sizeof(SectionContribution);
 
     SectionContribution* sectionContribs = (SectionContribution*)(data + offset);
@@ -333,20 +362,20 @@ void patchDbiStream(MsfMemoryStream* stream) {
         sc.padding2 = 0;
     }
 
-    offset += dbiHeader->sectionContributionSize;
+    offset += dbi->sectionContributionSize;
 
     // Skip over the section map
-    offset += dbiHeader->sectionMapSize;
+    offset += dbi->sectionMapSize;
 
     // In the list of files, there are some temporary files with random GUIDs in
     // the name.
-    if (dbiHeader->fileInfoSize > 0) {
+    if (dbi->fileInfoSize > 0) {
 
-        if (offset + dbiHeader->fileInfoSize > length)
+        if (offset + dbi->fileInfoSize > length)
             throw InvalidPdb("Missing file info in DBI stream");
 
         uint8_t* p = data + offset;
-        uint8_t* pEnd = p + dbiHeader->fileInfoSize;
+        uint8_t* pEnd = p + dbi->fileInfoSize;
 
         // Skip over the header as it doesn't always provide correct
         // information.
@@ -477,39 +506,16 @@ void patchPDB(MsfFile& msf, const CV_INFO_PDB70* pdbInfo,
     msf.replaceStream((size_t)PdbStreamType::streamTable, nullptr);
 
     // Read the PDB header
-    auto pdbHeaderStream = msf.getStream((size_t)PdbStreamType::header);
-
-    if (!pdbHeaderStream)
+    auto origPdbHeaderStream = msf.getStream((size_t)PdbStreamType::header);
+    if (!origPdbHeaderStream)
         throw InvalidPdb("missing PDB header stream");
 
-    if (pdbHeaderStream->length() < sizeof(PdbStream70))
-        throw InvalidPdb("missing PDB 7.0 header");
+    auto pdbHeaderStream = std::shared_ptr<MsfMemoryStream>(
+            new MsfMemoryStream(origPdbHeaderStream.get()));
 
-    PdbStream70 pdbHeader;
-    if (pdbHeaderStream->read(sizeof(pdbHeader), &pdbHeader) !=
-            sizeof(pdbHeader))
-        throw InvalidPdb("missing PDB header");
+    patchHeaderStream(pdbHeaderStream.get(), pdbInfo, timestamp, signature);
 
-    if (pdbHeader.version < PdbVersion::vc70)
-        throw InvalidPdb("unsupported PDB implementation version");
-
-    // Check that this PDB matches what the PE file expects
-    if (!pdbInfo || !matchingSignatures(*pdbInfo, pdbHeader))
-        throw InvalidPdb("PE and PDB signatures do not match");
-
-    // Patch the PDB header stream
-    pdbHeader.timestamp = timestamp;
-    pdbHeader.age = 1;
-    memcpy(pdbHeader.sig70, signature, sizeof(pdbHeader.sig70));
-
-    auto newPdbHeaderStream = std::make_shared<MsfMemoryStream>(
-            pdbHeaderStream.get());
-    if (newPdbHeaderStream->write(sizeof(pdbHeader), &pdbHeader) !=
-            sizeof(pdbHeader)) {
-        throw InvalidPdb("failed to rewrite PDB header");
-    }
-
-    msf.replaceStream((size_t)PdbStreamType::header, newPdbHeaderStream);
+    msf.replaceStream((size_t)PdbStreamType::header, pdbHeaderStream);
 
     // Patch the DBI stream
     if (auto origDbiStream = msf.getStream((size_t)PdbStreamType::dbi)) {
