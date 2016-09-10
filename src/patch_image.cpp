@@ -310,11 +310,6 @@ void patchDbiStream(MsfMemoryStream* stream) {
     // Patch the age. This must match the age in the PDB stream.
     dbi->age = 1;
 
-    std::cout << "DBI Header:\n";
-    std::cout << "  globalSymbolStream = " << dbi->globalSymbolStream << std::endl;
-    std::cout << "  publicSymbolStream = " << dbi->publicSymbolStream << std::endl;
-    std::cout << "  symbolRecordsStream = " << dbi->symbolRecordsStream << std::endl;
-
     offset += sizeof(*dbi);
 
     // The module info immediately follows the header.
@@ -341,11 +336,6 @@ void patchDbiStream(MsfMemoryStream* stream) {
         // memory address of the actual allocated array). Thus, we need to zero
         // it out.
         info->offsets = 0;
-
-        std::cout << "Module Info:\n";
-        std::cout << "  moduleName = " << info->moduleName() << std::endl;
-        std::cout << "  objectName = " << info->objectName() << std::endl;
-        std::cout << "  stream     = " << info->stream << std::endl;
 
         i += info->size();
         ++moduleCount;
@@ -438,22 +428,6 @@ void patchDbiStream(MsfMemoryStream* stream) {
 
     // Skip past the EC info
     offset += dbi->ecInfoSize;
-
-    // Parse the debug header
-    if (dbi->debugHeaderSize > 0) {
-        if (offset + dbi->debugHeaderSize > length)
-            throw InvalidPdb("missing debug header at end of DBI stream");
-
-        // The debug header is just a list of stream IDs.
-        uint16_t* debugStreams = (uint16_t*)(data + offset);
-        size_t debugStreamCount = dbi->debugHeaderSize / sizeof(*debugStreams);
-
-        std::cout << "Debug streams:\n";
-        for (size_t i = 0; i < debugStreamCount; ++i) {
-            if (debugStreams[i] != invalidStream)
-                std::cout << debugStreams[i] << std::endl;
-        }
-    }
 
     // Skip past the debug header. This should be the last substream in the DBI
     // stream.
