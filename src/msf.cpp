@@ -315,7 +315,13 @@ MsfFile::MsfFile(FileRef f) {
         if (pagesIndex >= streamTable.size())
             throw InvalidMsf("invalid stream count in stream table");
 
-        const uint32_t& size = streamSizes[i];
+        uint32_t size = streamSizes[i];
+
+        // Microsoft's PDB implementation sometimes sets the size of a stream to
+        // -1. We can't ignore this stream as it will invalidate the stream
+        // IDs everywhere. Instead, just set it to a length of 0.
+        if (size == (uint32_t)-1)
+            size = 0;
 
         addStream(new MsfFileStream(f, header.pageSize, size,
                 streamPages + pagesIndex));
