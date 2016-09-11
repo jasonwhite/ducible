@@ -72,6 +72,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <algorithm>
 #include <cstring>
 #include <iostream>
 #include <vector>
@@ -367,10 +368,9 @@ NameMapTable readNameMapTable(const uint8_t* data, const uint8_t* dataEnd) {
 }
 
 /**
- * Patches the LinkInfo named stream.
+ * Patches the "/LinkInfo" named stream.
  */
 void patchLinkInfoStream(MsfMemoryStream* stream) {
-
     uint8_t* data = stream->data();
     const size_t length = stream->length();
 
@@ -381,6 +381,69 @@ void patchLinkInfoStream(MsfMemoryStream* stream) {
 
     // The rest of the stream appears to be garbage. Thus, we truncate it.
     stream->resize(linkInfo->size);
+}
+
+/**
+ * Patches the "/names" stream.
+ */
+void patchNamesStream(MsfMemoryStream* stream) {
+    uint8_t* data = stream->data();
+    uint8_t* dataEnd = data + stream->length();
+
+    // Parse the header
+    if (size_t(dataEnd - data) < sizeof(StringTableHeader))
+        throw InvalidPdb("missing string table header");
+
+    StringTableHeader* header = (StringTableHeader*)data;
+
+    data += sizeof(*header);
+
+    if (header->signature != kHashTableSignature)
+        throw InvalidPdb("got invalid string table signature");
+
+    if (header->version != 1 && header->version != 2)
+        throw InvalidPdb("got invalid or unsupported string table version");
+
+    if (size_t(dataEnd - data) < header->stringsSize)
+        throw InvalidPdb("got partial string table data");
+
+    data += header->stringsSize;
+
+    if (size_t(dataEnd - data) < sizeof(uint32_t))
+        throw InvalidPdb("missing string table offset array length");
+
+    // Offsets array length
+    uint32_t offsetsLength = *(uint32_t*)data;
+
+    data += sizeof(offsetsLength);
+
+    if (size_t(dataEnd - data) < offsetsLength * sizeof(uint32_t))
+        throw InvalidPdb("got partial string table offsets array");
+
+    uint32_t* offsets = (uint32_t*)data;
+
+    data += offsetsLength * sizeof(uint32_t);
+
+    // Sort the offsets. There is some non-determinism creeping in here somehow.
+    std::sort(offsets, offsets + offsetsLength);
+
+    for (size_t i = 0; i < offsetsLength; ++i) {
+        const size_t offset = offsets[i];
+
+        if (offset == 0)
+            continue;
+
+        if (offset >= header->stringsSize)
+            throw InvalidPdb("got invalid offset into string table");
+
+        char* str = &header->strings[offset];
+        size_t len = strlen(str);
+
+        if (offset + len + 1 > header->stringsSize)
+            throw InvalidPdb("got invalid offset into string table");
+
+        normalizeFileNameGuid(str, len);
+    }
 }
 
 /**
@@ -414,21 +477,38 @@ void patchHeaderStream(MsfFile& msf, MsfMemoryStream* stream, const CV_INFO_PDB7
     const auto table = readNameMapTable(data, dataEnd);
 
     // Patch the LinkInfo stream.
-    const auto it = table.find("/LinkInfo");
-    if (it != table.end()) {
-        auto origLinkInfoStream = msf.getStream(it->second);
-        if (!origLinkInfoStream)
-            throw InvalidPdb("missing named LinkInfo stream");
+    {
+        const auto it = table.find("/LinkInfo");
+        if (it != table.end()) {
+            auto origLinkInfoStream = msf.getStream(it->second);
+            if (!origLinkInfoStream)
+                throw InvalidPdb("missing '/LinkInfo' stream");
 
-        auto linkInfoStream = std::shared_ptr<MsfMemoryStream>(
-                new MsfMemoryStream(origLinkInfoStream.get()));
+            auto linkInfoStream = std::shared_ptr<MsfMemoryStream>(
+                    new MsfMemoryStream(origLinkInfoStream.get()));
 
-        patchLinkInfoStream(linkInfoStream.get());
+            patchLinkInfoStream(linkInfoStream.get());
 
-        msf.replaceStream(it->second, linkInfoStream);
+            msf.replaceStream(it->second, linkInfoStream);
+        }
     }
 
-    // TODO: Rewrite /names hash table
+    // Rewrite /names hash table
+    {
+        const auto it = table.find("/names");
+        if (it != table.end()) {
+            auto origNamesStream = msf.getStream(it->second);
+            if (!origNamesStream)
+                throw InvalidPdb("missing '/names' stream");
+
+            auto namesStream = std::shared_ptr<MsfMemoryStream>(
+                    new MsfMemoryStream(origNamesStream.get()));
+
+            patchNamesStream(namesStream.get());
+
+            msf.replaceStream(it->second, namesStream);
+        }
+    }
 }
 
 /**

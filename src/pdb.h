@@ -467,6 +467,29 @@ struct LinkInfo {
     }
 };
 
+static_assert(sizeof(LinkInfo) == 24, "invalid struct size");
+
+const uint32_t kHashTableSignature = 0xeffeeffe;
+
+/**
+ * The header that is present at the start of string tables.
+ */
+struct StringTableHeader {
+    // Should be equal to kHashTableSignature
+    uint32_t signature;
+
+    // Either 1 or 2
+    uint32_t version;
+
+    // Size of the string data that follows
+    uint32_t stringsSize;
+
+    // The strings
+    char strings[];
+};
+
+static_assert(sizeof(StringTableHeader) == 12, "invalid struct size");
+
 /**
  * Thrown when a PDB is found to be invalid or unsupported.
  */
