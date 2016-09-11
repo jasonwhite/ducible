@@ -434,7 +434,7 @@ void patchHeaderStream(MsfFile& msf, MsfMemoryStream* stream, const CV_INFO_PDB7
 /**
  * Patches a module stream.
  */
-void patchModuleStream(const ModuleInfo& info, MsfMemoryStream* stream) {
+void patchModuleStream(MsfMemoryStream* stream) {
 
     uint8_t* data = stream->data();
     const uint8_t* dataEnd = stream->data() + stream->length();
@@ -539,7 +539,7 @@ void patchDbiStream(MsfFile& msf, MsfMemoryStream* stream) {
             auto moduleStream = std::shared_ptr<MsfMemoryStream>(
                     new MsfMemoryStream(origModuleStream.get()));
 
-            patchModuleStream(*info, moduleStream.get());
+            patchModuleStream(moduleStream.get());
 
             msf.replaceStream(info->stream, moduleStream);
         }
