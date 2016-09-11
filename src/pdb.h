@@ -32,6 +32,11 @@
 #endif
 
 /**
+ * An invalid stream ID.
+ */
+constexpr uint16_t invalidStream = (uint16_t)-1;
+
+/**
  * PDB stream IDs.
  */
 enum class PdbStreamType {
@@ -381,6 +386,86 @@ struct FileInfoHeader {
 
 static_assert(sizeof(FileInfoHeader) == 4, "invalid struct size");
 
+/**
+ * Streams in the debug header at the end of the DBI stream.
+ *
+ * The debug header is just an array of stream IDs. These are indices into that
+ * array.
+ */
+namespace DebugTypes {
+    enum {
+        fpo,
+        exception, // deprecated
+        fixup,
+        omapToSrc,
+        omapFromSrc,
+        sectionHdr,
+        tokenRidMap,
+        xdata,
+        pdata,
+        newFPO,
+        sectionHdrOrig,
+
+        count,
+    };
+}
+
+/**
+ * The "/LinkInfo" stream.
+ *
+ * This contains information about the command line used to link the binary.
+ */
+struct LinkInfo {
+    // Size of the struct + the two cwd and command strings.
+    uint32_t size;
+
+    // Version of the link info. Currently, this can either be 1 or 2.
+    uint32_t version;
+
+    // Offset from the base of this struct to the cwd string.
+    uint32_t cwdOffset;
+
+    // Offset from the base of this struct to the command string.
+    uint32_t commandOffset;
+
+    // Offset into the command string of the output file.
+    uint32_t outputFileOffset;
+
+    // Offset from the base of this struct to the libraries string.
+    uint32_t libsOffset;
+
+    /**
+     * Returns the current working directory string.
+     */
+    template<typename CharT>
+    CharT* cwd() const {
+        return (CharT*)((uint8_t*)this + cwdOffset);
+    }
+
+    /**
+     * Returns the command string.
+     */
+    template<typename CharT>
+    CharT* command() const {
+        return (CharT*)((uint8_t*)this + commandOffset);
+    }
+
+    /**
+     * Returns the command string.
+     */
+    template<typename CharT>
+    CharT* libs() const {
+        return (CharT*)((uint8_t*)this + libsOffset);
+    }
+
+    /**
+     * Returns the output file.
+     */
+    template<typename CharT>
+    CharT* outputFile() const {
+        return command<CharT>() + outputFileOffset;
+    }
+};
 
 /**
  * Thrown when a PDB is found to be invalid or unsupported.

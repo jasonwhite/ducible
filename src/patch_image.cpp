@@ -368,7 +368,17 @@ NameMapTable readNameMapTable(const uint8_t* data, const uint8_t* dataEnd) {
  * Patches the LinkInfo named stream.
  */
 void patchLinkInfoStream(MsfMemoryStream* stream) {
-    // TODO
+
+    uint8_t* data = stream->data();
+    const size_t length = stream->length();
+
+    const LinkInfo* linkInfo = (LinkInfo*)data;
+
+    if (length < sizeof(LinkInfo) || linkInfo->size > length)
+        throw InvalidPdb("got partial LinkInfo stream");
+
+    // The rest of the stream appears to be garbage. Thus, we truncate it.
+    stream->resize(linkInfo->size);
 }
 
 /**

@@ -51,6 +51,10 @@ size_t MsfMemoryStream::length() const {
     return _data.size();
 }
 
+void MsfMemoryStream::resize(size_t length) {
+    _data.resize(length);
+}
+
 size_t MsfMemoryStream::getPos() const {
     return _pos;
 }

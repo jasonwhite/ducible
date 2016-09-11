@@ -56,6 +56,11 @@ public:
     size_t length() const;
 
     /**
+     * Truncates the stream to the given length.
+     */
+    void resize(size_t length);
+
+    /**
      * Returns a pointer to the underlying data.
      */
     uint8_t* data() {
