@@ -24,6 +24,9 @@ extern "C" {
 
     // Disable "nonstandard extension used: zero-sized array in struct/union"
 #   pragma warning(disable : 4200)
+
+    // Disable "nonstandard extension used: nameless struct/union"
+#   pragma warning(disable : 4201)
 #endif
 
 #pragma pack(push, 1)
