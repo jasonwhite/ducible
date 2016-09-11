@@ -89,6 +89,8 @@
 #include "msf_memory_stream.h"
 #include "pdb.h"
 
+#include "cvinfo.h"
+
 #include "memmap.h"
 #include "md5.h"
 
@@ -425,12 +427,58 @@ void patchHeaderStream(MsfFile& msf, MsfMemoryStream* stream, const CV_INFO_PDB7
 
         msf.replaceStream(it->second, linkInfoStream);
     }
+
+    // TODO: Rewrite /names hash table
+}
+
+/**
+ * Patches a module stream.
+ */
+void patchModuleStream(const ModuleInfo& info, MsfMemoryStream* stream) {
+
+    uint8_t* data = stream->data();
+    const uint8_t* dataEnd = stream->data() + stream->length();
+
+    if (size_t(dataEnd - data) < sizeof(uint16_t))
+        throw InvalidPdb("got partial module info stream");
+
+    uint32_t type = *(uint32_t*)data;
+    data += sizeof(type);
+
+    if (type != CV_SIGNATURE_C13)
+        return;
+
+    if (size_t(dataEnd - data) < sizeof(SymbolRecord))
+        throw InvalidPdb("missing symbol record in module info stream");
+
+    const SymbolRecord* sym = (const SymbolRecord*)data;
+
+    // We're only concerned about objects here
+    if (sym->type != S_OBJNAME)
+        return;
+
+    // Recast now that we know the type.
+    OBJNAMESYM* objsym = (OBJNAMESYM*)data;
+
+    // The signature always seems to be 0.
+    if (objsym->signature != 0)
+        throw InvalidPdb("got invalid OBJNAMESYM symbol record signature");
+
+    if (size_t(dataEnd - data) < objsym->reclen)
+        throw InvalidPdb("got partial OBJNAMESYM symbol record");
+
+    size_t namelen = strlen((const char*)objsym->name);
+
+    if ((uint8_t*)objsym->name + namelen + 1 > dataEnd)
+        throw InvalidPdb("object path in symbol record is not null-terminated");
+
+    normalizeFileNameGuid((char*)objsym->name, namelen);
 }
 
 /**
  * Patches the DBI stream.
  */
-void patchDbiStream(MsfMemoryStream* stream) {
+void patchDbiStream(MsfFile& msf, MsfMemoryStream* stream) {
 
     if (stream->length() < sizeof(DbiHeader))
         throw InvalidPdb("DBI stream too short");
@@ -477,6 +525,24 @@ void patchDbiStream(MsfMemoryStream* stream) {
         // memory address of the actual allocated array). Thus, we need to zero
         // it out.
         info->offsets = 0;
+
+        // There is one entry that contains a path with a GUID. We need to patch
+        // this. It is often the first module info entry, but it is safer to
+        // find it by name.
+        if (strcmp(info->moduleName(), "* Linker Generated Manifest RES *") == 0 &&
+            strcmp(info->objectName(), "") == 0) {
+
+            auto origModuleStream = msf.getStream(info->stream);
+            if (!origModuleStream)
+                continue;
+
+            auto moduleStream = std::shared_ptr<MsfMemoryStream>(
+                    new MsfMemoryStream(origModuleStream.get()));
+
+            patchModuleStream(*info, moduleStream.get());
+
+            msf.replaceStream(info->stream, moduleStream);
+        }
 
         i += info->size();
         ++moduleCount;
@@ -677,7 +743,7 @@ void patchPDB(MsfFile& msf, const CV_INFO_PDB70* pdbInfo,
         auto dbiStream = std::make_shared<MsfMemoryStream>(
                 origDbiStream.get());
 
-        patchDbiStream(dbiStream.get());
+        patchDbiStream(msf, dbiStream.get());
 
         msf.replaceStream((size_t)PdbStreamType::dbi, dbiStream);
 
