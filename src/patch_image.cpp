@@ -374,10 +374,16 @@ void patchLinkInfoStream(MsfMemoryStream* stream) {
     uint8_t* data = stream->data();
     const size_t length = stream->length();
 
+    if (length == 0)
+        return;
+
+    if (length < sizeof(LinkInfo))
+        throw InvalidPdb("got partial LinkInfo stream");
+
     const LinkInfo* linkInfo = (LinkInfo*)data;
 
-    if (length < sizeof(LinkInfo) || linkInfo->size > length)
-        throw InvalidPdb("got partial LinkInfo stream");
+    if (linkInfo->size > length)
+        throw InvalidPdb("LinkInfo size too large for stream");
 
     // The rest of the stream appears to be garbage. Thus, we truncate it.
     stream->resize(linkInfo->size);
