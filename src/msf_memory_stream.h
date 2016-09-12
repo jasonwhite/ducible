@@ -64,7 +64,7 @@ public:
      * Returns a pointer to the underlying data.
      */
     uint8_t* data() {
-        return &_data[0];
+        return _data.data();
     }
 
     /**

@@ -29,7 +29,7 @@ MsfMemoryStream::MsfMemoryStream(size_t length, const void* buf)
     : _pos(0)
 {
     _data.resize(length);
-    memcpy(&_data[0], buf, length);
+    memcpy(_data.data(), buf, length);
 }
 
 MsfMemoryStream::MsfMemoryStream(MsfStream* stream)
@@ -42,7 +42,7 @@ MsfMemoryStream::MsfMemoryStream(MsfStream* stream)
     const size_t pos = stream->getPos();
     stream->setPos(0);
 
-    stream->read(length, &_data[0]);
+    stream->read(length, _data.data());
 
     stream->setPos(pos);
 }
