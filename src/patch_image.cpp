@@ -890,6 +890,56 @@ void patchPDB(const CharT* pdbPath, const CV_INFO_PDB70* pdbInfo,
     }
 }
 
+// Helpers for CharT generalization
+template<typename CharT>
+constexpr CharT ilkExtension[] = {};
+
+template<> constexpr char ilkExtension<char>[] = ".ilk";
+template<> constexpr wchar_t ilkExtension<wchar_t>[] = L".ilk";
+
+/**
+ * Patches the PDB signature in the .ilk file so that incremental linking still
+ * works.
+ */
+template<typename CharT>
+void patchIlk(const CharT* imagePath, const uint8_t oldSignature[16],
+        const uint8_t newSignature[16], bool dryrun) {
+
+    (void)oldSignature;
+    (void)newSignature;
+    (void)dryrun;
+
+    std::basic_string<CharT> ilkPath(imagePath);
+    size_t extpos = ilkPath.find_last_of('.');
+
+    // Strip off the extension.
+    if (extpos != std::basic_string<CharT>::npos)
+        ilkPath.resize(extpos);
+
+    ilkPath.append(ilkExtension<CharT>);
+
+    // Map the ilk file into memory.
+    try {
+        MemMap ilk(ilkPath.c_str());
+
+        uint8_t* buf = (uint8_t*)ilk.buf();
+        uint8_t* bufEnd = buf + ilk.length();
+
+        // Find
+        uint8_t* it = std::find_first_of(buf, bufEnd,
+                oldSignature, oldSignature+16);
+
+        // Replace
+        if (it != bufEnd) {
+            std::cout << "Replacing old PDB signature in ILK file.\n";
+            memcpy(it, newSignature, 16);
+        }
+    }
+    catch (const std::system_error&) {
+        // Ignore.
+    }
+}
+
 template<typename CharT>
 void patchImageImpl(const CharT* imagePath, const CharT* pdbPath, bool dryrun) {
     MemMap image(imagePath);
@@ -937,6 +987,12 @@ void patchImageImpl(const CharT* imagePath, const CharT* pdbPath, bool dryrun) {
     // Patch the PDB file.
     if (pdbPath) {
         patchPDB(pdbPath, pdbInfo, pe.timestamp, pe.pdbSignature, dryrun);
+    }
+
+    // Patch the ilk file with the new PDB signature. If we don't do this,
+    // incremental linking will fail due to a signature mismatch.
+    if (pdbInfo) {
+        patchIlk(imagePath, pdbInfo->Signature, pe.pdbSignature, dryrun);
     }
 
     patches.apply(dryrun);
