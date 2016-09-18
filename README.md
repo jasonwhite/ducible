@@ -1,4 +1,4 @@
-# pepatch
+# Ducible
 
 *This is a work in progress.*
 
@@ -16,7 +16,7 @@ reasons.
 
 Usage is as follows:
 
-    $ pepatch IMAGE [PDB]
+    $ ducible IMAGE [PDB]
 
 The EXE/DLL is specified as the first parameter and the PDB is optionally
 specified as the second. The PDB must be modified because changing the image
@@ -24,7 +24,7 @@ invalidates the signature for the PDB.
 
 As a post-build step, simply run:
 
-    $ pepatch MyModule.dll MyModule.pdb
+    $ ducible MyModule.dll MyModule.pdb
 
 The files are overwritten in-place.
 
@@ -48,7 +48,7 @@ Both of these tools must be in your `PATH`.
 
 ### Windows
 
-Just open `vs/vs2015/peclean.sln` and build it. Of course, this requires Visual
+Just open `vs/vs2015/ducible.sln` and build it. Of course, this requires Visual
 Studio 2015. If another version of Visual Studio is needed, please submit an
 issue or, better yet, a pull request.
 

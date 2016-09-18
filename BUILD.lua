@@ -11,8 +11,8 @@ rule {
     outputs = {"src/version.h"},
 }
 
-local pepatch = cc.binary {
-    name = "pepatch",
+local duciblie = cc.binary {
+    name = "duciblie",
     srcs = glob { "src/*.cpp", "src/*.c" },
     src_deps = {
         ["src/main.cpp"] = {"src/version.h"},
@@ -22,7 +22,7 @@ local pepatch = cc.binary {
 }
 
 --
--- Test pepatch
+-- Test ducible
 --
 local tests = {
     {image = "vs/vs2015/Debug/test_dll.dll", pdb = "vs/vs2015/Debug/test_dll.pdb"},
@@ -38,20 +38,20 @@ local tests = {
 
 for _,t in ipairs(tests) do
     rule {
-        inputs = {pepatch:path()},
-        task = {{pepatch:path(), t.image, t.pdb}},
+        inputs = {duciblie:path()},
+        task = {{duciblie:path(), t.image, t.pdb}},
         outputs = {},
     }
 end
 
 rule {
-    inputs = {pepatch:path()},
-    task = {{pepatch:path(), "--help"}},
+    inputs = {duciblie:path()},
+    task = {{duciblie:path(), "--help"}},
     outputs = {},
 }
 
 rule {
-    inputs = {pepatch:path()},
-    task = {{pepatch:path(), "--version"}},
+    inputs = {duciblie:path()},
+    task = {{duciblie:path(), "--version"}},
     outputs = {},
 }

@@ -1,4 +1,4 @@
-TARGET = pepatch
+TARGET = ducible
 CXX = g++
 CXXFLAGS = -g -Wall -Werror
 CFLAGS = -g -Wall -Werror

@@ -39,35 +39,35 @@
 
 // Major, minor, build, and patch version numbers. These will always be
 // integers.
-#define PEPATCH_MAJOR ${MAJOR}
-#define PEPATCH_MINOR ${MINOR}
-#define PEPATCH_PATCH ${PATCH}
-#define PEPATCH_BUILD 0 // Unused
+#define DUCIBLE_MAJOR ${MAJOR}
+#define DUCIBLE_MINOR ${MINOR}
+#define DUCIBLE_PATCH ${PATCH}
+#define DUCIBLE_BUILD 0 // Unused
 
 // The output of `git describe --always --dirty`. Note that this does not
 // include the major, minor, and patch versions.
-#define PEPATCH_GIT_VERSION "${GIT_VERSION}"
+#define DUCIBLE_GIT_VERSION "${GIT_VERSION}"
 
 // A short version of the commit hash. This will be >=7 characters long. As many
 // characters as are needed to make the commit hash unique will be included.
 // This is the output of `git describe --always`.
-#define PEPATCH_GIT_COMMIT_SHORT "${GIT_COMMIT_SHORT}"
+#define DUCIBLE_GIT_COMMIT_SHORT "${GIT_COMMIT_SHORT}"
 
 // The current full length commit hash. This is the output of `git rev-parse
 // HEAD`.
-#define PEPATCH_GIT_COMMIT_LONG "${GIT_COMMIT_LONG}"
+#define DUCIBLE_GIT_COMMIT_LONG "${GIT_COMMIT_LONG}"
 
-#define PEPATCH_VERSION "${MAJOR}.${MINOR}.${PATCH}-${GIT_VERSION}"
+#define DUCIBLE_VERSION "${MAJOR}.${MINOR}.${PATCH}-${GIT_VERSION}"
 
 // A pretty version in the form of "v1.0.0-226f798-dirty"
-#define PEPATCH_PRETTY_VERSION "v${MAJOR}.${MINOR}.${PATCH}-${GIT_VERSION}"
+#define DUCIBLE_PRETTY_VERSION "v${MAJOR}.${MINOR}.${PATCH}-${GIT_VERSION}"
 
 //
 // Miscellaneous information.
 //
 
-#define PEPATCH_INTERNAL_NAME     "PE Patch"
-#define PEPATCH_PRODUCT_NAME      "PE Patch"
-#define PEPATCH_DESCRIPTION       "Reproducible builds for Windows."
-#define PEPATCH_COPYRIGHT         "Copyright (c) Jason White 2016"
-#define PEPATCH_ORIGINAL_FILENAME "pepatch.exe"
+#define DUCIBLE_INTERNAL_NAME     "Ducible"
+#define DUCIBLE_PRODUCT_NAME      "Ducible"
+#define DUCIBLE_DESCRIPTION       "Reproducible builds for Windows."
+#define DUCIBLE_COPYRIGHT         "Copyright (c) Jason White 2016"
+#define DUCIBLE_ORIGINAL_FILENAME "ducible.exe"
