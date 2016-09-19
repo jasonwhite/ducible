@@ -206,6 +206,7 @@
     <ClCompile Include="..\..\..\src\msf_readonly_stream.cpp" />
     <ClCompile Include="..\..\..\src\patch.cpp" />
     <ClCompile Include="..\..\..\src\patches.cpp" />
+    <ClCompile Include="..\..\..\src\patch_ilk.cpp" />
     <ClCompile Include="..\..\..\src\patch_image.cpp" />
     <ClCompile Include="..\..\..\src\pe_file.cpp" />
   </ItemGroup>
@@ -221,6 +222,7 @@
     <ClInclude Include="..\..\..\src\msf_stream.h" />
     <ClInclude Include="..\..\..\src\patch.h" />
     <ClInclude Include="..\..\..\src\patches.h" />
+    <ClInclude Include="..\..\..\src\patch_ilk.h" />
     <ClInclude Include="..\..\..\src\patch_image.h" />
     <ClInclude Include="..\..\..\src\pdb.h" />
     <ClInclude Include="..\..\..\src\pe_file.h" />

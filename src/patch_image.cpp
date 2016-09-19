@@ -80,6 +80,7 @@
 #include <regex>
 
 #include "patch_image.h"
+#include "patch_ilk.h"
 
 #include "patches.h"
 #include "pe_file.h"
@@ -887,56 +888,6 @@ void patchPDB(const CharT* pdbPath, const CV_INFO_PDB70* pdbInfo,
     } else {
         // Rename the new PDB file over the old one
         renameFile(tmpPdbPath.c_str(), pdbPath);
-    }
-}
-
-// Helpers for CharT generalization
-template<typename CharT>
-constexpr CharT ilkExtension[] = {};
-
-template<> constexpr char ilkExtension<char>[] = ".ilk";
-template<> constexpr wchar_t ilkExtension<wchar_t>[] = L".ilk";
-
-/**
- * Patches the PDB signature in the .ilk file so that incremental linking still
- * works.
- */
-template<typename CharT>
-void patchIlk(const CharT* imagePath, const uint8_t oldSignature[16],
-        const uint8_t newSignature[16], bool dryrun) {
-
-    (void)oldSignature;
-    (void)newSignature;
-    (void)dryrun;
-
-    std::basic_string<CharT> ilkPath(imagePath);
-    size_t extpos = ilkPath.find_last_of('.');
-
-    // Strip off the extension.
-    if (extpos != std::basic_string<CharT>::npos)
-        ilkPath.resize(extpos);
-
-    ilkPath.append(ilkExtension<CharT>);
-
-    // Map the ilk file into memory.
-    try {
-        MemMap ilk(ilkPath.c_str());
-
-        uint8_t* buf = (uint8_t*)ilk.buf();
-        uint8_t* bufEnd = buf + ilk.length();
-
-        // Find
-        uint8_t* it = std::find_first_of(buf, bufEnd,
-                oldSignature, oldSignature+16);
-
-        // Replace
-        if (it != bufEnd) {
-            std::cout << "Replacing old PDB signature in ILK file.\n";
-            memcpy(it, newSignature, 16);
-        }
-    }
-    catch (const std::system_error&) {
-        // Ignore.
     }
 }
 
