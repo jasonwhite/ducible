@@ -562,6 +562,10 @@ void patchModuleStream(MsfMemoryStream* stream) {
     normalizeFileNameGuid((char*)objsym->name, namelen);
 }
 
+const char* kIncLinkWarning = "\
+Warning: /INCREMENTAL was specified in the linker options. Incremental linking \
+is known to not work with Ducible.";
+
 /**
  * Patches the DBI stream.
  */
@@ -582,6 +586,10 @@ void patchDbiStream(MsfFile& msf, MsfMemoryStream* stream) {
 
     if (dbi->version != DbiVersion::v70)
         throw InvalidPdb("Unsupported DBI stream version");
+
+    // Display a warning about incrementally linking
+    if (dbi->flags.incLink)
+        std::cout << kIncLinkWarning << std::endl;
 
     // Patch the age. This must match the age in the PDB stream.
     dbi->age = 1;
