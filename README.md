@@ -1,8 +1,7 @@
 # Ducible
 
-*This is a work in progress.*
-
-This is a simple tool to make builds of Portable Executables (PEs) reproducible.
+This is a tool to make builds of Portable Executables (PEs) and PDBs
+repro*ducible*.
 
 Timestamps and other non-deterministic data are embedded in DLLs, EXEs, and
 PDBs. If a DLL is compiled and linked twice without changing any source, the
