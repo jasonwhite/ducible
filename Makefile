@@ -1,5 +1,4 @@
 TARGET = ducible
-CXX = g++
 CXXFLAGS = -std=c++14 -g -Wall -Werror -Wno-unused-const-variable
 CFLAGS = -g -Wall -Werror
 
