@@ -1,4 +1,4 @@
-#!/bin/env python3
+#!/usr/bin/env python3
 # Copyright (c) 2016 Jason White
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
