@@ -1,6 +1,6 @@
 TARGET = ducible
 CXX = g++
-CXXFLAGS = -g -Wall -Werror
+CXXFLAGS = -std=c++14 -g -Wall -Werror -Wno-unused-const-variable
 CFLAGS = -g -Wall -Werror
 
 .PHONY: default all clean

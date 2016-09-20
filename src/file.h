@@ -37,13 +37,12 @@ struct FileMode {
     static const FileMode<CharT> writeEmpty;
 };
 
-
 typedef std::shared_ptr<FILE> FileRef;
 
 /**
  * Helper functions for opening a file generically and with reference counting.
  */
-FileRef openFile(const char* path, FileMode<char> mode = FileMode<char>::readExisting);
+FileRef openFile(const char* path, FileMode<char> mode);
 
 /*
  * Renames a file in a platform independent way.
@@ -61,7 +60,7 @@ void deleteFile(const char* path);
 
 #ifdef _WIN32
 
-FileRef openFile(const wchar_t* path, FileMode<wchar_t> mode = FileMode<wchar_t>::readExisting);
+FileRef openFile(const wchar_t* path, FileMode<wchar_t> mode);
 
 void renameFile(const wchar_t* src, const wchar_t* dest);
 void deleteFile(const wchar_t* path);

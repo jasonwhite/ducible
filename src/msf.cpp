@@ -149,7 +149,6 @@ void writeStream(FileRef f, MsfStreamRef stream,
  */
 class FreePageMap {
 private:
-    size_t _pageCount;
     std::vector<uint8_t> _data;
 
 public:
@@ -158,7 +157,7 @@ public:
      * as "used".
      */
     FreePageMap(size_t pageCount, uint8_t initValue = 0x00)
-        : _pageCount(pageCount), _data((pageCount+7)/8, initValue) {
+        : _data((pageCount+7)/8, initValue) {
 
         // Mark the left over bits at the end as free
         _data.back() |= ~(0xFF >> (_data.size() * 8 - pageCount));
@@ -425,7 +424,7 @@ void MsfFile::write(FileRef f) const {
     writeStream(f, streamTableStreamPages, streamTablePgPg, pageCount);
 
     // Write the header
-    MSF_HEADER header = {0};
+    MSF_HEADER header = {};
     memcpy(header.magic, kMsfHeaderMagic, sizeof(kMsfHeaderMagic));
     header.pageSize = kPageSize;
     header.freePageMap = 1;
