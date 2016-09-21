@@ -4,26 +4,16 @@ dist: trusty
 language: generic
 
 before_install:
+ - wget -nv -O - http://llvm.org/apt/llvm-snapshot.gpg.key | sudo apt-key add -
+ - sudo apt-add-repository -y 'deb http://llvm.org/apt/trusty llvm-toolchain-trusty-3.9 main'
+ - sudo apt-add-repository -y 'ubuntu-toolchain-r-test'
  - sudo apt-get -qq update
+ - sudo apt-get install -qq -y clang-3.9 g++-5
  - sudo apt-get install -y python3
 
-matrix:
-  include:
-    - os: linux
-      env: COMPILER_NAME=gcc CXX=g++-5 CC=gcc-5
-      addons:
-        apt:
-          packages:
-            - g++-5
-          sources: &sources
-            - llvm-toolchain-precise-3.8
-            - ubuntu-toolchain-r-test
-    - os: linux
-      env: COMPILER_NAME=clang CXX=clang++-3.8 CC=clang-3.8
-      addons:
-        apt:
-          packages:
-            - clang-3.8
-          sources: *sources
+env:
+  matrix:
+    - COMPILER_NAME=clang CXX=clang++3.9 CC=clang-3.9
+    - COMPILER_NAME=gcc CXX=g++-5 CC=gcc-5
 
 script: make
