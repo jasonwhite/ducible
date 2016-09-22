@@ -10,15 +10,6 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - python3
-            - g++-4.9
-      env: COMPILER_NAME=g++-4.9 CXX=g++-4.9 CC=gcc-4.9
-    - compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - python3
             - g++-5
       env: COMPILER_NAME=gcc CXX=g++-5 CC=gcc-5
     - compiler: clang
@@ -26,21 +17,11 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise-3.6
+            - llvm-toolchain-precise-3.8
           packages:
             - python3
-            - clang-3.6
-      env: COMPILER_NAME=clang CXX=clang++3.6 CC=clang-3.6
-    - compiler: clang
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise-3.7
-          packages:
-            - python3
-            - clang-3.7
-      env: COMPILER_NAME=clang CXX=clang++-3.7 CC=clang-3.7
+            - clang-3.8
+      env: COMPILER_NAME=clang CXX=clang++-3.8 CC=clang-3.8
 
 script:
  - make
