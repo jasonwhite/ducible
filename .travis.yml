@@ -12,16 +12,16 @@ matrix:
             - python3
             - g++-5
       env: COMPILER_NAME=gcc CXX=g++-5 CC=gcc-5
-    - compiler: clang
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise-3.8
-          packages:
-            - python3
-            - clang-3.8
-      env: COMPILER_NAME=clang CXX=clang++-3.8 CC=clang-3.8
+#    - compiler: clang
+#      addons:
+#        apt:
+#          sources:
+#            - ubuntu-toolchain-r-test
+#            - llvm-toolchain-precise-3.8
+#          packages:
+#            - python3
+#            - clang-3.8
+#      env: COMPILER_NAME=clang CXX=clang++-3.8 CC=clang-3.8
 
 script:
  - make
