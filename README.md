@@ -1,4 +1,8 @@
+[travis-ci-badge]: https://travis-ci.org/jasonwhite/ducible.svg?branch=master
+
 # Ducible
+
+[![Build Status][travis-ci-badge]](https://travis-ci.org/jasonwhite/ducible)
 
 This is a tool to make builds of Portable Executables (PEs) and PDBs
 repro*ducible*.
