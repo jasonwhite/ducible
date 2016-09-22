@@ -1,29 +1,27 @@
-sudo: required
-dist: trusty
-
+sudo: false
 language: generic
-
-before_install:
- - sudo apt-get -qq update
- - sudo apt-get install -y python3
 
 matrix:
   include:
-    - os: linux
-      env: COMPILER_NAME=gcc CXX=g++-5 CC=gcc-5
+    - compiler: gcc
       addons:
         apt:
-          packages:
-            - g++-5
-          sources: &sources
-            - llvm-toolchain-precise-3.8
+          sources:
             - ubuntu-toolchain-r-test
-    - os: linux
-      env: COMPILER_NAME=clang CXX=clang++-3.8 CC=clang-3.8
-      addons:
-        apt:
           packages:
-            - clang-3.8
-          sources: *sources
+            - python3
+            - g++-5
+      env: COMPILER_NAME=gcc CXX=g++-5 CC=gcc-5
+#    - compiler: clang
+#      addons:
+#        apt:
+#          sources:
+#            - ubuntu-toolchain-r-test
+#            - llvm-toolchain-precise-3.8
+#          packages:
+#            - python3
+#            - clang-3.8
+#      env: COMPILER_NAME=clang CXX=clang++-3.8 CC=clang-3.8
 
-script: make
+script:
+ - make
