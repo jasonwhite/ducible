@@ -1,0 +1,13 @@
+image: Visual Studio 2015
+
+platform:
+ - x86
+ - x64
+
+configuration:
+ - Debug
+ - Release
+
+build:
+  parallel: true
+  project: vs/vs2015/ducible.sln
