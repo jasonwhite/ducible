@@ -22,3 +22,12 @@ build:
 artifacts:
  - path: vs\vs2015\$(platform)\$(configuration)\ducible.exe
    name: ducible
+
+deploy:
+ - provider: GitHub
+   artifact: ducible
+   draft: false
+   prerelease: false
+   on:
+     branch: master
+     appveyor_repo_tag: true
