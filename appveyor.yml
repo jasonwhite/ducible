@@ -8,7 +8,7 @@ install:
  - "python --version"
 
 platform:
- - x86
+ - Win32
  - x64
 
 configuration:
@@ -18,3 +18,7 @@ configuration:
 build:
   parallel: true
   project: vs/vs2015/ducible.sln
+
+artifacts:
+ - path: vs\vs2015\$(platform)\$(configuration)\ducible.exe
+   name: ducible
