@@ -25,6 +25,8 @@ artifacts:
 
 deploy:
  - provider: GitHub
+   auth_token:
+     secure: M5QsspiAtEP8jLdfNQ5e+e0v9dp8vVkDJfX4NEdsOrd2DMsr+WhPZEFTbqtnWk10
    artifact: ducible
    draft: false
    prerelease: false
