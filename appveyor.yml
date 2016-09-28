@@ -19,8 +19,11 @@ build:
   parallel: true
   project: vs/vs2015/ducible.sln
 
+after_build:
+ - 7z a ducible-windows-%PLATFORM%-%CONFIGURATION%.zip vs\vs2015\%PLATFORM%\%CONFIGURATION%\ducible.exe
+
 artifacts:
- - path: vs\vs2015\$(platform)\$(configuration)\ducible.exe
+ - path: ducible-windows-$(platform)-$(configuration).zip
    name: ducible
 
 deploy:
@@ -33,3 +36,4 @@ deploy:
    on:
      branch: master
      appveyor_repo_tag: true
+     configuration: Release
