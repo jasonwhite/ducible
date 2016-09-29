@@ -11,8 +11,8 @@ rule {
     outputs = {"src/version.h"},
 }
 
-local duciblie = cc.binary {
-    name = "duciblie",
+local ducible = cc.binary {
+    name = "ducible",
     srcs = glob { "src/*.cpp", "src/*.c" },
     src_deps = {
         ["src/main.cpp"] = {"src/version.h"},
@@ -38,20 +38,20 @@ local tests = {
 
 for _,t in ipairs(tests) do
     rule {
-        inputs = {duciblie:path()},
-        task = {{duciblie:path(), t.image, t.pdb}},
+        inputs = {ducible:path()},
+        task = {{ducible:path(), t.image, t.pdb}},
         outputs = {},
     }
 end
 
 rule {
-    inputs = {duciblie:path()},
-    task = {{duciblie:path(), "--help"}},
+    inputs = {ducible:path()},
+    task = {{ducible:path(), "--help"}},
     outputs = {},
 }
 
 rule {
-    inputs = {duciblie:path()},
-    task = {{duciblie:path(), "--version"}},
+    inputs = {ducible:path()},
+    task = {{ducible:path(), "--version"}},
     outputs = {},
 }
