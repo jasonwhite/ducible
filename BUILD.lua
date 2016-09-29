@@ -24,26 +24,6 @@ local ducible = cc.binary {
 --
 -- Test ducible
 --
-local tests = {
-    {image = "vs/vs2015/Debug/test_dll.dll", pdb = "vs/vs2015/Debug/test_dll.pdb"},
-    {image = "vs/vs2015/Release/test_dll.dll", pdb = "vs/vs2015/Release/test_dll.pdb"},
-    {image = "vs/vs2015/x64/Debug/test_dll.dll", pdb = "vs/vs2015/x64/Debug/test_dll.pdb"},
-    {image = "vs/vs2015/x64/Release/test_dll.dll", pdb = "vs/vs2015/x64/Release/test_dll.pdb"},
-
-    {image = "vs/vs2015/Debug/test_exe.exe", pdb = "vs/vs2015/Debug/test_exe.pdb"},
-    {image = "vs/vs2015/Release/test_exe.exe", pdb = "vs/vs2015/Release/test_exe.pdb"},
-    {image = "vs/vs2015/x64/Debug/test_exe.exe", pdb = "vs/vs2015/x64/Debug/test_exe.pdb"},
-    {image = "vs/vs2015/x64/Release/test_exe.exe", pdb = "vs/vs2015/x64/Release/test_exe.pdb"},
-}
-
-for _,t in ipairs(tests) do
-    rule {
-        inputs = {ducible:path()},
-        task = {{ducible:path(), t.image, t.pdb}},
-        outputs = {},
-    }
-end
-
 rule {
     inputs = {ducible:path()},
     task = {{ducible:path(), "--help"}},
