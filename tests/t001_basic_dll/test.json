@@ -1,0 +1,8 @@
+{
+    "commands": [
+        ["cl", "/nologo", "/LD", "main.c"]
+    ],
+    "outputs": [
+        "main.dll"
+    ]
+}
