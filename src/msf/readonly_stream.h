@@ -23,7 +23,7 @@
 
 #include <stdint.h>
 
-#include "msf_stream.h"
+#include "msf/stream.h"
 
 /**
  * A lightweight read-only memory stream.

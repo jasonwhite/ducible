@@ -13,10 +13,18 @@ rule {
 
 local ducible = cc.binary {
     name = "ducible",
-    srcs = glob { "src/*.cpp", "src/*.c" },
-    src_deps = {
-        ["src/main.cpp"] = {"src/version.h"},
+    srcs = glob {
+        "src/util/*.cpp",
+        "src/util/*.c",
+        "src/msf/*.cpp",
+        "src/ducible/*.cpp",
+        "src/pe/*.cpp",
+        "src/pdb/*.cpp",
     },
+    src_deps = {
+        ["src/ducible/main.cpp"] = {"src/version.h"},
+    },
+    includes = {"src"},
     warnings = {"all", "error"},
     compiler_opts = {"-g"},
 }

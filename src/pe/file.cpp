@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-#include "pe_file.h"
+#include "pe/file.h"
 
 #include <cstring>
 

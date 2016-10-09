@@ -24,7 +24,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "pe_format.h"
+#include "pe/format.h"
 
 /**
  * Thrown when an image is found to be invalid.

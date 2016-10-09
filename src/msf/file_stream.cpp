@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-#include "msf_file_stream.h"
+#include "msf/file_stream.h"
 
 #include <algorithm>
 #include <system_error>

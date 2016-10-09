@@ -23,7 +23,7 @@
 #include <algorithm>
 #include <cstring>
 
-#include "msf_memory_stream.h"
+#include "msf/memory_stream.h"
 
 MsfMemoryStream::MsfMemoryStream(size_t length, const void* buf)
     : _pos(0)

@@ -20,52 +20,37 @@
  * SOFTWARE.
  */
 
-#include <algorithm>
+#include "ducible/patch.h"
+
+#include <iostream>
+#include <iomanip>
+#include <tuple>
 #include <cstring>
 
-#include "msf_readonly_stream.h"
-
-MsfReadOnlyStream::MsfReadOnlyStream(size_t length, const void* buf)
-    : _pos(0), _length(length), _data((const uint8_t*)buf)
-{
+Patch::Patch(size_t offset, size_t length, const uint8_t* data, const char* name)
+    : offset(offset), length(length), data(data), name(name) {
 }
 
-size_t MsfReadOnlyStream::length() const {
-    return _length;
+void Patch::apply(uint8_t* buf, bool dryRun) {
+
+    // Only apply the patch if necessary. This makes it easier to see what
+    // actually changed in the output.
+    if (memcmp(buf + offset, data, length) == 0)
+        return;
+
+    std::cout << *this << std::endl;
+
+    if (!dryRun)
+        memcpy(buf + offset, data, length);
 }
 
-size_t MsfReadOnlyStream::getPos() const {
-    return _pos;
+std::ostream& operator<<(std::ostream& os, const Patch& patch) {
+    os << "Patching '" << patch.name
+       << "' at offset 0x" << std::hex << patch.offset << std::dec
+       << " (" << patch.length << " bytes)";
+    return os;
 }
 
-void MsfReadOnlyStream::setPos(size_t pos) {
-    // Don't allow setting the position past the end of the stream.
-    _pos = std::min(_length, pos);
-}
-
-size_t MsfReadOnlyStream::read(size_t length, void* buf) {
-
-    if (_pos >= _length)
-        return 0;
-
-    size_t available = std::min(_length - _pos, length);
-
-    memcpy(buf, _data + _pos, available);
-
-    _pos += available;
-
-    return available;
-}
-
-size_t MsfReadOnlyStream::read(void* buf) {
-    return read(_length - _pos, buf);
-}
-
-size_t MsfReadOnlyStream::write(size_t length, const void* buf) {
-
-    // TODO: Throw an exception instead
-    (void)length;
-    (void)buf;
-
-    return 0;
+bool operator<(const Patch& a, const Patch& b) {
+    return std::tie(a.offset, a.length) < std::tie(b.offset, b.length);
 }

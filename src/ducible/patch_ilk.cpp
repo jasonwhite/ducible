@@ -26,8 +26,9 @@
 #include <algorithm>
 #include <iostream>
 
-#include "patch_ilk.h"
-#include "memmap.h"
+#include "ducible/patch_ilk.h"
+
+#include "util/memmap.h"
 
 // Helpers for CharT generalization
 template<typename CharT>

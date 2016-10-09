@@ -20,23 +20,52 @@
  * SOFTWARE.
  */
 
-#include "patches.h"
-
 #include <algorithm>
+#include <cstring>
 
-Patches::Patches(uint8_t* buf)
-    : _buf(buf) {
+#include "msf/readonly_stream.h"
+
+MsfReadOnlyStream::MsfReadOnlyStream(size_t length, const void* buf)
+    : _pos(0), _length(length), _data((const uint8_t*)buf)
+{
 }
 
-void Patches::add(Patch patch) {
-    patches.push_back(patch);
+size_t MsfReadOnlyStream::length() const {
+    return _length;
 }
 
-void Patches::sort() {
-    std::sort(patches.begin(), patches.end());
+size_t MsfReadOnlyStream::getPos() const {
+    return _pos;
 }
 
-void Patches::apply(bool dryRun) {
-    for (auto&& patch: patches)
-        patch.apply(_buf, dryRun);
+void MsfReadOnlyStream::setPos(size_t pos) {
+    // Don't allow setting the position past the end of the stream.
+    _pos = std::min(_length, pos);
+}
+
+size_t MsfReadOnlyStream::read(size_t length, void* buf) {
+
+    if (_pos >= _length)
+        return 0;
+
+    size_t available = std::min(_length - _pos, length);
+
+    memcpy(buf, _data + _pos, available);
+
+    _pos += available;
+
+    return available;
+}
+
+size_t MsfReadOnlyStream::read(void* buf) {
+    return read(_length - _pos, buf);
+}
+
+size_t MsfReadOnlyStream::write(size_t length, const void* buf) {
+
+    // TODO: Throw an exception instead
+    (void)length;
+    (void)buf;
+
+    return 0;
 }
