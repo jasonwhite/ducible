@@ -1,0 +1,57 @@
+#!/bin/bash
+
+# Copyright (c) 2016 Jason White
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+
+# Runs some useful commands on an 'analysis' directory under a test case. Of
+# course, this assumes you are in a Unix-like environment on Windows such as
+# Cygwin. The current working directory is assumed to be inside the test case's
+# analysis directory.
+
+# FIXME: The test runner should create the hex dump files instead, but creating
+# a pretty hexdump is not so easy.
+
+set -e -o pipefail
+
+if [[ "$(basename $(pwd))" != "analysis" ]]; then
+    echo 'Not in "analysis" directory. Aborting.'
+    exit 1
+fi
+
+files=(*.1.orig *.1.rewritten *.2.orig *.2.rewritten)
+
+echo -n 'Generating MD5 hashes...'
+md5sum "${files[@]}" > MD5SUM
+echo ' Done.'
+
+echo -n 'Creating hex dumps...'
+for f in "${files[@]}"; do
+    hexdump -C $f > $f.hexdump
+done
+echo ' Done.'
+
+
+echo
+echo 'To analyze, run one of the following commands:'
+echo
+
+echo vimdiff *.dll.1.rewritten.hexdump *.dll.2.rewritten.hexdump
+echo vimdiff *.pdb.1.rewritten.hexdump *.pdb.2.rewritten.hexdump

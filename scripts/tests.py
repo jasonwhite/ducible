@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 # Copyright (c) 2016 Jason White
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -29,21 +30,34 @@ has been run).
 """
 
 import os
+import sys
 import json
+import shutil
+import fnmatch
 import hashlib
 import argparse
 import subprocess
+
+
+_script_dir = os.path.dirname(os.path.realpath(__file__))
+
+class MismatchException(Exception):
+    """
+    Thrown when a checksum mismatch is detected in a test case.
+    """
+    pass
 
 class Test:
     """
     Represents a single test.
     """
 
-    def __init__(self, name, workdir, commands, outputs):
+    def __init__(self, name, workdir, commands, args, clean_files):
         self.name = name
         self.workdir = workdir
         self.commands = commands
-        self.outputs = outputs
+        self.args = args
+        self.clean_files = clean_files
 
     def run(self, ducible):
         """
@@ -54,25 +68,29 @@ class Test:
 
         ducible = os.path.abspath(ducible)
 
-        outputs = [os.path.join(self.workdir, o) for o in self.outputs]
+        outputs = [os.path.join(self.workdir, o) for o in self.args]
 
         # Run the commands to do the build
         for command in self.commands:
             subprocess.check_call(command, cwd=self.workdir)
 
         # Attempt to eliminate nondeterminism
-        subprocess.check_call([ducible] + self.outputs, cwd=self.workdir)
+        subprocess.check_call([ducible] + self.args, cwd=self.workdir)
 
         checksums_1 = [hash_file(o).digest() for o in outputs]
+
+        self.clean()
 
         # Run the commands to do the build (again)
         for command in self.commands:
             subprocess.check_call(command, cwd=self.workdir)
 
         # Attempt to eliminate nondeterminism (again)
-        subprocess.check_call([ducible] + self.outputs, cwd=self.workdir)
+        subprocess.check_call([ducible] + self.args, cwd=self.workdir)
 
         checksums_2 = [hash_file(o).digest() for o in outputs]
+
+        self.clean()
 
         mismatches = [i for i,c in enumerate(zip(checksums_1, checksums_2))
                         if c[0] != c[1]]
@@ -80,12 +98,77 @@ class Test:
         if mismatches:
             print('Error: The following files are not reproducible:')
             for m in mismatches:
-                print('  {}'.format(self.outputs[m]))
+                print('  {}'.format(self.args[m]))
 
-            raise Exception('Some files are not reproducible')
+            raise MismatchException('Some files are not reproducible')
 
+    def analyze(self, ducible):
+        """
+        Creates an environment to make analyzing non-determinism easier.
+
+        In particular, it creates a hexdump of all files and puts them
+        side-by-side in the test's directory for easy diffing.
+        """
+
+        ducible = os.path.abspath(ducible)
+        analysis = os.path.join(self.workdir, 'analysis')
+
+        os.makedirs(analysis, exist_ok=True)
+
+        outputs = [os.path.join(self.workdir, o) for o in self.args]
+
+        # Run the commands to do the build
+        for command in self.commands:
+            subprocess.check_call(command, cwd=self.workdir)
+
+        # Copy *original* outputs to the analysis directory (round 1)
         for o in outputs:
-            os.remove(o)
+            shutil.copyfile(o, os.path.join(analysis,
+                os.path.basename(o)+'.1.orig'))
+
+        # Attempt to eliminate nondeterminism
+        subprocess.check_call([ducible] + self.args, cwd=self.workdir)
+
+        # Copy *rewritten* outputs to the analysis directory (round 1)
+        for o in outputs:
+            shutil.copyfile(o, os.path.join(analysis,
+                os.path.basename(o)+'.1.rewritten'))
+
+        self.clean()
+
+        # Run the commands to do the build (again)
+        for command in self.commands:
+            subprocess.check_call(command, cwd=self.workdir)
+
+        # Copy *original* outputs to the analysis directory (round 2)
+        for o in outputs:
+            shutil.copyfile(o, os.path.join(analysis,
+                os.path.basename(o)+'.2.orig'))
+
+        # Attempt to eliminate nondeterminism (again)
+        subprocess.check_call([ducible] + self.args, cwd=self.workdir)
+
+        # Copy *rewritten* outputs to the analysis directory (round 2)
+        for o in outputs:
+            shutil.copyfile(o, os.path.join(analysis,
+                os.path.basename(o)+'.2.rewritten'))
+
+        self.clean()
+
+        # Copy the analyze script there for convenience
+        shutil.copy(os.path.join(_script_dir, 'analyze'), analysis)
+
+    def clean(self):
+        """
+        Deletes the files specified in the 'clean' array.
+        """
+        root, dirs, files = next(os.walk(self.workdir))
+
+        for f in files:
+            for pattern in self.clean_files:
+                if fnmatch.fnmatch(f, pattern):
+                    print('Deleting \'%s\'' % f)
+                    os.remove(os.path.join(root, f))
 
 def hash_file(path, chunk_size=65536):
     hasher = hashlib.md5()
@@ -112,19 +195,33 @@ def tests(tests_dir):
         try:
             with open(os.path.join(root, d, 'test.json')) as f:
                 obj = json.load(f)
-                yield Test(d, os.path.join(root, d), obj['commands'],
-                        obj['outputs'])
+                yield Test(d, os.path.join(root, d),
+                        obj['commands'],
+                        obj['ducible_args'],
+                        obj['clean'])
         except FileNotFoundError:
             # Directory doesn't have a test in it
             pass
 
 def run_all_tests(tests_dir, ducible):
+    failed = 0
+
     for t in tests(tests_dir):
         print(':: Running test "{}"...'.format(t.name))
         try:
             t.run(ducible)
-        except Exception as e:
+        except MismatchException as e:
+            print('Mismatch detected, re-running test for analysis...')
+            t.analyze(ducible)
+
+            failed += 1
             print('TEST FAILED:', e)
+
+        except Exception as e:
+            failed += 1
+            print('TEST FAILED:', e)
+
+    return failed
 
 if __name__ == '__main__':
 
@@ -135,8 +232,11 @@ if __name__ == '__main__':
     assert os.environ['VisualStudioVersion'] == '14.0',\
             'You must be in a Visual Studio 2015 command prompt.'
 
-    script_dir = os.path.dirname(os.path.realpath(__file__))
+    tests_dir = os.path.relpath(os.path.join(_script_dir, '../tests'))
 
-    tests_dir = os.path.relpath(os.path.join(script_dir, '../tests'))
-
-    run_all_tests(tests_dir, args.ducible)
+    failed = run_all_tests(tests_dir, args.ducible)
+    if failed > 0:
+        print(':: %s test(s) failed' % failed)
+        sys.exit(1)
+    else:
+        print(':: All tests passed')

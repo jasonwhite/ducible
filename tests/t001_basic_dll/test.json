@@ -1,8 +1,7 @@
 {
     "commands": [
-        ["cl", "/nologo", "/LD", "main.c"]
+        ["cl", "/nologo", "/LD", "/Febasic", "main.c"]
     ],
-    "outputs": [
-        "main.dll"
-    ]
+    "ducible_args": ["basic.dll"],
+    "clean": ["*.dll", "*.pdb", "*.obj", "*.ilk"]
 }
