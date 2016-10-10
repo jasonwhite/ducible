@@ -84,7 +84,7 @@
 
 #include "ducible/patches.h"
 
-#include "pe/file.h"
+#include "pe/pe.h"
 
 #include "util/file.h"
 

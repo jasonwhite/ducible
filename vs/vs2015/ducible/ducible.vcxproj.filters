@@ -13,101 +13,139 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\..\src\main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\md5.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\memmap.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\msf.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\patch.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\patch_image.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\patches.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\pe_file.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\file.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\msf_file_stream.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\msf_memory_stream.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\msf_readonly_stream.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\patch_ilk.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\src\md5.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\memmap.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\msf.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\msf_stream.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\patch.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\patch_image.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\patches.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\pe_file.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\pe_format.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\file.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\msf_file_stream.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\msf_format.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\msf_memory_stream.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\pdb.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\msf_readonly_stream.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\patch_ilk.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+    <Filter Include="Source Files\ducible">
+      <UniqueIdentifier>{af7d9d39-a99f-45f3-9fe6-81b7c63b1eba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\msf">
+      <UniqueIdentifier>{2c7a3984-f7a4-4540-b4dc-5d0c09d29220}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\pdb">
+      <UniqueIdentifier>{056faf79-96e1-4ba6-ae70-718fa6021430}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\pe">
+      <UniqueIdentifier>{48b5098e-2870-4f2e-845c-6cb37922ca9a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\util">
+      <UniqueIdentifier>{df0a94a9-5b0c-4890-b274-26c5dacc4ed4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ducible">
+      <UniqueIdentifier>{1a2d258b-882e-4a92-b322-2d5579c9e02c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\msf">
+      <UniqueIdentifier>{ffc2d84b-a3bd-4f5d-9555-f03e5dc0f525}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\util">
+      <UniqueIdentifier>{2e134abc-bf97-46a7-b16f-c040f1ae831a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\pe">
+      <UniqueIdentifier>{34470868-1a01-439d-a6ba-e84c32c1fc1e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\pdb">
+      <UniqueIdentifier>{bacaeac6-591f-4522-a72c-09e7e6cc95c1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\..\src\version.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\src\ducible\main.cpp">
+      <Filter>Source Files\ducible</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\ducible\patch.cpp">
+      <Filter>Source Files\ducible</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\ducible\patch_ilk.cpp">
+      <Filter>Source Files\ducible</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\ducible\patch_image.cpp">
+      <Filter>Source Files\ducible</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\ducible\patches.cpp">
+      <Filter>Source Files\ducible</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\msf\file_stream.cpp">
+      <Filter>Source Files\msf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\msf\memory_stream.cpp">
+      <Filter>Source Files\msf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\msf\msf.cpp">
+      <Filter>Source Files\msf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\msf\readonly_stream.cpp">
+      <Filter>Source Files\msf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\util\md5.c">
+      <Filter>Source Files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\util\file.cpp">
+      <Filter>Source Files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\util\memmap.cpp">
+      <Filter>Source Files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\pe\pe.cpp">
+      <Filter>Source Files\pe</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\src\ducible\patch.h">
+      <Filter>Header Files\ducible</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\ducible\patch_ilk.h">
+      <Filter>Header Files\ducible</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\ducible\patch_image.h">
+      <Filter>Header Files\ducible</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\ducible\patches.h">
+      <Filter>Header Files\ducible</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\msf\file_stream.h">
+      <Filter>Header Files\msf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\msf\format.h">
+      <Filter>Header Files\msf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\msf\memory_stream.h">
+      <Filter>Header Files\msf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\msf\msf.h">
+      <Filter>Header Files\msf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\msf\readonly_stream.h">
+      <Filter>Header Files\msf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\msf\stream.h">
+      <Filter>Header Files\msf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\pdb\cvinfo.h">
+      <Filter>Header Files\pdb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\pdb\pdb.h">
+      <Filter>Header Files\pdb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\pe\format.h">
+      <Filter>Header Files\pe</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\util\file.h">
+      <Filter>Header Files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\util\md5.h">
+      <Filter>Header Files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\util\memmap.h">
+      <Filter>Header Files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\pe\pe.h">
+      <Filter>Header Files\pe</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\src\version.h.in">
+      <Filter>Header Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

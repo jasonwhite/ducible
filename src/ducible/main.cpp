@@ -28,7 +28,7 @@
 
 #include "ducible/patch_image.h"
 
-#include "pe/file.h"
+#include "pe/pe.h"
 #include "msf/msf.h"
 #include "pdb/pdb.h"
 

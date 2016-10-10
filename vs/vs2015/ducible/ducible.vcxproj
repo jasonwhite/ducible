@@ -208,40 +208,44 @@
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\src\file.cpp" />
-    <ClCompile Include="..\..\..\src\main.cpp" />
-    <ClCompile Include="..\..\..\src\md5.c" />
-    <ClCompile Include="..\..\..\src\memmap.cpp" />
-    <ClCompile Include="..\..\..\src\msf.cpp" />
-    <ClCompile Include="..\..\..\src\msf_file_stream.cpp" />
-    <ClCompile Include="..\..\..\src\msf_memory_stream.cpp" />
-    <ClCompile Include="..\..\..\src\msf_readonly_stream.cpp" />
-    <ClCompile Include="..\..\..\src\patch.cpp" />
-    <ClCompile Include="..\..\..\src\patches.cpp" />
-    <ClCompile Include="..\..\..\src\patch_ilk.cpp" />
-    <ClCompile Include="..\..\..\src\patch_image.cpp" />
-    <ClCompile Include="..\..\..\src\pe_file.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\src\file.h" />
-    <ClInclude Include="..\..\..\src\md5.h" />
-    <ClInclude Include="..\..\..\src\memmap.h" />
-    <ClInclude Include="..\..\..\src\msf.h" />
-    <ClInclude Include="..\..\..\src\msf_file_stream.h" />
-    <ClInclude Include="..\..\..\src\msf_format.h" />
-    <ClInclude Include="..\..\..\src\msf_memory_stream.h" />
-    <ClInclude Include="..\..\..\src\msf_readonly_stream.h" />
-    <ClInclude Include="..\..\..\src\msf_stream.h" />
-    <ClInclude Include="..\..\..\src\patch.h" />
-    <ClInclude Include="..\..\..\src\patches.h" />
-    <ClInclude Include="..\..\..\src\patch_ilk.h" />
-    <ClInclude Include="..\..\..\src\patch_image.h" />
-    <ClInclude Include="..\..\..\src\pdb.h" />
-    <ClInclude Include="..\..\..\src\pe_file.h" />
-    <ClInclude Include="..\..\..\src\pe_format.h" />
-  </ItemGroup>
-  <ItemGroup>
     <ResourceCompile Include="..\..\..\src\version.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\src\ducible\main.cpp" />
+    <ClCompile Include="..\..\..\src\ducible\patch.cpp" />
+    <ClCompile Include="..\..\..\src\ducible\patches.cpp" />
+    <ClCompile Include="..\..\..\src\ducible\patch_ilk.cpp" />
+    <ClCompile Include="..\..\..\src\ducible\patch_image.cpp" />
+    <ClCompile Include="..\..\..\src\msf\file_stream.cpp" />
+    <ClCompile Include="..\..\..\src\msf\memory_stream.cpp" />
+    <ClCompile Include="..\..\..\src\msf\msf.cpp" />
+    <ClCompile Include="..\..\..\src\msf\readonly_stream.cpp" />
+    <ClCompile Include="..\..\..\src\pe\pe.cpp" />
+    <ClCompile Include="..\..\..\src\util\file.cpp" />
+    <ClCompile Include="..\..\..\src\util\md5.c" />
+    <ClCompile Include="..\..\..\src\util\memmap.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\src\ducible\patch.h" />
+    <ClInclude Include="..\..\..\src\ducible\patches.h" />
+    <ClInclude Include="..\..\..\src\ducible\patch_ilk.h" />
+    <ClInclude Include="..\..\..\src\ducible\patch_image.h" />
+    <ClInclude Include="..\..\..\src\msf\file_stream.h" />
+    <ClInclude Include="..\..\..\src\msf\format.h" />
+    <ClInclude Include="..\..\..\src\msf\memory_stream.h" />
+    <ClInclude Include="..\..\..\src\msf\msf.h" />
+    <ClInclude Include="..\..\..\src\msf\readonly_stream.h" />
+    <ClInclude Include="..\..\..\src\msf\stream.h" />
+    <ClInclude Include="..\..\..\src\pdb\cvinfo.h" />
+    <ClInclude Include="..\..\..\src\pdb\pdb.h" />
+    <ClInclude Include="..\..\..\src\pe\pe.h" />
+    <ClInclude Include="..\..\..\src\pe\format.h" />
+    <ClInclude Include="..\..\..\src\util\file.h" />
+    <ClInclude Include="..\..\..\src\util\md5.h" />
+    <ClInclude Include="..\..\..\src\util\memmap.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\src\version.h.in" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
