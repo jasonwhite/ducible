@@ -43,3 +43,36 @@ rule {
     task = {{ducible:path(), "--version"}},
     outputs = {},
 }
+
+
+local pdbdump = cc.binary {
+    name = "pdbdump",
+    srcs = glob {
+        "src/pdbdump/*.cpp",
+        "src/util/*.cpp",
+        "src/util/*.c",
+        "src/msf/*.cpp",
+        "src/pdb/*.cpp",
+    },
+    src_deps = {
+        ["src/pdbdump/main.cpp"] = {"src/version.h"},
+    },
+    includes = {"src"},
+    warnings = {"all", "error"},
+    compiler_opts = {"-g"},
+}
+
+--
+-- Test pdbdump
+--
+rule {
+    inputs = {pdbdump:path()},
+    task = {{pdbdump:path(), "--help"}},
+    outputs = {},
+}
+
+rule {
+    inputs = {pdbdump:path()},
+    task = {{pdbdump:path(), "--version"}},
+    outputs = {},
+}
