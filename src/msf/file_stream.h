@@ -24,48 +24,36 @@
 #include <stdint.h>
 #include <vector>
 
-#include "msf_stream.h"
+#include "msf/stream.h"
+#include "util/file.h"
 
 /**
  * Represents an MSF file stream.
  */
-class MsfMemoryStream : public MsfStream {
+class MsfFileStream : public MsfStream {
 private:
 
+    FileRef _f;
+    size_t _pageSize;
     size_t _pos;
-    std::vector<uint8_t> _data;
+    size_t _length;
+    std::vector<uint32_t> _pages;
 
 public:
     /**
-     * Initialize the stream with an buffer. The buffer is copied internally.
-     *
      * Params:
-     *   length = Length of the buffer, in bytes.
-     *   buf    = The buffer.
+     *   f        = FILE pointer.
+     *   pageSize = Length of one page, in bytes.
+     *   length   = Length of the stream, in bytes.
+     *   pages    = List of pages. The length of this array is calculated using
+     *              the page size and stream length.
      */
-    MsfMemoryStream(size_t length, const void* buf);
-
-    /**
-     * Initialize the stream with another stream.
-     */
-    MsfMemoryStream(MsfStream* stream);
+    MsfFileStream(FileRef f, size_t pageSize, size_t length, const uint32_t* pages);
 
     /**
      * Returns the length of the stream, in bytes.
      */
     size_t length() const;
-
-    /**
-     * Truncates the stream to the given length.
-     */
-    void resize(size_t length);
-
-    /**
-     * Returns a pointer to the underlying data.
-     */
-    uint8_t* data() {
-        return _data.data();
-    }
 
     /**
      * Gets the current position, in bytes, in the stream.
@@ -100,8 +88,25 @@ public:
     size_t read(void* buf);
 
     /**
-     * Writes a buffer to the stream from the current position. If attempting to
-     * write past the end of the stream, the length of the stream will grow.
+     * Writes a buffer to the stream from the current position. If an attempt is
+     * made to write past the end of the last page, it will only partially
+     * succeed. No new pages will be allocated.
      */
     size_t write(size_t length, const void* buf);
+
+private:
+
+    /**
+     * Reads a single page from the stream.
+     *
+     * Params:
+     *   f    = The file to read from. The seek location is not guaranteed to be
+     *          the same after this function is finished.
+     *   page = The page number to read from.
+     *   length = The number of bytes to read from the page.
+     *   buf  = The buffer to read the page into.
+     *
+     * Returns: The number of bytes read.
+     */
+    size_t readFromPage(size_t page, size_t length, void* buf, size_t offset = 0);
 };

@@ -19,38 +19,49 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#pragma once
 
-#include "patch.h"
+#include <vector>
+#include <stdint.h>
 
-#include <iostream>
-#include <iomanip>
-#include <tuple>
-#include <cstring>
+#include "ducible/patch.h"
 
-Patch::Patch(size_t offset, size_t length, const uint8_t* data, const char* name)
-    : offset(offset), length(length), data(data), name(name) {
-}
+/**
+ * Keeps track of a list of patches to apply.
+ */
+class Patches
+{
+private:
 
-void Patch::apply(uint8_t* buf, bool dryRun) {
+    uint8_t* _buf;
 
-    // Only apply the patch if necessary. This makes it easier to see what
-    // actually changed in the output.
-    if (memcmp(buf + offset, data, length) == 0)
-        return;
+public:
+    // List of patches
+    std::vector<Patch> patches;
 
-    std::cout << *this << std::endl;
+    Patches(uint8_t* buf);
 
-    if (!dryRun)
-        memcpy(buf + offset, data, length);
-}
+    void add(Patch patch);
 
-std::ostream& operator<<(std::ostream& os, const Patch& patch) {
-    os << "Patching '" << patch.name
-       << "' at offset 0x" << std::hex << patch.offset << std::dec
-       << " (" << patch.length << " bytes)";
-    return os;
-}
+    /**
+     * Convenience function for adding patches.
+     */
+    template<typename T>
+    void add(const T* addr, const T* data, const char* name = NULL) {
+        add(Patch((const uint8_t*)addr - _buf, data, name));
+    }
 
-bool operator<(const Patch& a, const Patch& b) {
-    return std::tie(a.offset, a.length) < std::tie(b.offset, b.length);
-}
+    /**
+     * Sort the patches. The patches will be ordered according to the offset in
+     * the file. This is useful once all the patches have been added, but not
+     * applied so that we can take the checksum of the file in the areas between
+     * the patches.
+     */
+    void sort();
+
+    /**
+     * Applies the patches.
+     */
+    void apply(bool dryRun = false);
+};
+

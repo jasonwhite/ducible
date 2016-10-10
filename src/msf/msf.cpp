@@ -27,9 +27,10 @@
 #include <iostream>
 #include <cassert>
 
-#include "file.h"
-#include "msf_file_stream.h"
-#include "msf_readonly_stream.h"
+#include "util/file.h"
+
+#include "msf/file_stream.h"
+#include "msf/readonly_stream.h"
 
 namespace {
 

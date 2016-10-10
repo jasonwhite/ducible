@@ -79,22 +79,24 @@
 #include <map>
 #include <regex>
 
-#include "patch_image.h"
-#include "patch_ilk.h"
+#include "ducible/patch_image.h"
+#include "ducible/patch_ilk.h"
 
-#include "patches.h"
-#include "pe_file.h"
-#include "file.h"
+#include "ducible/patches.h"
 
-#include "msf.h"
-#include "msf_stream.h"
-#include "msf_memory_stream.h"
-#include "pdb.h"
+#include "pe/pe.h"
 
-#include "cvinfo.h"
+#include "util/file.h"
 
-#include "memmap.h"
-#include "md5.h"
+#include "msf/msf.h"
+#include "msf/stream.h"
+#include "msf/memory_stream.h"
+
+#include "pdb/pdb.h"
+#include "pdb/cvinfo.h"
+
+#include "util/memmap.h"
+#include "util/md5.h"
 
 namespace {
 

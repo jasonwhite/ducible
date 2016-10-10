@@ -1,14 +1,14 @@
 TARGET = ducible
-CXXFLAGS = -std=c++14 -g -Wall -Werror -Wno-unused-const-variable
-CFLAGS = -g -Wall -Werror
+CXXFLAGS = -Isrc -std=c++14 -g -Wall -Werror -Wno-unused-const-variable
+CFLAGS = -Isrc -g -Wall -Werror
 
 .PHONY: default all clean
 
 default: $(TARGET)
 all: default
 
-OBJECTS = $(patsubst %.cpp, %.o, $(wildcard src/*.cpp)) \
-		  $(patsubst %.c, %.o, $(wildcard src/*.c))
+OBJECTS = $(patsubst %.cpp, %.o, $(wildcard src/*/*.cpp)) \
+		  $(patsubst %.c, %.o, $(wildcard src/util/*.c))
 HEADERS = $(wildcard src/*.h) src/version.h
 
 VERSION_DEPS=VERSION \

@@ -26,8 +26,8 @@
 #include <vector>
 #include <memory>
 
-#include "msf_format.h"
-#include "file.h"
+#include "msf/format.h"
+#include "util/file.h"
 
 /**
  * Thrown when an MSF is found to be invalid or unsupported.

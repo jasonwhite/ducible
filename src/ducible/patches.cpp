@@ -19,49 +19,24 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#pragma once
 
-#include <vector>
-#include <stdint.h>
+#include "ducible/patches.h"
 
-#include "patch.h"
+#include <algorithm>
 
-/**
- * Keeps track of a list of patches to apply.
- */
-class Patches
-{
-private:
+Patches::Patches(uint8_t* buf)
+    : _buf(buf) {
+}
 
-    uint8_t* _buf;
+void Patches::add(Patch patch) {
+    patches.push_back(patch);
+}
 
-public:
-    // List of patches
-    std::vector<Patch> patches;
+void Patches::sort() {
+    std::sort(patches.begin(), patches.end());
+}
 
-    Patches(uint8_t* buf);
-
-    void add(Patch patch);
-
-    /**
-     * Convenience function for adding patches.
-     */
-    template<typename T>
-    void add(const T* addr, const T* data, const char* name = NULL) {
-        add(Patch((const uint8_t*)addr - _buf, data, name));
-    }
-
-    /**
-     * Sort the patches. The patches will be ordered according to the offset in
-     * the file. This is useful once all the patches have been added, but not
-     * applied so that we can take the checksum of the file in the areas between
-     * the patches.
-     */
-    void sort();
-
-    /**
-     * Applies the patches.
-     */
-    void apply(bool dryRun = false);
-};
-
+void Patches::apply(bool dryRun) {
+    for (auto&& patch: patches)
+        patch.apply(_buf, dryRun);
+}

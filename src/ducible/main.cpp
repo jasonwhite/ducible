@@ -26,10 +26,12 @@
 #include <vector>
 #include <string>
 
-#include "patch_image.h"
-#include "pe_file.h"
-#include "msf.h"
-#include "pdb.h"
+#include "ducible/patch_image.h"
+
+#include "pe/pe.h"
+#include "msf/msf.h"
+#include "pdb/pdb.h"
+
 #include "version.h"
 
 /**
