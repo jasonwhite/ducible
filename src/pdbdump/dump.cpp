@@ -26,12 +26,29 @@
 
 #include "util/file.h"
 #include "msf/msf.h"
+#include "msf/stream.h"
 
 namespace {
 
-void dumpPdb(MsfFile& msf) {
+/**
+ * Prints the stream table.
+ */
+void dumpStreamTable(MsfFile& msf) {
+    const size_t streamCount = msf.streamCount();
 
-    std::cout << "Stream Count: " << msf.streamCount() << std::endl;
+    std::cout << "Streams (" << streamCount << "):\n";
+
+    for (size_t i = 0; i < streamCount; ++i) {
+        auto stream = msf.getStream(i);
+        std::cout << "  " << i
+            << " (" << stream->length() << " bytes, "
+            << pageCount<size_t>(4096, stream->length()) << " pages)"
+            << std::endl;
+    }
+}
+
+void dumpPdb(MsfFile& msf) {
+    dumpStreamTable(msf);
 }
 
 template<typename CharT>
