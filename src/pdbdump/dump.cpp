@@ -22,35 +22,74 @@
 
 #include <iostream>
 #include <iomanip>
+#include <memory>
+#include <vector>
 
 #include "pdbdump/dump.h"
 
 #include "util/file.h"
 #include "msf/msf.h"
 #include "msf/stream.h"
+#include "msf/file_stream.h"
 
 namespace {
 
 /**
+ * Prints a nicely formatted page sequences (as if you were specifying the pages
+ * to be printed).
+ */
+void printPageSequences(const std::vector<uint32_t>& pages) {
+    std::cout << "[";
+
+    // Print list of pages.
+    for (size_t i = 0; i < pages.size(); ) {
+
+        if (i > 0)
+            std::cout << ", ";
+
+        uint32_t start = pages[i];
+        uint32_t count = 0;
+
+        ++i;
+
+        for (; i < pages.size() && pages[i] == pages[i-1]+1; ++i)
+            ++count;
+
+        if (count == 0)
+            std::cout << start;
+        else
+            std::cout << start << "-" << start+count;
+    }
+
+    std::cout << "]";
+}
+
+/**
  * Prints the stream table.
  */
-void dumpStreamTable(MsfFile& msf) {
+void printStreamTable(MsfFile& msf) {
     const size_t streamCount = msf.streamCount();
 
     std::cout << "Streams (" << streamCount << "):\n";
 
     for (size_t i = 0; i < streamCount; ++i) {
-        auto stream = msf.getStream(i);
+        auto stream = std::dynamic_pointer_cast<MsfFileStream>(msf.getStream(i));
+
+        const auto& pages = stream->pages();
+
         std::cout
             << std::setw(5) << i << ": "
             << std::setw(8) << stream->length() << " bytes, "
-            << std::setw(4) << pageCount<size_t>(4096, stream->length()) << " pages"
-            << std::endl;
+            << std::setw(4) << pages.size() << " pages ";
+
+        printPageSequences(pages);
+
+        std::cout << std::endl;
     }
 }
 
 void dumpPdb(MsfFile& msf) {
-    dumpStreamTable(msf);
+    printStreamTable(msf);
 }
 
 template<typename CharT>

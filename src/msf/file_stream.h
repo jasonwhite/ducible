@@ -94,6 +94,13 @@ public:
      */
     size_t write(size_t length, const void* buf);
 
+    /**
+     * Returns the pages in the stream. This is useful for diagnostic purposes.
+     */
+    const std::vector<uint32_t>& pages() const {
+        return _pages;
+    }
+
 private:
 
     /**
