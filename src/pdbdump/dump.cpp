@@ -21,6 +21,7 @@
  */
 
 #include <iostream>
+#include <iomanip>
 
 #include "pdbdump/dump.h"
 
@@ -40,9 +41,10 @@ void dumpStreamTable(MsfFile& msf) {
 
     for (size_t i = 0; i < streamCount; ++i) {
         auto stream = msf.getStream(i);
-        std::cout << "  " << i
-            << " (" << stream->length() << " bytes, "
-            << pageCount<size_t>(4096, stream->length()) << " pages)"
+        std::cout
+            << std::setw(5) << i << ": "
+            << std::setw(8) << stream->length() << " bytes, "
+            << std::setw(4) << pageCount<size_t>(4096, stream->length()) << " pages"
             << std::endl;
     }
 }
