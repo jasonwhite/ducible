@@ -56,9 +56,17 @@ void printPageSequences(const std::vector<uint32_t>& pages) {
             ++count;
 
         if (count == 0)
-            std::cout << start;
+            std::cout << start
+                << " (0x" << std::hex
+                << (uint64_t)start * 4096 << "-0x"
+                << ((uint64_t)start+1) * 4096 - 1
+                << ")" << std::dec;
         else
-            std::cout << start << "-" << start+count;
+            std::cout << start << "-" << start+count
+                << " (0x" << std::hex
+                << ((uint64_t)start) * 4096 << "-0x"
+                << ((uint64_t)start+count+1) * 4096 - 1
+                << ")" << std::dec;
     }
 
     std::cout << "]";
