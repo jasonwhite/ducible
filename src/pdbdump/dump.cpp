@@ -37,11 +37,18 @@ namespace {
 /**
  * Prints a nicely formatted page sequences (as if you were specifying the pages
  * to be printed).
+ *
+ * For example, the page list:
+ *
+ *    [0, 1, 2, 3, 4, 6, 7, 8, 9, 20]
+ *
+ * is printed as
+ *
+ *    [0-4, 6-9, 20]
  */
 void printPageSequences(const std::vector<uint32_t>& pages) {
     std::cout << "[";
 
-    // Print list of pages.
     for (size_t i = 0; i < pages.size(); ) {
 
         if (i > 0)
@@ -52,21 +59,24 @@ void printPageSequences(const std::vector<uint32_t>& pages) {
 
         ++i;
 
+        // Find how long a run of pages is.
         for (; i < pages.size() && pages[i] == pages[i-1]+1; ++i)
             ++count;
 
-        if (count == 0)
+        if (count == 0) {
             std::cout << start
                 << " (0x" << std::hex
                 << (uint64_t)start * 4096 << "-0x"
                 << ((uint64_t)start+1) * 4096 - 1
                 << ")" << std::dec;
-        else
+        }
+        else {
             std::cout << start << "-" << start+count
                 << " (0x" << std::hex
                 << ((uint64_t)start) * 4096 << "-0x"
                 << ((uint64_t)start+count+1) * 4096 - 1
                 << ")" << std::dec;
+        }
     }
 
     std::cout << "]";
