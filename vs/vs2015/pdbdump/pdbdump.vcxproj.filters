@@ -1,0 +1,106 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\msf">
+      <UniqueIdentifier>{2c7a3984-f7a4-4540-b4dc-5d0c09d29220}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\pdb">
+      <UniqueIdentifier>{056faf79-96e1-4ba6-ae70-718fa6021430}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\util">
+      <UniqueIdentifier>{df0a94a9-5b0c-4890-b274-26c5dacc4ed4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\msf">
+      <UniqueIdentifier>{ffc2d84b-a3bd-4f5d-9555-f03e5dc0f525}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\util">
+      <UniqueIdentifier>{2e134abc-bf97-46a7-b16f-c040f1ae831a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\pdb">
+      <UniqueIdentifier>{bacaeac6-591f-4522-a72c-09e7e6cc95c1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\pdbdump">
+      <UniqueIdentifier>{1a2d258b-882e-4a92-b322-2d5579c9e02c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\pdbdump">
+      <UniqueIdentifier>{af7d9d39-a99f-45f3-9fe6-81b7c63b1eba}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\..\src\version.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\src\msf\file_stream.cpp">
+      <Filter>Source Files\msf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\msf\memory_stream.cpp">
+      <Filter>Source Files\msf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\msf\msf.cpp">
+      <Filter>Source Files\msf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\msf\readonly_stream.cpp">
+      <Filter>Source Files\msf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\util\file.cpp">
+      <Filter>Source Files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\pdbdump\dump.cpp">
+      <Filter>Source Files\pdbdump</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\pdbdump\main.cpp">
+      <Filter>Source Files\pdbdump</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\src\msf\file_stream.h">
+      <Filter>Header Files\msf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\msf\format.h">
+      <Filter>Header Files\msf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\msf\memory_stream.h">
+      <Filter>Header Files\msf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\msf\msf.h">
+      <Filter>Header Files\msf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\msf\readonly_stream.h">
+      <Filter>Header Files\msf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\msf\stream.h">
+      <Filter>Header Files\msf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\pdb\cvinfo.h">
+      <Filter>Header Files\pdb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\pdb\pdb.h">
+      <Filter>Header Files\pdb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\util\file.h">
+      <Filter>Header Files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\pdbdump\dump.h">
+      <Filter>Header Files\pdbdump</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\src\version.h.in">
+      <Filter>Header Files</Filter>
+    </None>
+  </ItemGroup>
+</Project>

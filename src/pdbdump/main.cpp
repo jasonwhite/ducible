@@ -22,6 +22,7 @@
 
 #include <iostream>
 #include <vector>
+#include <string>
 
 #include "msf/msf.h"
 #include "pdb/pdb.h"
