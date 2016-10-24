@@ -30,6 +30,7 @@
 
 #include "pe/pe.h"
 #include "msf/msf.h"
+#include "pdb/format.h"
 #include "pdb/pdb.h"
 
 #include "version.h"
