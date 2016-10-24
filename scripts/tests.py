@@ -59,14 +59,15 @@ class Test:
         self.args = args
         self.clean_files = clean_files
 
-    def run(self, ducible):
+    def run(self, bin_dir):
         """
         Runs a single test.
 
         Throws an exception if the test failed.
         """
 
-        ducible = os.path.abspath(ducible)
+        bin_dir = os.path.abspath(bin_dir)
+        ducible = os.path.join(bin_dir, 'ducible')
 
         outputs = [os.path.join(self.workdir, o) for o in self.args]
 
@@ -102,7 +103,7 @@ class Test:
 
             raise MismatchException('Some files are not reproducible')
 
-    def analyze(self, ducible):
+    def analyze(self, bin_dir):
         """
         Creates an environment to make analyzing non-determinism easier.
 
@@ -110,12 +111,15 @@ class Test:
         side-by-side in the test's directory for easy diffing.
         """
 
-        ducible = os.path.abspath(ducible)
+        bin_dir = os.path.abspath(bin_dir)
+        ducible = os.path.join(bin_dir, 'ducible')
+        pdbdump = os.path.join(bin_dir, 'pdbdump')
         analysis = os.path.join(self.workdir, 'analysis')
 
         os.makedirs(analysis, exist_ok=True)
 
         outputs = [os.path.join(self.workdir, o) for o in self.args]
+        pdbs = [o for o in outputs if os.path.splitext(o)[1] == '.pdb']
 
         # Run the commands to do the build
         for command in self.commands:
@@ -126,6 +130,12 @@ class Test:
             shutil.copyfile(o, os.path.join(analysis,
                 os.path.basename(o)+'.1.orig'))
 
+        # Dump the *original* PDBs (round 1)
+        for pdb in pdbs:
+            output = os.path.join(analysis, os.path.basename(o)+'.1.orig.pdbdump')
+            with open(output, 'w') as f:
+                subprocess.check_call([pdbdump, pdb], stdout=f)
+
         # Attempt to eliminate nondeterminism
         subprocess.check_call([ducible] + self.args, cwd=self.workdir)
 
@@ -133,6 +143,12 @@ class Test:
         for o in outputs:
             shutil.copyfile(o, os.path.join(analysis,
                 os.path.basename(o)+'.1.rewritten'))
+
+        # Dump the *rewritten* PDBs (round 1)
+        for pdb in pdbs:
+            output = os.path.join(analysis, os.path.basename(o)+'.1.rewritten.pdbdump')
+            with open(output, 'w') as f:
+                subprocess.check_call([pdbdump, pdb], stdout=f)
 
         self.clean()
 
@@ -145,6 +161,12 @@ class Test:
             shutil.copyfile(o, os.path.join(analysis,
                 os.path.basename(o)+'.2.orig'))
 
+        # Dump the *original* PDBs (round 2)
+        for pdb in pdbs:
+            output = os.path.join(analysis, os.path.basename(o)+'.2.orig.pdbdump')
+            with open(output, 'w') as f:
+                subprocess.check_call([pdbdump, pdb], stdout=f)
+
         # Attempt to eliminate nondeterminism (again)
         subprocess.check_call([ducible] + self.args, cwd=self.workdir)
 
@@ -152,6 +174,12 @@ class Test:
         for o in outputs:
             shutil.copyfile(o, os.path.join(analysis,
                 os.path.basename(o)+'.2.rewritten'))
+
+        # Dump the *rewritten* PDBs (round 2)
+        for pdb in pdbs:
+            output = os.path.join(analysis, os.path.basename(o)+'.2.rewritten.pdbdump')
+            with open(output, 'w') as f:
+                subprocess.check_call([pdbdump, pdb], stdout=f)
 
         self.clean()
 
@@ -203,16 +231,16 @@ def tests(tests_dir):
             # Directory doesn't have a test in it
             pass
 
-def run_all_tests(tests_dir, ducible):
+def run_all_tests(tests_dir, bin_dir):
     failed = 0
 
     for t in tests(tests_dir):
         print(':: Running test "{}"...'.format(t.name))
         try:
-            t.run(ducible)
+            t.run(bin_dir)
         except MismatchException as e:
             print('Mismatch detected, re-running test for analysis...')
-            t.analyze(ducible)
+            t.analyze(bin_dir)
 
             failed += 1
             print('TEST FAILED:', e)
@@ -226,7 +254,8 @@ def run_all_tests(tests_dir, ducible):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Runs tests')
-    parser.add_argument('ducible', help='Path to Ducible executable.')
+    parser.add_argument('bindir',
+            help='Directory of the Ducible and Pdbdump executables.')
     args = parser.parse_args()
 
     assert os.environ['VisualStudioVersion'] == '14.0',\
@@ -234,7 +263,7 @@ if __name__ == '__main__':
 
     tests_dir = os.path.relpath(os.path.join(_script_dir, '../tests'))
 
-    failed = run_all_tests(tests_dir, args.ducible)
+    failed = run_all_tests(tests_dir, args.bindir)
     if failed > 0:
         print(':: %s test(s) failed' % failed)
         sys.exit(1)
