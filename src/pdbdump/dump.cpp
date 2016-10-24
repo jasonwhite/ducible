@@ -161,9 +161,11 @@ void printPageSequences(const std::vector<uint32_t>& pages, std::ostream& os) {
  * Prints the stream table.
  */
 void printStreamTable(MsfFile& msf, std::ostream& os) {
-    const size_t streamCount = msf.streamCount();
 
-    os << "Streams (" << streamCount << "):\n";
+    os << "Stream Table\n"
+       << "============\n";
+
+    const size_t streamCount = msf.streamCount();
 
     for (size_t i = 0; i < streamCount; ++i) {
         auto stream = std::dynamic_pointer_cast<MsfFileStream>(msf.getStream(i));
