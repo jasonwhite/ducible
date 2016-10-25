@@ -220,6 +220,7 @@
     <ClCompile Include="..\..\..\src\msf\memory_stream.cpp" />
     <ClCompile Include="..\..\..\src\msf\msf.cpp" />
     <ClCompile Include="..\..\..\src\msf\readonly_stream.cpp" />
+    <ClCompile Include="..\..\..\src\pdb\pdb.cpp" />
     <ClCompile Include="..\..\..\src\pe\pe.cpp" />
     <ClCompile Include="..\..\..\src\util\file.cpp" />
     <ClCompile Include="..\..\..\src\util\md5.c" />
@@ -237,6 +238,7 @@
     <ClInclude Include="..\..\..\src\msf\readonly_stream.h" />
     <ClInclude Include="..\..\..\src\msf\stream.h" />
     <ClInclude Include="..\..\..\src\pdb\cvinfo.h" />
+    <ClInclude Include="..\..\..\src\pdb\format.h" />
     <ClInclude Include="..\..\..\src\pdb\pdb.h" />
     <ClInclude Include="..\..\..\src\pe\pe.h" />
     <ClInclude Include="..\..\..\src\pe\format.h" />

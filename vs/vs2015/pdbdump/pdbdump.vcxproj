@@ -217,6 +217,7 @@
     <ClCompile Include="..\..\..\src\msf\readonly_stream.cpp" />
     <ClCompile Include="..\..\..\src\pdbdump\dump.cpp" />
     <ClCompile Include="..\..\..\src\pdbdump\main.cpp" />
+    <ClCompile Include="..\..\..\src\pdb\pdb.cpp" />
     <ClCompile Include="..\..\..\src\util\file.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -228,6 +229,7 @@
     <ClInclude Include="..\..\..\src\msf\stream.h" />
     <ClInclude Include="..\..\..\src\pdbdump\dump.h" />
     <ClInclude Include="..\..\..\src\pdb\cvinfo.h" />
+    <ClInclude Include="..\..\..\src\pdb\format.h" />
     <ClInclude Include="..\..\..\src\pdb\pdb.h" />
     <ClInclude Include="..\..\..\src\util\file.h" />
   </ItemGroup>
