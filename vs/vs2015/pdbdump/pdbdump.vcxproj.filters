@@ -65,6 +65,9 @@
     <ClCompile Include="..\..\..\src\pdbdump\main.cpp">
       <Filter>Source Files\pdbdump</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\pdb\pdb.cpp">
+      <Filter>Source Files\pdb</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\msf\file_stream.h">
@@ -96,6 +99,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\src\pdbdump\dump.h">
       <Filter>Header Files\pdbdump</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\pdb\format.h">
+      <Filter>Header Files\pdb</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -89,6 +89,9 @@
     <ClCompile Include="..\..\..\src\pe\pe.cpp">
       <Filter>Source Files\pe</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\pdb\pdb.cpp">
+      <Filter>Source Files\pdb</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\ducible\patch.h">
@@ -141,6 +144,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\src\pe\pe.h">
       <Filter>Header Files\pe</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\pdb\format.h">
+      <Filter>Header Files\pdb</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
