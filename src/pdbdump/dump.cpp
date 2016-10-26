@@ -24,6 +24,7 @@
 #include <iomanip>
 #include <memory>
 #include <vector>
+#include <cstring>
 
 #include "pdbdump/dump.h"
 
@@ -174,7 +175,7 @@ void printPdbStream(MsfFile& msf, std::ostream& os) {
     const size_t remaining = stream->length() - stream->getPos();
     std::unique_ptr<uint8_t> buf(new uint8_t[remaining]);
     if (stream->read(remaining, buf.get()) != remaining)
-        throw InvalidPdb("wat");
+        throw InvalidPdb("failed to read name map table");
 
     auto nameMap = readNameMapTable(buf.get(), buf.get()+remaining);
 
@@ -201,41 +202,153 @@ void printDbiStream(MsfFile& msf, std::ostream& os) {
     os << "Stream Size: " << stream->length() << " bytes" << std::endl;
     os << std::endl;
 
-    DbiHeader header;
+    DbiHeader dbi;
 
-    if (stream->read(sizeof(header), &header) != sizeof(header))
-        throw InvalidPdb("missing DBI header");
+    if (stream->read(sizeof(dbi), &dbi) != sizeof(dbi))
+        throw InvalidPdb("missing DBI dbi");
 
     os << "Header\n"
        << "------\n";
 
-    os << "Signature:                          0x" << std::hex << header.signature << std::dec <<
+    os << "Signature:                          0x" << std::hex << dbi.signature << std::dec <<
         std::endl
-       << "Version:                            " << (uint32_t)header.version << std::endl
-       << "Age:                                " << header.age << std::endl
-       << "Global Symbol Info (GSI) Stream ID: " << header.globalSymbolStream << std::endl
+       << "Version:                            " << (uint32_t)dbi.version << std::endl
+       << "Age:                                " << dbi.age << std::endl
+       << "Global Symbol Info (GSI) Stream ID: " << dbi.globalSymbolStream << std::endl
        << "PDB DLL Version:                    "
-           << header.pdbDllVersion.major << "."
-           << header.pdbDllVersion.minor << "."
-           << header.pdbDllVersion.format << std::endl
-       << "Public Symbol Info (PSI) Stream ID: " << header.publicSymbolStream << std::endl
-       << "PDB DLL Build Major Version:        " << header.pdbDllBuildVersionMajor << std::endl
-       << "Symbol Records Stream ID:           " << header.symbolRecordsStream << std::endl
-       << "PDB DLL Build Minor Version:        " << header.pdbDllBuildVersionMinor << std::endl
-       << "Module Info Size:                   " << header.gpModInfoSize << std::endl
-       << "Section Contribution Size:          " << header.sectionContributionSize << " bytes" << std::endl
-       << "Section Map Size:                   " << header.sectionMapSize << " bytes" << std::endl
-       << "File Info Size:                     " << header.fileInfoSize << " bytes" << std::endl
-       << "Type Server Map Size:               " << header.typeServerMapSize << " bytes" << std::endl
-       << "MFC Type Server Index:              " << header.mfcIndex << std::endl
-       << "Debug Header Size:                  " << header.debugHeaderSize << std::endl
-       << "EC Info Size:                       " << header.ecInfoSize << std::endl
+           << dbi.pdbDllVersion.major << "."
+           << dbi.pdbDllVersion.minor << "."
+           << dbi.pdbDllVersion.format << std::endl
+       << "Public Symbol Info (PSI) Stream ID: " << dbi.publicSymbolStream << std::endl
+       << "PDB DLL Build Major Version:        " << dbi.pdbDllBuildVersionMajor << std::endl
+       << "Symbol Records Stream ID:           " << dbi.symbolRecordsStream << std::endl
+       << "PDB DLL Build Minor Version:        " << dbi.pdbDllBuildVersionMinor << std::endl
+       << "Module Info Size:                   " << dbi.gpModInfoSize << std::endl
+       << "Section Contribution Size:          " << dbi.sectionContributionSize << " bytes" << std::endl
+       << "Section Map Size:                   " << dbi.sectionMapSize << " bytes" << std::endl
+       << "File Info Size:                     " << dbi.fileInfoSize << " bytes" << std::endl
+       << "Type Server Map Size:               " << dbi.typeServerMapSize << " bytes" << std::endl
+       << "MFC Type Server Index:              " << dbi.mfcIndex << std::endl
+       << "Debug Header Size:                  " << dbi.debugHeaderSize << std::endl
+       << "EC Info Size:                       " << dbi.ecInfoSize << std::endl
        << "Flags:" << std::endl
-       << "    Incrementally Linked:           " << (bool)header.flags.incLink << std::endl
-       << "    Stripped:                       " << (bool)header.flags.stripped << std::endl
-       << "    CTypes:                         " << (bool)header.flags.ctypes << std::endl
-       << "Machine Type:                       " << header.machine << std::endl
+       << "    Incrementally Linked:           " << (dbi.flags.incLink ? "yes" : "no") << std::endl
+       << "    Stripped:                       " << (dbi.flags.stripped ? "yes" : "no") << std::endl
+       << "    CTypes:                         " << (dbi.flags.ctypes ? "yes" : "no") << std::endl
+       << "Machine Type:                       " << dbi.machine << std::endl
        << std::endl;
+
+    size_t moduleCount = 0;
+
+    {
+        os << "Module Info\n"
+           << "-----------\n";
+
+        std::unique_ptr<uint8_t> modInfo(new uint8_t[dbi.gpModInfoSize]);
+        if (stream->read(dbi.gpModInfoSize, modInfo.get()) != dbi.gpModInfoSize)
+            throw InvalidPdb("failed to read module info sub-stream");
+
+        // Print the module info
+        for (size_t i = 0; i < dbi.gpModInfoSize; ) {
+            if (dbi.gpModInfoSize - i < sizeof(ModuleInfo))
+                throw InvalidPdb("got partial DBI module info");
+
+            ModuleInfo* info = (ModuleInfo*)(modInfo.get() + i);
+
+            os  << "Module ID:   " << moduleCount << std::endl
+                << "Module Name: '" << info->moduleName() << "'" << std::endl
+                << "Object Name: '" << info->objectName() << "'" << std::endl
+                << "Stream ID:   " << info->stream << std::endl
+                << std::endl;
+
+            i += info->size();
+            ++moduleCount;
+        }
+    }
+
+    {
+        os << "Section Contributions\n"
+           << "---------------------\n";
+
+        os << "Section Contribution Count: " <<
+            dbi.sectionContributionSize / sizeof(SectionContribution) << std::endl;
+
+        os << std::endl;
+
+        // Skip over the section contribution
+        stream->skip(dbi.sectionContributionSize);
+    }
+
+    {
+        os << "Section Map\n"
+           << "-----------\n";
+
+        os << "No information available.\n";
+
+        os << std::endl;
+
+        // Skip over the section map
+        stream->skip(dbi.sectionMapSize);
+    }
+
+    if (dbi.fileInfoSize > 0) {
+
+        // These are files that correspond to each module as listed in the
+        // Module Info substream above.
+
+        os << "File Info\n"
+           << "---------\n";
+
+        std::unique_ptr<uint8_t> fileInfo(new uint8_t[dbi.fileInfoSize]);
+        if (stream->read(dbi.fileInfoSize, fileInfo.get()) != dbi.fileInfoSize)
+            throw InvalidPdb("failed to read file info sub-stream");
+
+        const uint8_t* p = fileInfo.get();
+        const uint8_t* pEnd = p + dbi.fileInfoSize;
+
+        // Skip over the header as it doesn't always provide correct
+        // information.
+        p += sizeof(FileInfoHeader);
+
+        // Skip over file indices array. We don't need them.
+        p += moduleCount * sizeof(uint16_t);
+
+        // File counts array
+        const uint16_t* fileCounts = (const uint16_t*)p;
+        p += moduleCount * sizeof(*fileCounts);
+
+        if (p >= pEnd)
+            throw InvalidPdb("got partial file info in DBI stream");
+
+        const uint32_t* offsets = (const uint32_t*)p;
+
+        uint32_t offsetCount = 0;
+        for (size_t i = 0; i < moduleCount; ++i)
+            offsetCount += fileCounts[i];
+
+        p += offsetCount * sizeof(*offsets);
+
+        if (p >= pEnd)
+            throw InvalidPdb("got partial file info in DBI stream");
+
+        const char* names = (char*)p;
+
+        size_t offset = 0;
+
+        for (size_t i = 0; i < moduleCount; ++i) {
+
+            os << "Module " << i << std::endl;
+
+            for (size_t j = 1; j < fileCounts[i]; ++j) {
+                os << "    " << names + offsets[offset] << std::endl;
+                ++offset;
+            }
+
+            os << std::endl;
+        }
+    }
+
+    os << std::endl;
 }
 
 void dumpPdb(MsfFile& msf) {
