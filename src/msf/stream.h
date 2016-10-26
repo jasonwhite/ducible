@@ -22,6 +22,7 @@
 #pragma once
 
 #include <stdlib.h>
+#include <stddef.h>
 
 /**
  * Helper function for computing the number of pages required to hold a length
@@ -57,6 +58,13 @@ public:
      * Sets the current position, in bytes, in the stream.
      */
     virtual void setPos(size_t p) = 0;
+
+    /**
+     * Skips over the given number of bytes.
+     */
+    void skip(ptrdiff_t n) {
+        setPos(getPos() + n);
+    }
 
     /**
      * Reads a length of the stream. This abstracts reading from multiple pages.
