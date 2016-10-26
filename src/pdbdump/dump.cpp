@@ -349,6 +349,57 @@ void printDbiStream(MsfFile& msf, std::ostream& os) {
     }
 
     os << std::endl;
+
+    {
+        os << "Type Server Map (TSM)\n"
+           << "---------------------\n";
+
+        os << "No information available.\n";
+
+        os << std::endl;
+
+        // Skip over the TSM substream
+        stream->skip(dbi.typeServerMapSize);
+    }
+
+    {
+        os << "EC Info\n"
+           << "-------\n";
+
+        os << "No information available.\n";
+
+        os << std::endl;
+
+        // Skip over the EC info substream
+        stream->skip(dbi.ecInfoSize);
+    }
+
+    {
+        os << "Debug Header\n"
+           << "------------\n";
+
+        std::unique_ptr<uint8_t> debugHeader(new uint8_t[dbi.debugHeaderSize]);
+        if (stream->read(dbi.debugHeaderSize, debugHeader.get()) != dbi.debugHeaderSize)
+            throw InvalidPdb("failed to read DBI debug header");
+
+        if (dbi.debugHeaderSize/sizeof(int16_t) < DebugTypes::count)
+            throw InvalidPdb("got partial DBI debug header");
+
+        const int16_t* streams = (const int16_t*)debugHeader.get();
+
+        os << "fpo            = " << streams[DebugTypes::fpo]            << std::endl
+           << "exception      = " << streams[DebugTypes::exception]      << std::endl
+           << "fixup          = " << streams[DebugTypes::fixup]          << std::endl
+           << "omapToSrc      = " << streams[DebugTypes::omapToSrc]      << std::endl
+           << "omapFromSrc    = " << streams[DebugTypes::omapFromSrc]    << std::endl
+           << "sectionHdr     = " << streams[DebugTypes::sectionHdr]     << std::endl
+           << "tokenRidMap    = " << streams[DebugTypes::tokenRidMap]    << std::endl
+           << "xdata          = " << streams[DebugTypes::xdata]          << std::endl
+           << "pdata          = " << streams[DebugTypes::pdata]          << std::endl
+           << "newFPO         = " << streams[DebugTypes::newFPO]         << std::endl
+           << "sectionHdrOrig = " << streams[DebugTypes::sectionHdrOrig] << std::endl
+           << std::endl;
+    }
 }
 
 void dumpPdb(MsfFile& msf) {
