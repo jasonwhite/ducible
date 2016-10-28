@@ -3,16 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_exe", "test_exe\test_exe.vcxproj", "{5454D84F-10E9-48E2-96F4-C96694BC9E0C}"
-	ProjectSection(ProjectDependencies) = postProject
-		{2C07E47D-CA17-4D0A-8C9A-336DB1256938} = {2C07E47D-CA17-4D0A-8C9A-336DB1256938}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_dll", "test_dll\test_dll.vcxproj", "{9FFDDFFA-629B-4A15-9B09-9756D78F2095}"
-	ProjectSection(ProjectDependencies) = postProject
-		{2C07E47D-CA17-4D0A-8C9A-336DB1256938} = {2C07E47D-CA17-4D0A-8C9A-336DB1256938}
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ducible", "ducible\ducible.vcxproj", "{2C07E47D-CA17-4D0A-8C9A-336DB1256938}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pdbdump", "pdbdump\pdbdump.vcxproj", "{801F75FB-A618-42FE-ADB3-DAFD16DF799F}"
@@ -25,22 +15,6 @@ Global
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{5454D84F-10E9-48E2-96F4-C96694BC9E0C}.Debug|Win32.ActiveCfg = Debug|Win32
-		{5454D84F-10E9-48E2-96F4-C96694BC9E0C}.Debug|Win32.Build.0 = Debug|Win32
-		{5454D84F-10E9-48E2-96F4-C96694BC9E0C}.Debug|x64.ActiveCfg = Debug|x64
-		{5454D84F-10E9-48E2-96F4-C96694BC9E0C}.Debug|x64.Build.0 = Debug|x64
-		{5454D84F-10E9-48E2-96F4-C96694BC9E0C}.Release|Win32.ActiveCfg = Release|Win32
-		{5454D84F-10E9-48E2-96F4-C96694BC9E0C}.Release|Win32.Build.0 = Release|Win32
-		{5454D84F-10E9-48E2-96F4-C96694BC9E0C}.Release|x64.ActiveCfg = Release|x64
-		{5454D84F-10E9-48E2-96F4-C96694BC9E0C}.Release|x64.Build.0 = Release|x64
-		{9FFDDFFA-629B-4A15-9B09-9756D78F2095}.Debug|Win32.ActiveCfg = Debug|Win32
-		{9FFDDFFA-629B-4A15-9B09-9756D78F2095}.Debug|Win32.Build.0 = Debug|Win32
-		{9FFDDFFA-629B-4A15-9B09-9756D78F2095}.Debug|x64.ActiveCfg = Debug|x64
-		{9FFDDFFA-629B-4A15-9B09-9756D78F2095}.Debug|x64.Build.0 = Debug|x64
-		{9FFDDFFA-629B-4A15-9B09-9756D78F2095}.Release|Win32.ActiveCfg = Release|Win32
-		{9FFDDFFA-629B-4A15-9B09-9756D78F2095}.Release|Win32.Build.0 = Release|Win32
-		{9FFDDFFA-629B-4A15-9B09-9756D78F2095}.Release|x64.ActiveCfg = Release|x64
-		{9FFDDFFA-629B-4A15-9B09-9756D78F2095}.Release|x64.Build.0 = Release|x64
 		{2C07E47D-CA17-4D0A-8C9A-336DB1256938}.Debug|Win32.ActiveCfg = Debug|Win32
 		{2C07E47D-CA17-4D0A-8C9A-336DB1256938}.Debug|Win32.Build.0 = Debug|Win32
 		{2C07E47D-CA17-4D0A-8C9A-336DB1256938}.Debug|x64.ActiveCfg = Debug|x64
