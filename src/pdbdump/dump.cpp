@@ -221,12 +221,11 @@ void printLinkInfoStream(MsfMemoryStream* stream, std::ostream& os) {
     if (linkInfo->size > length)
         throw InvalidPdb("LinkInfo size too large for stream");
 
-    os << "CWD:         '" << linkInfo->cwd<char>()        << "'" << std::endl;
-    os << "Command:     '" << linkInfo->command<char>()    << "'" << std::endl;
-    os << "Libs:        '" << linkInfo->libs<char>()       << "'" << std::endl;
-    os << "Output File: '" << linkInfo->outputFile<char>() << "'" << std::endl;
-
-    os << std::endl;
+    os << "CWD:         '" << linkInfo->cwd<char>()        << "'" << std::endl
+       << "Command:     '" << linkInfo->command<char>()    << "'" << std::endl
+       << "Libs:        '" << linkInfo->libs<char>()       << "'" << std::endl
+       << "Output File: '" << linkInfo->outputFile<char>() << "'" << std::endl
+       << std::endl;
 }
 
 /**
