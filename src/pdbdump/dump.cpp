@@ -267,14 +267,14 @@ void printDbiStream(MsfFile& msf, std::ostream& os) {
        << "PDB DLL Build Major Version:        " << dbi.pdbDllBuildVersionMajor << std::endl
        << "Symbol Records Stream ID:           " << dbi.symbolRecordsStream << std::endl
        << "PDB DLL Build Minor Version:        " << dbi.pdbDllBuildVersionMinor << std::endl
-       << "Module Info Size:                   " << dbi.gpModInfoSize << std::endl
+       << "Module Info Size:                   " << dbi.gpModInfoSize << " bytes" << std::endl
        << "Section Contribution Size:          " << dbi.sectionContributionSize << " bytes" << std::endl
        << "Section Map Size:                   " << dbi.sectionMapSize << " bytes" << std::endl
        << "File Info Size:                     " << dbi.fileInfoSize << " bytes" << std::endl
        << "Type Server Map Size:               " << dbi.typeServerMapSize << " bytes" << std::endl
        << "MFC Type Server Index:              " << dbi.mfcIndex << std::endl
-       << "Debug Header Size:                  " << dbi.debugHeaderSize << std::endl
-       << "EC Info Size:                       " << dbi.ecInfoSize << std::endl
+       << "Debug Header Size:                  " << dbi.debugHeaderSize << " bytes" << std::endl
+       << "EC Info Size:                       " << dbi.ecInfoSize << " bytes" << std::endl
        << "Flags:" << std::endl
        << "    Incrementally Linked:           " << (dbi.flags.incLink ? "yes" : "no") << std::endl
        << "    Stripped:                       " << (dbi.flags.stripped ? "yes" : "no") << std::endl
