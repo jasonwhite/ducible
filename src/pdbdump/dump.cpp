@@ -190,14 +190,14 @@ void printPdbStream(MsfFile& msf, std::ostream& os) {
     // Dump the /LinkInfo stream if it exists.
     const auto it = nameMap.find("/LinkInfo");
     if (it != nameMap.end()) {
-        auto stream = msf.getStream(it->second);
-        if (!stream)
+        auto linkInfoStream = msf.getStream(it->second);
+        if (!linkInfoStream)
             throw InvalidPdb("missing '/LinkInfo' stream");
 
-        auto linkInfoStream = std::shared_ptr<MsfMemoryStream>(
-                new MsfMemoryStream(stream.get()));
+        auto memStream = std::shared_ptr<MsfMemoryStream>(
+                new MsfMemoryStream(linkInfoStream.get()));
 
-        printLinkInfoStream(linkInfoStream.get(), os);
+        printLinkInfoStream(memStream.get(), os);
     }
 }
 
