@@ -32,11 +32,14 @@
 #include "msf/msf.h"
 #include "msf/stream.h"
 #include "msf/file_stream.h"
+#include "msf/memory_stream.h"
 
 #include "pdb/format.h"
 #include "pdb/pdb.h"
 
 namespace {
+
+void printLinkInfoStream(MsfMemoryStream* stream, std::ostream& os);
 
 /**
  * Prints a nicely formatted page sequences (as if you were specifying the pages
@@ -181,6 +184,47 @@ void printPdbStream(MsfFile& msf, std::ostream& os) {
 
     for (auto const& kv: nameMap)
         os << kv.first << " => " << kv.second << std::endl;
+
+    os << std::endl;
+
+    // Dump the /LinkInfo stream if it exists.
+    const auto it = nameMap.find("/LinkInfo");
+    if (it != nameMap.end()) {
+        auto stream = msf.getStream(it->second);
+        if (!stream)
+            throw InvalidPdb("missing '/LinkInfo' stream");
+
+        auto linkInfoStream = std::shared_ptr<MsfMemoryStream>(
+                new MsfMemoryStream(stream.get()));
+
+        printLinkInfoStream(linkInfoStream.get(), os);
+    }
+}
+
+/**
+ * Prints out information in the "/LinkInfo" stream.
+ */
+void printLinkInfoStream(MsfMemoryStream* stream, std::ostream& os) {
+    os << "Link Info Stream\n"
+       << "================\n";
+
+    uint8_t* data = stream->data();
+    const size_t length = stream->length();
+
+    if (length == 0) return;
+
+    const LinkInfo* linkInfo = (const LinkInfo*)data;
+
+    if (length < sizeof(LinkInfo))
+        throw InvalidPdb("got partial LinkInfo stream");
+
+    if (linkInfo->size > length)
+        throw InvalidPdb("LinkInfo size too large for stream");
+
+    os << "CWD:         '" << linkInfo->cwd<char>()        << "'" << std::endl;
+    os << "Command:     '" << linkInfo->command<char>()    << "'" << std::endl;
+    os << "Libs:        '" << linkInfo->libs<char>()       << "'" << std::endl;
+    os << "Output File: '" << linkInfo->outputFile<char>() << "'" << std::endl;
 
     os << std::endl;
 }
