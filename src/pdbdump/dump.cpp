@@ -205,13 +205,14 @@ void printPdbStream(MsfFile& msf, std::ostream& os) {
  * Prints out information in the "/LinkInfo" stream.
  */
 void printLinkInfoStream(MsfMemoryStream* stream, std::ostream& os) {
-    os << "Link Info Stream\n"
-       << "================\n";
 
     uint8_t* data = stream->data();
     const size_t length = stream->length();
 
     if (length == 0) return;
+
+    os << "Link Info Stream\n"
+       << "================\n";
 
     const LinkInfo* linkInfo = (const LinkInfo*)data;
 
