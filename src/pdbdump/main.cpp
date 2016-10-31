@@ -86,18 +86,22 @@ struct OptionNames {};
 
 template<>
 struct OptionNames<char> {
-    const char* helpLong    = "--help";
-    const char* helpShort   = "-h";
-    const char* versionLong = "--version";
-    const char* dashDash    = "--";
+    const char* helpLong     = "--help";
+    const char* helpShort    = "-h";
+    const char* versionLong  = "--version";
+    const char* verboseLong  = "--verbose";
+    const char* verboseShort = "-v";
+    const char* dashDash     = "--";
 };
 
 template<>
 struct OptionNames<wchar_t> {
-    const wchar_t* helpLong    = L"--help";
-    const wchar_t* helpShort   = L"-h";
-    const wchar_t* versionLong = L"--version";
-    const wchar_t* dashDash    = L"--";
+    const wchar_t* helpLong     = L"--help";
+    const wchar_t* helpShort    = L"-h";
+    const wchar_t* versionLong  = L"--version";
+    const wchar_t* verboseLong  = L"--verbose";
+    const wchar_t* verboseShort = L"-v";
+    const wchar_t* dashDash     = L"--";
 };
 
 /**
@@ -114,7 +118,9 @@ public:
 
     const CharT* pdb;
 
-    CommandOptions() : pdb(NULL) {}
+    bool verbose;
+
+    CommandOptions() : pdb(NULL), verbose(false) {}
 
     /**
      * Parses the command line arguments.
@@ -158,6 +164,9 @@ public:
             else if (arg == opt.dashDash) {
                 onlyPositional = true;
             }
+            else if (arg == opt.verboseLong || arg == opt.verboseShort) {
+                verbose = true;
+            }
             else if (arg.length() > 0 && arg.front() == '-') {
                 throw UnknownOption<CharT>(argv[i]);
             }
@@ -184,18 +193,19 @@ template<typename CharT>
 const OptionNames<CharT> CommandOptions<CharT>::opt = OptionNames<CharT>();
 
 const char* usage =
-    "Usage: pdbdump pdb [--help]";
+    "Usage: pdbdump pdb [--help] [--verbose]";
 
 const char* help =
 R"(
 Dumps information about a PDB. This is useful for diffing two PDBs.
 
 Positional arguments:
-  pdb           The PDB file.
+  pdb            The PDB file.
 
 Optional arguments:
-  --help, -h    Prints this help.
-  --version     Prints version information.
+  --help, -h     Prints this help.
+  --version      Prints version information.
+  --verbose, -v  Prints extra information about the PDB.
 )";
 
 template<typename CharT = char>
@@ -229,7 +239,7 @@ int pdbdump(int argc, CharT** argv)
     }
 
     try {
-        dumpPdb(opts.pdb);
+        dumpPdb(opts.pdb, opts.verbose);
     }
     catch (const InvalidMsf& error) {
         std::cerr << "Error: Invalid PDB MSF format (" << error.why() << ")\n";

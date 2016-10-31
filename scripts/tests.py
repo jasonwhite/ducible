@@ -134,7 +134,7 @@ class Test:
         for pdb in pdbs:
             output = os.path.join(analysis, os.path.basename(o)+'.1.orig.pdbdump')
             with open(output, 'w') as f:
-                subprocess.check_call([pdbdump, pdb], stdout=f)
+                subprocess.check_call([pdbdump, '--verbose', '--', pdb], stdout=f)
 
         # Attempt to eliminate nondeterminism
         subprocess.check_call([ducible] + self.args, cwd=self.workdir)
@@ -148,7 +148,7 @@ class Test:
         for pdb in pdbs:
             output = os.path.join(analysis, os.path.basename(o)+'.1.rewritten.pdbdump')
             with open(output, 'w') as f:
-                subprocess.check_call([pdbdump, pdb], stdout=f)
+                subprocess.check_call([pdbdump, '--verbose', '--', pdb], stdout=f)
 
         self.clean()
 
@@ -165,7 +165,7 @@ class Test:
         for pdb in pdbs:
             output = os.path.join(analysis, os.path.basename(o)+'.2.orig.pdbdump')
             with open(output, 'w') as f:
-                subprocess.check_call([pdbdump, pdb], stdout=f)
+                subprocess.check_call([pdbdump, '--verbose', '--', pdb], stdout=f)
 
         # Attempt to eliminate nondeterminism (again)
         subprocess.check_call([ducible] + self.args, cwd=self.workdir)
@@ -179,7 +179,7 @@ class Test:
         for pdb in pdbs:
             output = os.path.join(analysis, os.path.basename(o)+'.2.rewritten.pdbdump')
             with open(output, 'w') as f:
-                subprocess.check_call([pdbdump, pdb], stdout=f)
+                subprocess.check_call([pdbdump, '--verbose', '--', pdb], stdout=f)
 
         self.clean()
 

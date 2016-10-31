@@ -27,10 +27,10 @@
  */
 #if defined(_WIN32) && defined(UNICODE)
 
-void dumpPdb(const wchar_t* path);
+void dumpPdb(const wchar_t* path, bool verbose);
 
 #else
 
-void dumpPdb(const char* path);
+void dumpPdb(const char* path, bool verbose);
 
 #endif

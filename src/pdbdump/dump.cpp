@@ -232,7 +232,7 @@ void printLinkInfoStream(MsfMemoryStream* stream, std::ostream& os) {
 /**
  * Prints out information in the DBI stream.
  */
-void printDbiStream(MsfFile& msf, std::ostream& os) {
+void printDbiStream(MsfFile& msf, std::ostream& os, bool verbose) {
 
     static const size_t streamid = (size_t)PdbStreamType::dbi;
 
@@ -310,15 +310,40 @@ void printDbiStream(MsfFile& msf, std::ostream& os) {
         }
     }
 
-    {
+    if (verbose) {
         os << "Section Contributions\n"
            << "---------------------\n";
 
-        os << "Section Contribution Count: " <<
-            dbi.sectionContributionSize / sizeof(SectionContribution) << std::endl;
+        const size_t count = dbi.sectionContributionSize /
+            sizeof(SectionContribution);
+
+        os << "Section Contribution Count: " << count << std::endl;
+
+        for (size_t i = 0; i < count; ++i) {
+            SectionContribution sc;
+
+            if (stream->read(sizeof(sc), &sc) != sizeof(sc))
+                throw InvalidPdb("failed to read SectionContribution");
+
+            os  << "id              = " << i                  << std::endl
+                << "section         = " << sc.section         << std::endl
+                << "padding1        = " << sc.padding1        << std::endl
+                << "offset          = " << std::hex << "0x" << sc.offset << std::dec << std::endl
+                << "size            = " << sc.size            << std::endl
+                << "characteristics = " << sc.characteristics << std::endl
+                << "imod            = " << sc.imod            << std::endl
+                << "padding2        = " << sc.padding2        << std::endl
+                << "dataCrc         = " << std::hex << "0x" << sc.dataCrc << std::dec << std::endl
+                << "relocCrc        = " << sc.relocCrc        << std::endl
+               << std::endl;
+        }
 
         os << std::endl;
 
+        // Skip over the remainder of the section contribution
+        stream->skip(dbi.sectionContributionSize % sizeof(SectionContribution));
+    }
+    else {
         // Skip over the section contribution
         stream->skip(dbi.sectionContributionSize);
     }
@@ -335,7 +360,7 @@ void printDbiStream(MsfFile& msf, std::ostream& os) {
         stream->skip(dbi.sectionMapSize);
     }
 
-    if (dbi.fileInfoSize > 0) {
+    if (verbose && dbi.fileInfoSize > 0) {
 
         // These are files that correspond to each module as listed in the
         // Module Info substream above.
@@ -390,6 +415,10 @@ void printDbiStream(MsfFile& msf, std::ostream& os) {
 
             os << std::endl;
         }
+    }
+    else {
+        // Skip over the file info
+        stream->skip(dbi.fileInfoSize);
     }
 
     os << std::endl;
@@ -446,33 +475,33 @@ void printDbiStream(MsfFile& msf, std::ostream& os) {
     }
 }
 
-void dumpPdb(MsfFile& msf) {
+void dumpPdb(MsfFile& msf, bool verbose) {
     printStreamTable(msf, std::cout);
     printPdbStream(msf, std::cout);
-    printDbiStream(msf, std::cout);
+    printDbiStream(msf, std::cout, verbose);
 }
 
 template<typename CharT>
-void dumpPdbImpl(const CharT* path) {
+void dumpPdbImpl(const CharT* path, bool verbose) {
     auto pdb = openFile(path, FileMode<CharT>::readExisting);
 
     MsfFile msf(pdb);
 
-    dumpPdb(msf);
+    dumpPdb(msf, verbose);
 }
 
 }
 
 #if defined(_WIN32) && defined(UNICODE)
 
-void dumpPdb(const wchar_t* path) {
-    dumpPdbImpl(path);
+void dumpPdb(const wchar_t* path, bool verbose) {
+    dumpPdbImpl(path, verbose);
 }
 
 #else
 
-void dumpPdb(const char* path) {
-    dumpPdbImpl(path);
+void dumpPdb(const char* path, bool verbose) {
+    dumpPdbImpl(path, verbose);
 }
 
 #endif
