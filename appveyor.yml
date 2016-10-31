@@ -20,7 +20,7 @@ build:
   project: vs/vs2015/ducible.sln
 
 after_build:
- - runtests.bat vs\vs2015\$(platform)\$(configuration)
+ - runtests.bat vs\vs2015\%PLATFORM%\%CONFIGURATION%
  - 7z a ducible-windows-%PLATFORM%-%CONFIGURATION%.zip .\vs\vs2015\%PLATFORM%\%CONFIGURATION%\ducible.exe .\vs\vs2015\%PLATFORM%\%CONFIGURATION%\pdbdump.exe
 
 artifacts:
