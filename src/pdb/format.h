@@ -223,6 +223,15 @@ struct SectionContribution {
 static_assert(sizeof(SectionContribution) == 28, "invalid struct size");
 
 /**
+ * Section Contribution version signatures.
+ */
+enum class SectionContribVersion : uint32_t {
+    v1 = 0xeffe0000 + 19970605,
+    v2 = 0xeffe0000 + 20140516,
+};
+
+
+/**
  * Module info.
  */
 struct ModuleInfo {

@@ -553,7 +553,15 @@ void patchDbiStream(MsfFile& msf, MsfMemoryStream* stream) {
                 "DBI section contributions size exceeds stream length");
     }
 
-    const size_t scCount = dbi->sectionContributionSize /
+    const SectionContribVersion scVersion = *(SectionContribVersion*)(data + offset);
+    offset += sizeof(scVersion);
+
+    if (scVersion != SectionContribVersion::v1 &&
+        scVersion != SectionContribVersion::v2) {
+        throw InvalidPdb("got invalid section contribution substream version");
+    }
+
+    const size_t scCount = (dbi->sectionContributionSize - sizeof(scVersion)) /
         sizeof(SectionContribution);
 
     SectionContribution* sectionContribs = (SectionContribution*)(data + offset);
@@ -564,7 +572,7 @@ void patchDbiStream(MsfFile& msf, MsfMemoryStream* stream) {
         sc.padding2 = 0;
     }
 
-    offset += dbi->sectionContributionSize;
+    offset += dbi->sectionContributionSize - sizeof(scVersion);
 
     // Skip over the section map
     offset += dbi->sectionMapSize;

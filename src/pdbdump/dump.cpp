@@ -314,7 +314,16 @@ void printDbiStream(MsfFile& msf, std::ostream& os, bool verbose) {
         os << "Section Contributions\n"
            << "---------------------\n";
 
-        const size_t count = dbi.sectionContributionSize /
+        SectionContribVersion scVersion;
+        if (stream->read(sizeof(scVersion), &scVersion) != sizeof(scVersion))
+            throw InvalidPdb("failed to read section contribution version");
+
+        if (scVersion != SectionContribVersion::v1 &&
+            scVersion != SectionContribVersion::v2) {
+            throw InvalidPdb("got invalid section contribution substream version");
+        }
+
+        const size_t count = (dbi.sectionContributionSize - sizeof(scVersion)) /
             sizeof(SectionContribution);
 
         os << "Section Contribution Count: " << count << std::endl;
@@ -339,9 +348,6 @@ void printDbiStream(MsfFile& msf, std::ostream& os, bool verbose) {
         }
 
         os << std::endl;
-
-        // Skip over the remainder of the section contribution
-        stream->skip(dbi.sectionContributionSize % sizeof(SectionContribution));
     }
     else {
         // Skip over the section contribution
