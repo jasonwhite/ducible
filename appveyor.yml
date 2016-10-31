@@ -26,6 +26,9 @@ artifacts:
  - path: ducible-windows-$(platform)-$(configuration).zip
    name: ducible
 
+test:
+ - runtests.bat vs\vs2015\$(platform)\$(configuration)
+
 deploy:
  - provider: GitHub
    auth_token:
