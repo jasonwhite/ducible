@@ -10,12 +10,23 @@ This is a tool to make builds of Portable Executables (PEs) and PDBs
 repro*ducible*.
 
 Timestamps and other non-deterministic data are embedded in DLLs, EXEs, and
-PDBs. If a DLL is compiled and linked twice without changing any source, the
-DLLs will not be bit-by-bit identical. This tool fixes that.
+PDBs. If some source is compiled and linked twice without changing any source,
+the binary will not be bit-by-bit identical both times. This tool fixes that by
+modifying DLLs/EXEs and rewriting PDBs.
 
-Builds that are reproducible are very useful for a number of reasons. The site
-https://reproducible-builds.org/ does an excellent job of enumerating those
-reasons.
+## Why?
+
+In general, reproducible builds give a verifiable path from *source code* to
+*binary code*. There are a number of security reasons and practical reasons for
+why this is good. More specifically, it enables
+
+ * confidence that two parties built a binary with the same environment,
+ * recreating a release bit-for-bit from source code,
+ * recreating debug symbols for a particular version of source code, and
+ * verifiable and correct distributed builds.
+
+See https://reproducible-builds.org/docs/buy-in/ for more information on why you
+should want this.
 
 ## Using It
 
@@ -33,10 +44,16 @@ As a post-build step, simply run:
 
 The files are overwritten in-place.
 
+## Downloading It
+
+See the [releases][] for downloads.
+
+[releases]: https://github.com/jasonwhite/ducible/releases
+
 ## Building It
 
-This is a very simple C++ program. There are no third party dependencies and it
-should be buildable and runnable on any platform (even non-Windows!).
+This is written in C++14. There are no third party dependencies and it should be
+buildable and runnable on any platform (even non-Windows!).
 
 Required build tools:
 
@@ -60,7 +77,7 @@ issue or, better yet, a pull request.
 ### Linux
 
 Although this is primarily a Windows utility, it was developed in a Linux
-environment simply because it is faster and easier. One might also want to use
+environment simply because it was faster and easier. One might also want to use
 it for compiling Windows binaries on Linux. Thus, it builds and runs on Linux as
 well.
 
@@ -72,8 +89,6 @@ This hasn't been tested on OS X, but it probably works as there is nothing
 Linux-specific in the code.
 
 To build it, just run `make`.
-
-If you find that this works, please submit an issue letting me know.
 
 ## Related Work
 
