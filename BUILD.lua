@@ -29,21 +29,22 @@ local ducible = cc.binary {
     compiler_opts = {"-g"},
 }
 
+local ducible_exe = path.join(".", ducible:path())
+
 --
 -- Test ducible
 --
 rule {
     inputs = {ducible:path()},
-    task = {{ducible:path(), "--help"}},
+    task = {{ducible_exe, "--help"}},
     outputs = {},
 }
 
 rule {
     inputs = {ducible:path()},
-    task = {{ducible:path(), "--version"}},
+    task = {{ducible_exe, "--version"}},
     outputs = {},
 }
-
 
 local pdbdump = cc.binary {
     name = "pdbdump",
@@ -62,17 +63,25 @@ local pdbdump = cc.binary {
     compiler_opts = {"-g"},
 }
 
+local pdbdump_exe = path.join(".", pdbdump:path())
+
 --
 -- Test pdbdump
 --
 rule {
     inputs = {pdbdump:path()},
-    task = {{pdbdump:path(), "--help"}},
+    task = {{pdbdump_exe, "--help"}},
     outputs = {},
 }
 
 rule {
     inputs = {pdbdump:path()},
-    task = {{pdbdump:path(), "--version"}},
+    task = {{pdbdump_exe, "--version"}},
+    outputs = {},
+}
+
+rule {
+    inputs = {pdbdump:path()},
+    task = {{pdbdump_exe, "vs/vs2015/x64/Debug/test_dll.pdb"}},
     outputs = {},
 }
