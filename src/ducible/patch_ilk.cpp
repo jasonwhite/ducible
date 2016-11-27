@@ -30,12 +30,18 @@
 
 #include "util/memmap.h"
 
+namespace {
+
 // Helpers for CharT generalization
 template<typename CharT>
-constexpr CharT ilkExtension[] = {};
+struct Strings {
+    static const CharT ilkExtension[];
+};
 
-template<> constexpr char ilkExtension<char>[] = ".ilk";
-template<> constexpr wchar_t ilkExtension<wchar_t>[] = L".ilk";
+template<> const char    Strings<char>::ilkExtension[]    = ".ilk";
+template<> const wchar_t Strings<wchar_t>::ilkExtension[] = L".ilk";
+
+}
 
 template<typename CharT>
 void patchIlkImpl(const CharT* imagePath, const uint8_t oldSignature[16],
@@ -48,7 +54,7 @@ void patchIlkImpl(const CharT* imagePath, const uint8_t oldSignature[16],
     if (extpos != std::basic_string<CharT>::npos)
         ilkPath.resize(extpos);
 
-    ilkPath.append(ilkExtension<CharT>);
+    ilkPath.append(Strings<CharT>::ilkExtension);
 
     // Map the ilk file into memory.
     try {
