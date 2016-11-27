@@ -120,9 +120,6 @@ To build it, just run `make`.
 
 ### OS X
 
-This hasn't been tested on OS X, but it probably works as there is nothing
-Linux-specific in the code.
-
 To build it, just run `make`.
 
 ## Related Work
