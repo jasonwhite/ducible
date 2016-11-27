@@ -1,6 +1,6 @@
 DUCIBLE_TARGET = ducible
 PDBDUMP_TARGET = pdbdump
-CXXFLAGS = -Isrc -std=c++14 -g -Wall -Werror -Wno-unused-const-variable
+CXXFLAGS = -Isrc -std=c++11 -g -Wall -Werror -Wno-unused-const-variable
 CFLAGS = -Isrc -g -Wall -Werror
 
 .PHONY: default all clean
@@ -35,4 +35,4 @@ $(PDBDUMP_TARGET): $(PDBDUMP_OBJECTS)
 	$(CXX) $^ -o $@
 
 clean:
-	$(RM) $(PDBDUMP_OBJECTS) $(DUCIBLE_OBJECTS) $(DUCIBLE_TARGET) $(PDBDUMP_TARGET src/version.h
+	$(RM) $(PDBDUMP_OBJECTS) $(DUCIBLE_OBJECTS) $(DUCIBLE_TARGET) $(PDBDUMP_TARGET) src/version.h

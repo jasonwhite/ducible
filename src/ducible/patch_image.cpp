@@ -101,6 +101,18 @@
 
 namespace {
 
+// Helpers for CharT generalization
+template<typename CharT>
+struct Strings {
+    static const CharT tmpExtension[];
+    static const CharT nullGuid[];
+};
+
+template<> const char    Strings<char>::tmpExtension[]    = ".tmp";
+template<> const char    Strings<char>::nullGuid[]        = "{00000000-0000-0000-0000-000000000000}";
+template<> const wchar_t Strings<wchar_t>::tmpExtension[] = L".tmp";
+template<> const wchar_t Strings<wchar_t>::nullGuid[]     = L"{00000000-0000-0000-0000-000000000000}";
+
 /**
  * There are 0 or more debug data directories. We need to patch the timestamp in
  * all of them.
@@ -223,12 +235,6 @@ bool matchingSignatures(const CV_INFO_PDB70& pdbInfo,
     return true;
 }
 
-template<typename CharT>
-constexpr CharT tmpSuffix[] = {};
-
-template<> constexpr char tmpSuffix<char>[] = ".tmp";
-template<> constexpr wchar_t tmpSuffix<wchar_t>[] = L".tmp";
-
 /**
  * Returns a temporary PDB path name. The PDB will be written here first and
  * then renamed to the original after everything succeeds.
@@ -236,15 +242,9 @@ template<> constexpr wchar_t tmpSuffix<wchar_t>[] = L".tmp";
 template<typename CharT>
 std::basic_string<CharT> getTempPdbPath(const CharT* pdbPath) {
     std::basic_string<CharT> temp(pdbPath);
-    temp.append(tmpSuffix<CharT>);
+    temp.append(Strings<CharT>::tmpExtension);
     return temp;
 }
-
-template<typename CharT>
-constexpr CharT nullGuid[] = {};
-
-template<> constexpr char nullGuid<char>[] = "{00000000-0000-0000-0000-000000000000}";
-template<> constexpr wchar_t nullGuid<wchar_t>[] = L"{00000000-0000-0000-0000-000000000000}";
 
 /**
  * Helper function for normalizing a GUID in a NULL terminated file name.
@@ -263,8 +263,8 @@ void normalizeFileNameGuid(CharT* path, size_t length) {
 
     if (std::regex_search((const CharT*)path, (const CharT*)path + length,
                 match, guidRegex)) {
-        memcpy(path + match.position(0), nullGuid<CharT>,
-                sizeof(nullGuid<CharT>));
+        memcpy(path + match.position(0), Strings<CharT>::nullGuid,
+                sizeof(Strings<CharT>::nullGuid));
     }
 }
 

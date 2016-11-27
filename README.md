@@ -87,7 +87,7 @@ See the [releases][] for downloads.
 
 ## Building It
 
-This is written in C++14. There are no third party dependencies and it should be
+This is written in C++11. There are no third party dependencies and it should be
 buildable and runnable on any platform (even non-Windows!).
 
 Required build tools:
