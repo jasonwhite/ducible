@@ -28,6 +28,7 @@ why this is good. More specifically, it enables
  * recreating a release bit-for-bit from source code,
  * recreating debug symbols for a particular version of source code,
  * verifiable and correct distributed builds,
+ * faster cached builds (both local and distributed),
  * no spurious changes in binaries under version control.
 
 See also https://reproducible-builds.org/ for more information on why you should
