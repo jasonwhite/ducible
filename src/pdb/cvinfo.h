@@ -19,7 +19,7 @@
 extern "C" {
 #endif
 
-#if defined(_WIN32) && defined(__cplusplus)
+#if defined(_MSC_VER) && defined(__cplusplus)
 #   pragma warning(push)
 
     // Disable "nonstandard extension used: zero-sized array in struct/union"
@@ -4465,7 +4465,7 @@ typedef struct PDBMAP {
 
 #pragma pack(pop)
 
-#if defined(_WIN32) && defined(__cplusplus)
+#if defined(_MSC_VER) && defined(__cplusplus)
 #   pragma warning(pop)
 #endif
 
