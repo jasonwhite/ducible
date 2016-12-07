@@ -124,6 +124,9 @@ void patchDebugDataDirectories(const PEFile& pe, Patches& patches,
     size_t debugDirCount;
     auto dir = pe.getDebugDataDirs(opt, debugDirCount);
 
+    // No debug directories (executable not created by VS):
+    if( ! dir ) return;
+
     // Information about the PDB.
     const CV_INFO_PDB70* cvInfo = NULL;
 
