@@ -26,6 +26,7 @@
 #include <codecvt>
 #include <string>
 #include <sstream>
+#include <locale>
 
 #ifdef _WIN32
 #   include <Windows.h>

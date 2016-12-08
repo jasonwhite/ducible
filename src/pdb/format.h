@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 #   pragma warning(push)
 
     // Disable "nonstandard extension used: zero-sized array in struct/union"
@@ -499,6 +499,6 @@ struct StringTableHeader {
 
 static_assert(sizeof(StringTableHeader) == 12, "invalid struct size");
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 #   pragma warning(pop)
 #endif
