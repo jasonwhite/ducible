@@ -27,10 +27,20 @@
  */
 #if defined(_WIN32) && defined(UNICODE)
 
-void patchImage(const wchar_t* imagePath, const wchar_t* pdbPath, bool dryrun = true);
+void patchImage(
+    const wchar_t* imagePath,
+    const wchar_t* pdbPath,
+    bool dryrun = true,
+    bool force = false
+    );
 
 #else
 
-void patchImage(const char* imagePath, const char* pdbPath, bool dryrun = true);
+void patchImage(
+    const char* imagePath,
+    const char* pdbPath,
+    bool dryrun = true,
+    bool force = false
+    );
 
 #endif

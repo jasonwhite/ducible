@@ -359,7 +359,7 @@ void patchNamesStream(MsfMemoryStream* stream) {
  * Patches the PDB header stream.
  */
 void patchHeaderStream(MsfFile& msf, MsfMemoryStream* stream, const CV_INFO_PDB70* pdbInfo,
-        uint32_t timestamp, const uint8_t signature[16]) {
+        uint32_t timestamp, const uint8_t signature[16], bool force) {
 
     uint8_t* data = stream->data();
     const uint8_t* dataEnd = stream->data() + stream->length();
@@ -374,8 +374,9 @@ void patchHeaderStream(MsfFile& msf, MsfMemoryStream* stream, const CV_INFO_PDB7
     if (header->version < PdbVersion::vc70)
         throw InvalidPdb("unsupported PDB implementation version");
 
-    // Check that this PDB matches what the PE file expects
-    if (!pdbInfo || !matchingSignatures(*pdbInfo, *header))
+    // Check that this PDB matches what the PE file expects. Don't do the check
+    // if `force` was specified.
+    if (!force && (!pdbInfo || !matchingSignatures(*pdbInfo, *header)))
         throw InvalidPdb("PE and PDB signatures do not match");
 
     // Patch the PDB header stream
@@ -726,7 +727,7 @@ void patchPublicSymbolStream(MsfMemoryStream* stream) {
  * Rewrites a PDB, eliminating non-determinism.
  */
 void patchPDB(MsfFile& msf, const CV_INFO_PDB70* pdbInfo,
-        uint32_t timestamp, const uint8_t signature[16]) {
+        uint32_t timestamp, const uint8_t signature[16], bool force) {
 
     msf.replaceStream((size_t)PdbStreamType::streamTable, nullptr);
 
@@ -738,7 +739,7 @@ void patchPDB(MsfFile& msf, const CV_INFO_PDB70* pdbInfo,
     auto pdbHeaderStream = std::shared_ptr<MsfMemoryStream>(
             new MsfMemoryStream(origPdbHeaderStream.get()));
 
-    patchHeaderStream(msf, pdbHeaderStream.get(), pdbInfo, timestamp, signature);
+    patchHeaderStream(msf, pdbHeaderStream.get(), pdbInfo, timestamp, signature, force);
 
     msf.replaceStream((size_t)PdbStreamType::header, pdbHeaderStream);
 
@@ -784,7 +785,7 @@ void patchPDB(MsfFile& msf, const CV_INFO_PDB70* pdbInfo,
  */
 template<typename CharT>
 void patchPDB(const CharT* pdbPath, const CV_INFO_PDB70* pdbInfo,
-        uint32_t timestamp, const uint8_t signature[16], bool dryrun) {
+        uint32_t timestamp, const uint8_t signature[16], bool dryrun, bool force) {
 
     auto tmpPdbPath = getTempPdbPath(pdbPath);
 
@@ -794,7 +795,7 @@ void patchPDB(const CharT* pdbPath, const CV_INFO_PDB70* pdbInfo,
 
         MsfFile msf(pdb);
 
-        patchPDB(msf, pdbInfo, timestamp, signature);
+        patchPDB(msf, pdbInfo, timestamp, signature, force);
 
         // Write out the rewritten PDB to disk.
         msf.write(tmpPdb);
@@ -810,7 +811,7 @@ void patchPDB(const CharT* pdbPath, const CV_INFO_PDB70* pdbInfo,
 }
 
 template<typename CharT>
-void patchImageImpl(const CharT* imagePath, const CharT* pdbPath, bool dryrun) {
+void patchImageImpl(const CharT* imagePath, const CharT* pdbPath, bool dryrun, bool force) {
     MemMap image(imagePath);
 
     uint8_t* buf = (uint8_t*)image.buf();
@@ -855,7 +856,7 @@ void patchImageImpl(const CharT* imagePath, const CharT* pdbPath, bool dryrun) {
 
     // Patch the PDB file.
     if (pdbPath) {
-        patchPDB(pdbPath, pdbInfo, pe.timestamp, pe.pdbSignature, dryrun);
+        patchPDB(pdbPath, pdbInfo, pe.timestamp, pe.pdbSignature, dryrun, force);
     }
 
     // Patch the ilk file with the new PDB signature. If we don't do this,
@@ -871,14 +872,14 @@ void patchImageImpl(const CharT* imagePath, const CharT* pdbPath, bool dryrun) {
 
 #if defined(_WIN32) && defined(UNICODE)
 
-void patchImage(const wchar_t* imagePath, const wchar_t* pdbPath, bool dryrun) {
-    patchImageImpl(imagePath, pdbPath, dryrun);
+void patchImage(const wchar_t* imagePath, const wchar_t* pdbPath, bool dryrun, bool force) {
+    patchImageImpl(imagePath, pdbPath, dryrun, force);
 }
 
 #else
 
-void patchImage(const char* imagePath, const char* pdbPath, bool dryrun) {
-    patchImageImpl(imagePath, pdbPath, dryrun);
+void patchImage(const char* imagePath, const char* pdbPath, bool dryrun, bool force) {
+    patchImageImpl(imagePath, pdbPath, dryrun, force);
 }
 
 #endif

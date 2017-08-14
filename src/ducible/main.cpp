@@ -96,6 +96,8 @@ struct OptionNames<char> {
     const char* dryrunLong  = "--dryrun";
     const char* dryrunShort = "-n";
     const char* dashDash    = "--";
+    const char* forceLong   = "--force";
+    const char* forceShort  = "-f";
 };
 
 template<>
@@ -106,6 +108,8 @@ struct OptionNames<wchar_t> {
     const wchar_t* dryrunLong  = L"--dryrun";
     const wchar_t* dryrunShort = L"-n";
     const wchar_t* dashDash    = L"--";
+    const wchar_t* forceLong   = L"--force";
+    const wchar_t* forceShort  = L"-f";
 };
 
 /**
@@ -123,6 +127,7 @@ public:
     const CharT* image;
     const CharT* pdb;
     bool dryrun;
+	bool force;
 
     CommandOptions() : image(NULL), pdb(NULL), dryrun(false) {}
 
@@ -170,6 +175,9 @@ public:
             }
             else if (arg == opt.dryrunLong || arg == opt.dryrunShort) {
                 dryrun = true;
+            }
+            else if (arg == opt.forceLong || arg == opt.forceShort) {
+                force = true;
             }
             else if (arg.length() > 0 && arg.front() == '-') {
                 throw UnknownOption<CharT>(argv[i]);
@@ -221,6 +229,9 @@ Optional arguments:
   --help, -h    Prints this help.
   --dryrun, -n  No files are modified, only what would have been patched are
                 printed.
+  --force, -f   Proceed even if the PDB signatures don't match. Useful if you
+                already know an image is compatible with a PDB even though the
+                signatures don't match.
 )";
 
 template<typename CharT = char>
@@ -254,7 +265,7 @@ int ducible(int argc, CharT** argv)
     }
 
     try {
-        patchImage(opts.image, opts.pdb, opts.dryrun);
+        patchImage(opts.image, opts.pdb, opts.dryrun, opts.force);
     }
     catch (const InvalidImage& error) {
         std::cerr << "Error: Invalid image (" << error.why() << ")\n";
