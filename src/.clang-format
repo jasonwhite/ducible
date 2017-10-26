@@ -1,0 +1,8 @@
+---
+BasedOnStyle: Google
+IndentWidth: 4
+---
+Language: Cpp
+AlignConsecutiveAssignments: true
+AlignTrailingComments: true
+ReflowComments: true
