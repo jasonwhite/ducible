@@ -28,13 +28,24 @@
  * Abstracts file mode so we can use them generically with other templates.
  */
 template <typename CharT>
-struct FileMode {
-    const CharT* mode;
+struct FileMode {};
 
-    FileMode(const CharT* mode) : mode(mode) {}
+template <>
+struct FileMode<char> {
+    const char* mode;
 
-    static const FileMode<CharT> readExisting;
-    static const FileMode<CharT> writeEmpty;
+    FileMode(const char* mode) : mode(mode) {}
+    static const FileMode<char> readExisting;
+    static const FileMode<char> writeEmpty;
+};
+
+template <>
+struct FileMode<wchar_t> {
+    const wchar_t* mode;
+
+    FileMode(const wchar_t* mode) : mode(mode) {}
+    static const FileMode<wchar_t> readExisting;
+    static const FileMode<wchar_t> writeEmpty;
 };
 
 typedef std::shared_ptr<FILE> FileRef;

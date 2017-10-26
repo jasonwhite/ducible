@@ -32,14 +32,9 @@
 #include <windows.h>
 #endif
 
-template <>
 const FileMode<char> FileMode<char>::readExisting("rb");
-template <>
 const FileMode<char> FileMode<char>::writeEmpty("wb");
-
-template <>
 const FileMode<wchar_t> FileMode<wchar_t>::readExisting(L"rb");
-template <>
 const FileMode<wchar_t> FileMode<wchar_t>::writeEmpty(L"wb");
 
 /**
