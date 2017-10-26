@@ -21,8 +21,8 @@
  */
 #pragma once
 
-#include <stdlib.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <ostream>
 
 /**
@@ -34,9 +34,8 @@
  * incomplete patch. Thus, we keep a list of patches and patch everything all at
  * once to mitigate failure cases.
  */
-class Patch
-{
-public:
+class Patch {
+   public:
     // Location to patch.
     size_t offset;
 
@@ -50,16 +49,14 @@ public:
     const char* name;
 
     Patch(size_t offset, size_t length, const uint8_t* data,
-            const char* name = NULL);
+          const char* name = NULL);
 
-    template<typename T>
+    template <typename T>
     Patch(size_t offset, const T* data, const char* name = NULL)
         : offset(offset),
           length(sizeof(T)),
           data((const uint8_t*)data),
-          name(name)
-    {
-    }
+          name(name) {}
 
     /**
      * Applies the patch. Note that no bounds checking is done. It is assumed

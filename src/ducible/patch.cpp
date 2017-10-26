@@ -22,32 +22,28 @@
 
 #include "ducible/patch.h"
 
-#include <iostream>
-#include <iomanip>
-#include <tuple>
 #include <cstring>
+#include <iomanip>
+#include <iostream>
+#include <tuple>
 
-Patch::Patch(size_t offset, size_t length, const uint8_t* data, const char* name)
-    : offset(offset), length(length), data(data), name(name) {
-}
+Patch::Patch(size_t offset, size_t length, const uint8_t* data,
+             const char* name)
+    : offset(offset), length(length), data(data), name(name) {}
 
 void Patch::apply(uint8_t* buf, bool dryRun) {
-
     // Only apply the patch if necessary. This makes it easier to see what
     // actually changed in the output.
-    if (memcmp(buf + offset, data, length) == 0)
-        return;
+    if (memcmp(buf + offset, data, length) == 0) return;
 
     std::cout << *this << std::endl;
 
-    if (!dryRun)
-        memcpy(buf + offset, data, length);
+    if (!dryRun) memcpy(buf + offset, data, length);
 }
 
 std::ostream& operator<<(std::ostream& os, const Patch& patch) {
-    os << "Patching '" << patch.name
-       << "' at offset 0x" << std::hex << patch.offset << std::dec
-       << " (" << patch.length << " bytes)";
+    os << "Patching '" << patch.name << "' at offset 0x" << std::hex
+       << patch.offset << std::dec << " (" << patch.length << " bytes)";
     return os;
 }
 

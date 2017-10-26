@@ -29,34 +29,27 @@
 /**
  * Thrown when an image is found to be invalid.
  */
-class InvalidImage
-{
-private:
+class InvalidImage {
+   private:
     const char* _why;
 
-public:
-
+   public:
     InvalidImage(const char* why) : _why(why) {}
 
-    const char* why() const {
-        return _why;
-    }
+    const char* why() const { return _why; }
 };
 
 /**
  * Helper class for parsing image headers.
  */
-class PEFile
-{
-private:
-
+class PEFile {
+   private:
     // Pointer to the optional header.
     const uint8_t* _optional;
 
     void _init();
 
-public:
-
+   public:
     const uint8_t* buf;
     const size_t length;
 
@@ -91,14 +84,12 @@ public:
      * The Magic field of the optional header. This is used to determine if the
      * optional header is 32- or 64-bit.
      */
-    uint16_t magic() const {
-        return *(uint16_t*)_optional;
-    }
+    uint16_t magic() const { return *(uint16_t*)_optional; }
 
     /**
      * Returns the optional header of the given type.
      */
-    template<typename T>
+    template <typename T>
     const T* optionalHeader() const {
         // Bounds check
         if (_optional + sizeof(T) >= buf + length)
@@ -118,7 +109,7 @@ public:
      * Checks if the given pointer for type T is contained in the image. That
      * is, if the object it points to fits inside as well.
      */
-    template<typename T>
+    template <typename T>
     bool isValidRef(const T* p) const {
         return isValidRef((const uint8_t*)p, sizeof(T));
     }
@@ -130,12 +121,11 @@ public:
     /**
      * Returns a data directory. If it does not exist, returns NULL.
      */
-    template<typename T, typename OptHeader>
+    template <typename T, typename OptHeader>
     const T* getDataDir(const OptHeader* opt, uint32_t entry) const {
         const IMAGE_DATA_DIRECTORY& dd = opt->DataDirectory[entry];
 
-        if (dd.VirtualAddress == 0)
-            return NULL;
+        if (dd.VirtualAddress == 0) return NULL;
 
         if (dd.Size < sizeof(T)) {
             // Note that we only check if the size is less than our defined
@@ -147,7 +137,8 @@ public:
 
         const T* dir = (const T*)translate(dd.VirtualAddress);
         if (!isValidRef(dir))
-            throw InvalidImage("IMAGE_DATA_DIRECTORY.VirtualAddress is invalid");
+            throw InvalidImage(
+                "IMAGE_DATA_DIRECTORY.VirtualAddress is invalid");
 
         return dir;
     }
@@ -155,18 +146,19 @@ public:
     /**
      * Returns a list of debug data directories. If non exist, returns NULL.
      */
-    template<typename OptHeader>
-    const IMAGE_DEBUG_DIRECTORY* getDebugDataDirs(const OptHeader* opt, size_t& count) const {
+    template <typename OptHeader>
+    const IMAGE_DEBUG_DIRECTORY* getDebugDataDirs(const OptHeader* opt,
+                                                  size_t& count) const {
         const IMAGE_DATA_DIRECTORY& dd =
             opt->DataDirectory[IMAGE_DIRECTORY_ENTRY_DEBUG];
 
-        if (dd.VirtualAddress == 0)
-            return NULL;
+        if (dd.VirtualAddress == 0) return NULL;
 
         const uint8_t* p = translate(dd.VirtualAddress);
 
         if (!isValidRef(p, dd.Size))
-            throw InvalidImage("IMAGE_DATA_DIRECTORY.VirtualAddress is invalid");
+            throw InvalidImage(
+                "IMAGE_DATA_DIRECTORY.VirtualAddress is invalid");
 
         // There can be multiple debug data directories in this section.
         count = dd.Size / sizeof(IMAGE_DEBUG_DIRECTORY);
@@ -178,13 +170,11 @@ public:
      * Returns the PDB information in the PE file. If it doesn't exist, returns
      * NULL.
      */
-    template<typename OptHeader>
+    template <typename OptHeader>
     const CV_INFO_PDB70* pdbInfo(const OptHeader* opt) const {
-
         size_t debugDirCount;
         auto dir = getDebugDataDirs(opt, debugDirCount);
-        if (!dir)
-            return NULL;
+        if (!dir) return NULL;
 
         // Information about the PDB that we're looking for.
         const CV_INFO_PDB70* cvInfo = NULL;

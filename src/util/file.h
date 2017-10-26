@@ -27,7 +27,7 @@
 /**
  * Abstracts file mode so we can use them generically with other templates.
  */
-template<typename CharT>
+template <typename CharT>
 struct FileMode {
     const CharT* mode;
 
@@ -65,4 +65,4 @@ FileRef openFile(const wchar_t* path, FileMode<wchar_t> mode);
 void renameFile(const wchar_t* src, const wchar_t* dest);
 void deleteFile(const wchar_t* path);
 
-#endif // _WIN32
+#endif  // _WIN32

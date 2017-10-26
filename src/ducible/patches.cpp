@@ -24,19 +24,12 @@
 
 #include <algorithm>
 
-Patches::Patches(uint8_t* buf)
-    : _buf(buf) {
-}
+Patches::Patches(uint8_t* buf) : _buf(buf) {}
 
-void Patches::add(Patch patch) {
-    patches.push_back(patch);
-}
+void Patches::add(Patch patch) { patches.push_back(patch); }
 
-void Patches::sort() {
-    std::sort(patches.begin(), patches.end());
-}
+void Patches::sort() { std::sort(patches.begin(), patches.end()); }
 
 void Patches::apply(bool dryRun) {
-    for (auto&& patch: patches)
-        patch.apply(_buf, dryRun);
+    for (auto&& patch : patches) patch.apply(_buf, dryRun);
 }

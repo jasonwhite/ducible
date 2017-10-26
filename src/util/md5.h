@@ -5,7 +5,7 @@
  */
 #pragma once
 
-#include <stdlib.h> // For size_t
+#include <stdlib.h>  // For size_t
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,11 +14,10 @@ extern "C" {
 /**
  * \brief          MD5 context structure
  */
-typedef struct
-{
-    unsigned int total[2];     /*!< number of bytes processed  */
-    unsigned int state[4];     /*!< intermediate digest state  */
-    unsigned char buffer[64];  /*!< data block being processed */
+typedef struct {
+    unsigned int total[2];    /*!< number of bytes processed  */
+    unsigned int state[4];    /*!< intermediate digest state  */
+    unsigned char buffer[64]; /*!< data block being processed */
 } md5_context;
 
 /**

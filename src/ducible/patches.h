@@ -21,21 +21,19 @@
  */
 #pragma once
 
-#include <vector>
 #include <stdint.h>
+#include <vector>
 
 #include "ducible/patch.h"
 
 /**
  * Keeps track of a list of patches to apply.
  */
-class Patches
-{
-private:
-
+class Patches {
+   private:
     uint8_t* _buf;
 
-public:
+   public:
     // List of patches
     std::vector<Patch> patches;
 
@@ -46,7 +44,7 @@ public:
     /**
      * Convenience function for adding patches.
      */
-    template<typename T>
+    template <typename T>
     void add(const T* addr, const T* data, const char* name = NULL) {
         add(Patch((const uint8_t*)addr - _buf, data, name));
     }
@@ -64,4 +62,3 @@ public:
      */
     void apply(bool dryRun = false);
 };
-

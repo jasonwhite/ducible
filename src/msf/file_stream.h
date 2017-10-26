@@ -31,15 +31,14 @@
  * Represents an MSF file stream.
  */
 class MsfFileStream : public MsfStream {
-private:
-
+   private:
     FileRef _f;
     size_t _pageSize;
     size_t _pos;
     size_t _length;
     std::vector<uint32_t> _pages;
 
-public:
+   public:
     /**
      * Params:
      *   f        = FILE pointer.
@@ -48,7 +47,8 @@ public:
      *   pages    = List of pages. The length of this array is calculated using
      *              the page size and stream length.
      */
-    MsfFileStream(FileRef f, size_t pageSize, size_t length, const uint32_t* pages);
+    MsfFileStream(FileRef f, size_t pageSize, size_t length,
+                  const uint32_t* pages);
 
     /**
      * Returns the length of the stream, in bytes.
@@ -97,12 +97,9 @@ public:
     /**
      * Returns the pages in the stream. This is useful for diagnostic purposes.
      */
-    const std::vector<uint32_t>& pages() const {
-        return _pages;
-    }
+    const std::vector<uint32_t>& pages() const { return _pages; }
 
-private:
-
+   private:
     /**
      * Reads a single page from the stream.
      *
@@ -115,5 +112,6 @@ private:
      *
      * Returns: The number of bytes read.
      */
-    size_t readFromPage(size_t page, size_t length, void* buf, size_t offset = 0);
+    size_t readFromPage(size_t page, size_t length, void* buf,
+                        size_t offset = 0);
 };

@@ -30,12 +30,11 @@
  * Represents an MSF file stream.
  */
 class MsfMemoryStream : public MsfStream {
-private:
-
+   private:
     size_t _pos;
     std::vector<uint8_t> _data;
 
-public:
+   public:
     /**
      * Initialize the stream with an buffer. The buffer is copied internally.
      *
@@ -63,9 +62,7 @@ public:
     /**
      * Returns a pointer to the underlying data.
      */
-    uint8_t* data() {
-        return _data.data();
-    }
+    uint8_t* data() { return _data.data(); }
 
     /**
      * Gets the current position, in bytes, in the stream.

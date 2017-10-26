@@ -21,14 +21,14 @@
  */
 #pragma once
 
-#include <stdlib.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #ifdef _MSC_VER
-#   pragma warning(push)
+#pragma warning(push)
 
-    // Disable "nonstandard extension used: zero-sized array in struct/union"
-#   pragma warning(disable : 4200)
+// Disable "nonstandard extension used: zero-sized array in struct/union"
+#pragma warning(disable : 4200)
 #endif
 
 /**
@@ -71,7 +71,7 @@ enum class PdbVersion : uint32_t {
     vc41    = 19950814,
     vc50    = 19960307,
     vc98    = 19970604,
-    vc70Dep = 19990604, // deprecated vc70 implementation version
+    vc70Dep = 19990604,  // deprecated vc70 implementation version
     vc70    = 20000404,
     vc80    = 20030901,
     vc110   = 20091201,
@@ -124,7 +124,6 @@ enum class DbiVersion : uint32_t {
  * The Debug Information Stream (DBI) header.
  */
 struct DbiHeader {
-
     // The header signature. This should be 0xffffffff.
     uint32_t signature;
 
@@ -178,11 +177,11 @@ struct DbiHeader {
     uint32_t ecInfoSize;
 
     struct Flags {
-        uint16_t incLink : 1;  // True if linked incrementally (really just if
-                               // ilink thunks are present)
-        uint16_t stripped : 1; // True if private data is stripped out
-        uint16_t ctypes : 1;   // True if this PDB is using CTypes.
-        uint16_t unused : 13;  // reserved, must be 0.
+        uint16_t incLink : 1;   // True if linked incrementally (really just if
+                                // ilink thunks are present)
+        uint16_t stripped : 1;  // True if private data is stripped out
+        uint16_t ctypes : 1;    // True if this PDB is using CTypes.
+        uint16_t unused : 13;   // reserved, must be 0.
     } flags;
 
     // Machine type
@@ -230,7 +229,6 @@ enum class SectionContribVersion : uint32_t {
     v2 = 0xeffe0000 + 20140516,
 };
 
-
 /**
  * Module info.
  */
@@ -240,19 +238,19 @@ struct ModuleInfo {
     SectionContribution sc;
 
     struct Flags {
-        uint16_t written : 1;   // True if mod has been written since DBI opened
-        uint16_t ecEnabled : 1; // True if mod has EC symbolic information
-        uint16_t unused: 6;
-        uint16_t tsmIndex: 8;   // index into TSM list for this mods server
+        uint16_t written : 1;  // True if mod has been written since DBI opened
+        uint16_t ecEnabled : 1;  // True if mod has EC symbolic information
+        uint16_t unused : 6;
+        uint16_t tsmIndex : 8;  // index into TSM list for this mods server
     } flags;
 
-    uint16_t stream; // Stream number of module debug info
+    uint16_t stream;  // Stream number of module debug info
 
-    uint32_t symbolsSize;  // Size of local symbols debug info in stream
-    uint32_t linesSize;    // Size of line number debug info in stream
-    uint32_t c13LinesSize; // Size of C13 style line number info in stream
+    uint32_t symbolsSize;   // Size of local symbols debug info in stream
+    uint32_t linesSize;     // Size of line number debug info in stream
+    uint32_t c13LinesSize;  // Size of C13 style line number info in stream
 
-    uint16_t fileCount; // number of files contributing to this module
+    uint16_t fileCount;  // number of files contributing to this module
 
     uint32_t offsets;
 
@@ -267,9 +265,7 @@ struct ModuleInfo {
     /**
      * Returns the module name.
      */
-    const char* moduleName() const {
-        return names;
-    }
+    const char* moduleName() const { return names; }
 
     /**
      * Returns the object name.m
@@ -288,13 +284,18 @@ struct ModuleInfo {
      * padding due to alignment.
      */
     size_t size() const {
-
         size_t len = sizeof(*this);
 
         // Skip past the names
         const char* p = names;
-        while (*p != 0) { ++p; } ++p; // Skip module name
-        while (*p != 0) { ++p; } ++p; // Skip object name
+        while (*p != 0) {
+            ++p;
+        }
+        ++p;  // Skip module name
+        while (*p != 0) {
+            ++p;
+        }
+        ++p;  // Skip object name
         len += p - names;
 
         // Align to a multiple of 4 bytes
@@ -329,8 +330,8 @@ const uint32_t gsiHashVersion = 0xeffe0000 + 19990810;
  * Global stream info hash header
  */
 struct GsiHashHeader {
-    uint32_t signature; // Equal to gsiHashSignature
-    uint32_t version;   // Equal to gsiHashVersion
+    uint32_t signature;  // Equal to gsiHashSignature
+    uint32_t version;    // Equal to gsiHashVersion
 
     // Total size of the hash records, in bytes
     uint32_t recordsSize;
@@ -385,7 +386,6 @@ static_assert(sizeof(PublicSymbolHeader) == 28, "invalid struct size");
  * files and the header files that go into those source files.
  */
 struct FileInfoHeader {
-
     // Module index
     uint16_t modiref;
 
@@ -402,21 +402,21 @@ static_assert(sizeof(FileInfoHeader) == 4, "invalid struct size");
  * array.
  */
 namespace DebugTypes {
-    enum {
-        fpo,
-        exception, // deprecated
-        fixup,
-        omapToSrc,
-        omapFromSrc,
-        sectionHdr,
-        tokenRidMap,
-        xdata,
-        pdata,
-        newFPO,
-        sectionHdrOrig,
+enum {
+    fpo,
+    exception,  // deprecated
+    fixup,
+    omapToSrc,
+    omapFromSrc,
+    sectionHdr,
+    tokenRidMap,
+    xdata,
+    pdata,
+    newFPO,
+    sectionHdrOrig,
 
-        count,
-    };
+    count,
+};
 }
 
 /**
@@ -446,7 +446,7 @@ struct LinkInfo {
     /**
      * Returns the current working directory string.
      */
-    template<typename CharT>
+    template <typename CharT>
     CharT* cwd() const {
         return (CharT*)((uint8_t*)this + cwdOffset);
     }
@@ -454,7 +454,7 @@ struct LinkInfo {
     /**
      * Returns the command string.
      */
-    template<typename CharT>
+    template <typename CharT>
     CharT* command() const {
         return (CharT*)((uint8_t*)this + commandOffset);
     }
@@ -462,7 +462,7 @@ struct LinkInfo {
     /**
      * Returns the command string.
      */
-    template<typename CharT>
+    template <typename CharT>
     CharT* libs() const {
         return (CharT*)((uint8_t*)this + libsOffset);
     }
@@ -470,7 +470,7 @@ struct LinkInfo {
     /**
      * Returns the output file.
      */
-    template<typename CharT>
+    template <typename CharT>
     CharT* outputFile() const {
         return command<CharT>() + outputFileOffset;
     }
@@ -500,5 +500,5 @@ struct StringTableHeader {
 static_assert(sizeof(StringTableHeader) == 12, "invalid struct size");
 
 #ifdef _MSC_VER
-#   pragma warning(pop)
+#pragma warning(pop)
 #endif

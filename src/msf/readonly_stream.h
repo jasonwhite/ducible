@@ -29,13 +29,12 @@
  * A lightweight read-only memory stream.
  */
 class MsfReadOnlyStream : public MsfStream {
-private:
-
+   private:
     size_t _pos;
     size_t _length;
     const uint8_t* _data;
 
-public:
+   public:
     /**
      * Initialize the stream with an buffer. The buffer is copied internally.
      *
@@ -53,9 +52,7 @@ public:
     /**
      * Returns a pointer to the underlying data.
      */
-    const uint8_t* data() const {
-        return _data;
-    }
+    const uint8_t* data() const { return _data; }
 
     /**
      * Gets the current position, in bytes, in the stream.
@@ -95,4 +92,3 @@ public:
      */
     size_t write(size_t length, const void* buf);
 };
-

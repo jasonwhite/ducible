@@ -21,7 +21,6 @@
  */
 #pragma once
 
-
 /**
  * Prints information about a PDB.
  */

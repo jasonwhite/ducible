@@ -20,75 +20,67 @@
  * SOFTWARE.
  */
 
-#include <iostream>
-#include <system_error>
 #include <stdlib.h>
-#include <vector>
+#include <iostream>
 #include <string>
+#include <system_error>
+#include <vector>
 
 #include "ducible/patch_image.h"
 
-#include "pe/pe.h"
 #include "msf/msf.h"
 #include "pdb/format.h"
 #include "pdb/pdb.h"
+#include "pe/pe.h"
 
 #include "version.h"
 
 /**
  * Thrown when there is an error parsing the command line options.
  */
-class InvalidCommandLine
-{
-private:
+class InvalidCommandLine {
+   private:
     std::string _why;
 
-public:
-
+   public:
     InvalidCommandLine(const std::string& why) : _why(why) {}
 
-    const std::string& why() const {
-        return _why;
-    }
+    const std::string& why() const { return _why; }
 };
 
 /**
  * Thrown when an unknown option is passed to the command line.
  */
-template<typename CharT = char>
+template <typename CharT = char>
 class UnknownOption {
-private:
+   private:
     const CharT* _name;
 
-public:
+   public:
     UnknownOption(const CharT* name) : _name(name) {}
 
-    const CharT* name() const {
-        return _name;
-    }
+    const CharT* name() const { return _name; }
 };
 
 /**
  * Thrown when help is requested from the command line.
  */
-class CommandLineHelp {
-};
+class CommandLineHelp {};
 
 /**
  * Thrown when version information is requested from the command line.
  */
-class CommandLineVersion {
-};
+class CommandLineVersion {};
 
 /**
  * String literals for the appropriate character type.
  *
  * FIXME: I'm sure there is a better way to do this...
  */
-template<typename CharT>
+template <typename CharT>
 struct OptionNames {};
 
-template<>
+template <>
 struct OptionNames<char> {
     const char* helpLong    = "--help";
     const char* helpShort   = "-h";
@@ -100,7 +92,7 @@ struct OptionNames<char> {
     const char* forceShort  = "-f";
 };
 
-template<>
+template <>
 struct OptionNames<wchar_t> {
     const wchar_t* helpLong    = L"--help";
     const wchar_t* helpShort   = L"-h";
@@ -115,19 +107,16 @@ struct OptionNames<wchar_t> {
 /**
  * Command line options.
  */
-template<typename CharT = char>
-class CommandOptions
-{
-private:
-
+template <typename CharT = char>
+class CommandOptions {
+   private:
     static const OptionNames<CharT> opt;
 
-public:
-
+   public:
     const CharT* image;
     const CharT* pdb;
     bool dryrun;
-	bool force;
+    bool force;
 
     CommandOptions() : image(NULL), pdb(NULL), dryrun(false) {}
 
@@ -135,7 +124,6 @@ public:
      * Parses the command line arguments.
      */
     void parse(int argc, CharT** argv) {
-
         typedef std::basic_string<CharT> string;
 
         // Look for the help option
@@ -169,20 +157,15 @@ public:
 
             if (onlyPositional) {
                 positional.push_back(argv[i]);
-            }
-            else if (arg == opt.dashDash) {
+            } else if (arg == opt.dashDash) {
                 onlyPositional = true;
-            }
-            else if (arg == opt.dryrunLong || arg == opt.dryrunShort) {
+            } else if (arg == opt.dryrunLong || arg == opt.dryrunShort) {
                 dryrun = true;
-            }
-            else if (arg == opt.forceLong || arg == opt.forceShort) {
+            } else if (arg == opt.forceLong || arg == opt.forceShort) {
                 force = true;
-            }
-            else if (arg.length() > 0 && arg.front() == '-') {
+            } else if (arg.length() > 0 && arg.front() == '-') {
                 throw UnknownOption<CharT>(argv[i]);
-            }
-            else {
+            } else {
                 positional.push_back(argv[i]);
             }
         }
@@ -204,14 +187,13 @@ public:
     }
 };
 
-template<typename CharT>
+template <typename CharT>
 const OptionNames<CharT> CommandOptions<CharT>::opt = OptionNames<CharT>();
 
-const char* usage =
-    "Usage: ducible image [pdb] [--help] [--dryrun]";
+const char* usage = "Usage: ducible image [pdb] [--help] [--dryrun]";
 
 const char* help =
-R"(
+    R"(
 This is a simple tool to make builds of Portable Executables (PEs) reproducible.
 
 Timestamps and other non-deterministic data are embedded in DLLs, EXEs, and
@@ -234,52 +216,42 @@ Optional arguments:
                 signatures don't match.
 )";
 
-template<typename CharT = char>
-int ducible(int argc, CharT** argv)
-{
+template <typename CharT = char>
+int ducible(int argc, CharT** argv) {
     CommandOptions<CharT> opts;
 
     try {
         opts.parse(argc, argv);
-    }
-    catch (const InvalidCommandLine& error) {
+    } catch (const InvalidCommandLine& error) {
         std::cout << "Error parsing arguments: " << error.why() << std::endl;
         std::cout << usage << std::endl;
         return 1;
-    }
-    catch (const UnknownOption<CharT>& error) {
+    } catch (const UnknownOption<CharT>& error) {
         std::cout << "Error parsing arguments: Unknown option '" << error.name()
-            << "'" << std::endl;
+                  << "'" << std::endl;
         std::cout << usage << std::endl;
         return 1;
-    }
-    catch (const CommandLineHelp&) {
+    } catch (const CommandLineHelp&) {
         std::cout << usage << std::endl;
         std::cout << help;
         return 0;
-    }
-    catch (const CommandLineVersion&) {
-        std::cout << "ducible version " << DUCIBLE_PRETTY_VERSION <<
-            std::endl;
+    } catch (const CommandLineVersion&) {
+        std::cout << "ducible version " << DUCIBLE_PRETTY_VERSION << std::endl;
         return 0;
     }
 
     try {
         patchImage(opts.image, opts.pdb, opts.dryrun, opts.force);
-    }
-    catch (const InvalidImage& error) {
+    } catch (const InvalidImage& error) {
         std::cerr << "Error: Invalid image (" << error.why() << ")\n";
         return 1;
-    }
-    catch (const InvalidMsf& error) {
+    } catch (const InvalidMsf& error) {
         std::cerr << "Error: Invalid PDB MSF format (" << error.why() << ")\n";
         return 1;
-    }
-    catch (const InvalidPdb& error) {
+    } catch (const InvalidPdb& error) {
         std::cerr << "Error: Invalid PDB format (" << error.why() << ")\n";
         return 1;
-    }
-    catch (const std::system_error& error) {
+    } catch (const std::system_error& error) {
         std::cerr << "Error: " << error.what() << "\n";
         return 1;
     }
@@ -289,14 +261,10 @@ int ducible(int argc, CharT** argv)
 
 #if defined(_WIN32) && defined(UNICODE)
 
-int wmain(int argc, wchar_t** argv) {
-    return ducible<wchar_t>(argc, argv);
-}
+int wmain(int argc, wchar_t** argv) { return ducible<wchar_t>(argc, argv); }
 
 #else
 
-int main(int argc, char** argv) {
-    return ducible<char>(argc, argv);
-}
+int main(int argc, char** argv) { return ducible<char>(argc, argv); }
 
 #endif

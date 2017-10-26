@@ -25,16 +25,12 @@
 
 #include "msf/memory_stream.h"
 
-MsfMemoryStream::MsfMemoryStream(size_t length, const void* buf)
-    : _pos(0)
-{
+MsfMemoryStream::MsfMemoryStream(size_t length, const void* buf) : _pos(0) {
     _data.resize(length);
     memcpy(_data.data(), buf, length);
 }
 
-MsfMemoryStream::MsfMemoryStream(MsfStream* stream)
-    : _pos(0)
-{
+MsfMemoryStream::MsfMemoryStream(MsfStream* stream) : _pos(0) {
     const size_t length = stream->length();
 
     _data.resize(length);
@@ -47,17 +43,11 @@ MsfMemoryStream::MsfMemoryStream(MsfStream* stream)
     stream->setPos(pos);
 }
 
-size_t MsfMemoryStream::length() const {
-    return _data.size();
-}
+size_t MsfMemoryStream::length() const { return _data.size(); }
 
-void MsfMemoryStream::resize(size_t length) {
-    _data.resize(length);
-}
+void MsfMemoryStream::resize(size_t length) { _data.resize(length); }
 
-size_t MsfMemoryStream::getPos() const {
-    return _pos;
-}
+size_t MsfMemoryStream::getPos() const { return _pos; }
 
 void MsfMemoryStream::setPos(size_t pos) {
     // Don't allow setting the position past the end of the stream.
@@ -65,9 +55,7 @@ void MsfMemoryStream::setPos(size_t pos) {
 }
 
 size_t MsfMemoryStream::read(size_t length, void* buf) {
-
-    if (_pos >= _data.size())
-        return 0;
+    if (_pos >= _data.size()) return 0;
 
     size_t available = std::min(_data.size() - _pos, length);
 
@@ -83,12 +71,10 @@ size_t MsfMemoryStream::read(void* buf) {
 }
 
 size_t MsfMemoryStream::write(size_t length, const void* buf) {
-
     const size_t available = _data.size() - _pos;
 
     // Not enough room, need to grow the stream.
-    if (available < length)
-        _data.resize(_pos + length);
+    if (available < length) _data.resize(_pos + length);
 
     memcpy(&_data[_pos], buf, length);
 

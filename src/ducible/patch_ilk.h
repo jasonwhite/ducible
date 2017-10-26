@@ -28,11 +28,11 @@
 #if defined(_WIN32) && defined(UNICODE)
 
 void patchIlk(const wchar_t* imagePath, const uint8_t oldSignature[16],
-        const uint8_t newSignature[16], bool dryrun);
+              const uint8_t newSignature[16], bool dryrun);
 
 #else
 
 void patchIlk(const char* imagePath, const uint8_t oldSignature[16],
-        const uint8_t newSignature[16], bool dryrun);
+              const uint8_t newSignature[16], bool dryrun);
 
 #endif

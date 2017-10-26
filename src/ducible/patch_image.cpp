@@ -68,19 +68,19 @@
  *   implementation for reading/writing PDBs.)
  */
 
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include <algorithm>
 #include <cstring>
 #include <iostream>
-#include <vector>
 #include <map>
 #include <regex>
+#include <vector>
 
-#include "ducible/patch_image.h"
 #include "ducible/patch_ilk.h"
+#include "ducible/patch_image.h"
 
 #include "ducible/patches.h"
 
@@ -88,39 +88,43 @@
 
 #include "util/file.h"
 
+#include "msf/memory_stream.h"
 #include "msf/msf.h"
 #include "msf/stream.h"
-#include "msf/memory_stream.h"
 
+#include "pdb/cvinfo.h"
 #include "pdb/format.h"
 #include "pdb/pdb.h"
-#include "pdb/cvinfo.h"
 
-#include "util/memmap.h"
 #include "util/md5.h"
+#include "util/memmap.h"
 
 namespace {
 
 // Helpers for CharT generalization
-template<typename CharT>
+template <typename CharT>
 struct Strings {
     static const CharT tmpExtension[];
     static const CharT nullGuid[];
 };
 
-template<> const char    Strings<char>::tmpExtension[]    = ".tmp";
-template<> const char    Strings<char>::nullGuid[]        = "{00000000-0000-0000-0000-000000000000}";
-template<> const wchar_t Strings<wchar_t>::tmpExtension[] = L".tmp";
-template<> const wchar_t Strings<wchar_t>::nullGuid[]     = L"{00000000-0000-0000-0000-000000000000}";
+template <>
+const char Strings<char>::tmpExtension[] = ".tmp";
+template <>
+const char Strings<char>::nullGuid[] = "{00000000-0000-0000-0000-000000000000}";
+template <>
+const wchar_t Strings<wchar_t>::tmpExtension[] = L".tmp";
+template <>
+const wchar_t Strings<wchar_t>::nullGuid[] =
+    L"{00000000-0000-0000-0000-000000000000}";
 
 /**
  * There are 0 or more debug data directories. We need to patch the timestamp in
  * all of them.
  */
-template<typename OptHeader>
+template <typename OptHeader>
 void patchDebugDataDirectories(const PEFile& pe, Patches& patches,
-        const OptHeader* opt) {
-
+                               const OptHeader* opt) {
     size_t debugDirCount;
     auto dir = pe.getDebugDataDirs(opt, debugDirCount);
 
@@ -135,7 +139,7 @@ void patchDebugDataDirectories(const PEFile& pe, Patches& patches,
     for (size_t i = 0; i < debugDirCount; ++i) {
         if (dir->TimeDateStamp != 0)
             patches.add(&dir->TimeDateStamp, &pe.timestamp,
-                    "IMAGE_DEBUG_DIRECTORY.TimeDateStamp");
+                        "IMAGE_DEBUG_DIRECTORY.TimeDateStamp");
 
         if (dir->Type == IMAGE_DEBUG_TYPE_CODEVIEW) {
             if (cvInfo)
@@ -152,7 +156,8 @@ void patchDebugDataDirectories(const PEFile& pe, Patches& patches,
 
     if (cvInfo) {
         if (cvInfo->CvSignature != CV_INFO_SIGNATURE_PDB70)
-            throw InvalidImage("unsupported PDB format, only version 7.0 is supported");
+            throw InvalidImage(
+                "unsupported PDB format, only version 7.0 is supported");
 
         patches.add(&cvInfo->Signature, &pe.pdbSignature, "PDB Signature");
         patches.add(&cvInfo->Age, &pe.pdbAge, "PDB Age");
@@ -163,24 +168,23 @@ void patchDebugDataDirectories(const PEFile& pe, Patches& patches,
  * Patches the image based on the optional header type. The optional header can
  * be either 32- or 64-bit.
  */
-template<typename T>
-void patchOptionalHeader(const PEFile& pe, Patches& patches, const T* optional) {
-
-    patches.add(&optional->CheckSum, &pe.timestamp,
-            "OptionalHeader.CheckSum");
+template <typename T>
+void patchOptionalHeader(const PEFile& pe, Patches& patches,
+                         const T* optional) {
+    patches.add(&optional->CheckSum, &pe.timestamp, "OptionalHeader.CheckSum");
 
     // Patch exports directory timestamp
-    if (auto dir = pe.getDataDir<IMAGE_EXPORT_DIRECTORY>(optional,
-                IMAGE_DIRECTORY_ENTRY_EXPORT)) {
+    if (auto dir = pe.getDataDir<IMAGE_EXPORT_DIRECTORY>(
+            optional, IMAGE_DIRECTORY_ENTRY_EXPORT)) {
         patches.add(&dir->TimeDateStamp, &pe.timestamp,
-                "IMAGE_EXPORT_DIRECTORY.TimeDateStamp");
+                    "IMAGE_EXPORT_DIRECTORY.TimeDateStamp");
     }
 
     // Patch resource directory timestamp
-    if (auto dir = pe.getDataDir<IMAGE_RESOURCE_DIRECTORY>(optional,
-                IMAGE_DIRECTORY_ENTRY_RESOURCE)) {
+    if (auto dir = pe.getDataDir<IMAGE_RESOURCE_DIRECTORY>(
+            optional, IMAGE_DIRECTORY_ENTRY_RESOURCE)) {
         patches.add(&dir->TimeDateStamp, &pe.timestamp,
-                "IMAGE_RESOURCE_DIRECTORY.TimeDateStamp");
+                    "IMAGE_RESOURCE_DIRECTORY.TimeDateStamp");
     }
 
     // Patch the debug directories
@@ -199,8 +203,7 @@ void patchOptionalHeader(const PEFile& pe, Patches& patches, const T* optional) 
  * a good choice, but it can't incrementally hash chunks of data.
  */
 void calculateChecksum(const uint8_t* buf, const size_t length,
-        const std::vector<Patch>& patches, uint8_t output[16]) {
-
+                       const std::vector<Patch>& patches, uint8_t output[16]) {
     size_t pos = 0;
 
     md5_context ctx;
@@ -209,7 +212,7 @@ void calculateChecksum(const uint8_t* buf, const size_t length,
     // Take the checksum of the regions between the patches to ensure a
     // deterministic file checksum. Since the patches are sorted, we iterate
     // over the file sequentially.
-    for (auto&& patch: patches) {
+    for (auto&& patch : patches) {
         // Hash everything up to the patch
         md5_update(&ctx, buf + pos, patch.offset - pos);
 
@@ -229,8 +232,8 @@ void calculateChecksum(const uint8_t* buf, const size_t length,
 bool matchingSignatures(const CV_INFO_PDB70& pdbInfo,
                         const PdbStream70& pdbHeader) {
     if (pdbInfo.Age != pdbHeader.age ||
-        memcmp(pdbInfo.Signature, pdbHeader.sig70, sizeof(pdbHeader.sig70)) != 0
-        ) {
+        memcmp(pdbInfo.Signature, pdbHeader.sig70, sizeof(pdbHeader.sig70)) !=
+            0) {
         return false;
     }
 
@@ -241,7 +244,7 @@ bool matchingSignatures(const CV_INFO_PDB70& pdbInfo,
  * Returns a temporary PDB path name. The PDB will be written here first and
  * then renamed to the original after everything succeeds.
  */
-template<typename CharT>
+template <typename CharT>
 std::basic_string<CharT> getTempPdbPath(const CharT* pdbPath) {
     std::basic_string<CharT> temp(pdbPath);
     temp.append(Strings<CharT>::tmpExtension);
@@ -253,20 +256,21 @@ std::basic_string<CharT> getTempPdbPath(const CharT* pdbPath) {
  */
 template <typename CharT>
 void normalizeFileNameGuid(CharT* path, size_t length) {
-    static const std::regex guidRegex("\\{"
-            "[0-9a-fA-F]{8}-"
-            "[0-9a-fA-F]{4}-"
-            "[0-9a-fA-F]{4}-"
-            "[0-9a-fA-F]{4}-"
-            "[0-9a-fA-F]{12}"
+    static const std::regex guidRegex(
+        "\\{"
+        "[0-9a-fA-F]{8}-"
+        "[0-9a-fA-F]{4}-"
+        "[0-9a-fA-F]{4}-"
+        "[0-9a-fA-F]{4}-"
+        "[0-9a-fA-F]{12}"
         "\\}");
 
     std::match_results<const CharT*> match;
 
     if (std::regex_search((const CharT*)path, (const CharT*)path + length,
-                match, guidRegex)) {
+                          match, guidRegex)) {
         memcpy(path + match.position(0), Strings<CharT>::nullGuid,
-                sizeof(Strings<CharT>::nullGuid));
+               sizeof(Strings<CharT>::nullGuid));
     }
 }
 
@@ -274,11 +278,10 @@ void normalizeFileNameGuid(CharT* path, size_t length) {
  * Patches the "/LinkInfo" named stream.
  */
 void patchLinkInfoStream(MsfMemoryStream* stream) {
-    uint8_t* data = stream->data();
+    uint8_t* data       = stream->data();
     const size_t length = stream->length();
 
-    if (length == 0)
-        return;
+    if (length == 0) return;
 
     if (length < sizeof(LinkInfo))
         throw InvalidPdb("got partial LinkInfo stream");
@@ -296,7 +299,7 @@ void patchLinkInfoStream(MsfMemoryStream* stream) {
  * Patches the "/names" stream.
  */
 void patchNamesStream(MsfMemoryStream* stream) {
-    uint8_t* data = stream->data();
+    uint8_t* data    = stream->data();
     uint8_t* dataEnd = data + stream->length();
 
     // Parse the header
@@ -339,13 +342,12 @@ void patchNamesStream(MsfMemoryStream* stream) {
     for (size_t i = 0; i < offsetsLength; ++i) {
         const size_t offset = offsets[i];
 
-        if (offset == 0)
-            continue;
+        if (offset == 0) continue;
 
         if (offset >= header->stringsSize)
             throw InvalidPdb("got invalid offset into string table");
 
-        char* str = &header->strings[offset];
+        char* str  = &header->strings[offset];
         size_t len = strlen(str);
 
         if (offset + len + 1 > header->stringsSize)
@@ -358,10 +360,10 @@ void patchNamesStream(MsfMemoryStream* stream) {
 /**
  * Patches the PDB header stream.
  */
-void patchHeaderStream(MsfFile& msf, MsfMemoryStream* stream, const CV_INFO_PDB70* pdbInfo,
-        uint32_t timestamp, const uint8_t signature[16], bool force) {
-
-    uint8_t* data = stream->data();
+void patchHeaderStream(MsfFile& msf, MsfMemoryStream* stream,
+                       const CV_INFO_PDB70* pdbInfo, uint32_t timestamp,
+                       const uint8_t signature[16], bool force) {
+    uint8_t* data          = stream->data();
     const uint8_t* dataEnd = stream->data() + stream->length();
 
     if (size_t(dataEnd - data) < sizeof(PdbStream70))
@@ -381,7 +383,7 @@ void patchHeaderStream(MsfFile& msf, MsfMemoryStream* stream, const CV_INFO_PDB7
 
     // Patch the PDB header stream
     header->timestamp = timestamp;
-    header->age = 1;
+    header->age       = 1;
     memcpy(header->sig70, signature, sizeof(header->sig70));
 
     const auto table = readNameMapTable(data, dataEnd);
@@ -395,7 +397,7 @@ void patchHeaderStream(MsfFile& msf, MsfMemoryStream* stream, const CV_INFO_PDB7
                 throw InvalidPdb("missing '/LinkInfo' stream");
 
             auto linkInfoStream = std::shared_ptr<MsfMemoryStream>(
-                    new MsfMemoryStream(origLinkInfoStream.get()));
+                new MsfMemoryStream(origLinkInfoStream.get()));
 
             patchLinkInfoStream(linkInfoStream.get());
 
@@ -408,11 +410,10 @@ void patchHeaderStream(MsfFile& msf, MsfMemoryStream* stream, const CV_INFO_PDB7
         const auto it = table.find("/names");
         if (it != table.end()) {
             auto origNamesStream = msf.getStream(it->second);
-            if (!origNamesStream)
-                throw InvalidPdb("missing '/names' stream");
+            if (!origNamesStream) throw InvalidPdb("missing '/names' stream");
 
             auto namesStream = std::shared_ptr<MsfMemoryStream>(
-                    new MsfMemoryStream(origNamesStream.get()));
+                new MsfMemoryStream(origNamesStream.get()));
 
             patchNamesStream(namesStream.get());
 
@@ -425,8 +426,7 @@ void patchHeaderStream(MsfFile& msf, MsfMemoryStream* stream, const CV_INFO_PDB7
  * Patches a module stream.
  */
 void patchModuleStream(MsfMemoryStream* stream) {
-
-    uint8_t* data = stream->data();
+    uint8_t* data          = stream->data();
     const uint8_t* dataEnd = stream->data() + stream->length();
 
     if (size_t(dataEnd - data) < sizeof(uint16_t))
@@ -435,8 +435,7 @@ void patchModuleStream(MsfMemoryStream* stream) {
     uint32_t type = *(uint32_t*)data;
     data += sizeof(type);
 
-    if (type != CV_SIGNATURE_C13)
-        return;
+    if (type != CV_SIGNATURE_C13) return;
 
     if (size_t(dataEnd - data) < sizeof(SymbolRecord))
         throw InvalidPdb("missing symbol record in module info stream");
@@ -444,8 +443,7 @@ void patchModuleStream(MsfMemoryStream* stream) {
     const SymbolRecord* sym = (const SymbolRecord*)data;
 
     // We're only concerned about objects here
-    if (sym->type != S_OBJNAME)
-        return;
+    if (sym->type != S_OBJNAME) return;
 
     // Recast now that we know the type.
     OBJNAMESYM* objsym = (OBJNAMESYM*)data;
@@ -465,7 +463,8 @@ void patchModuleStream(MsfMemoryStream* stream) {
     normalizeFileNameGuid((char*)objsym->name, namelen);
 }
 
-const char* kIncLinkWarning = "\
+const char* kIncLinkWarning =
+    "\
 Warning: /INCREMENTAL was specified in the linker options. Incremental linking \
 is known to not work with Ducible.";
 
@@ -473,13 +472,12 @@ is known to not work with Ducible.";
  * Patches the DBI stream.
  */
 void patchDbiStream(MsfFile& msf, MsfMemoryStream* stream) {
-
     if (stream->length() < sizeof(DbiHeader))
         throw InvalidPdb("DBI stream too short");
 
-    uint8_t* data = stream->data();
+    uint8_t* data       = stream->data();
     const size_t length = stream->length();
-    size_t offset = 0;
+    size_t offset       = 0;
 
     DbiHeader* dbi = (DbiHeader*)data;
 
@@ -491,8 +489,7 @@ void patchDbiStream(MsfFile& msf, MsfMemoryStream* stream) {
         throw InvalidPdb("Unsupported DBI stream version");
 
     // Display a warning about incrementally linking
-    if (dbi->flags.incLink)
-        std::cout << kIncLinkWarning << std::endl;
+    if (dbi->flags.incLink) std::cout << kIncLinkWarning << std::endl;
 
     // Patch the age. This must match the age in the PDB stream.
     dbi->age = 1;
@@ -509,7 +506,7 @@ void patchDbiStream(MsfFile& msf, MsfMemoryStream* stream) {
     size_t moduleCount = 0;
 
     // Patch the module info entries
-    for (size_t i = 0; i < dbi->gpModInfoSize; ) {
+    for (size_t i = 0; i < dbi->gpModInfoSize;) {
         if (dbi->gpModInfoSize - i < sizeof(ModuleInfo))
             throw InvalidPdb("got partial DBI module info");
 
@@ -527,15 +524,14 @@ void patchDbiStream(MsfFile& msf, MsfMemoryStream* stream) {
         // There is one entry that contains a path with a GUID. We need to patch
         // this. It is often the first module info entry, but it is safer to
         // find it by name.
-        if (strcmp(info->moduleName(), "* Linker Generated Manifest RES *") == 0 &&
+        if (strcmp(info->moduleName(), "* Linker Generated Manifest RES *") ==
+                0 &&
             strcmp(info->objectName(), "") == 0) {
-
             auto origModuleStream = msf.getStream(info->stream);
-            if (!origModuleStream)
-                continue;
+            if (!origModuleStream) continue;
 
             auto moduleStream = std::shared_ptr<MsfMemoryStream>(
-                    new MsfMemoryStream(origModuleStream.get()));
+                new MsfMemoryStream(origModuleStream.get()));
 
             patchModuleStream(moduleStream.get());
 
@@ -553,10 +549,11 @@ void patchDbiStream(MsfFile& msf, MsfMemoryStream* stream) {
 
     if (offset + dbi->sectionContributionSize > length) {
         throw InvalidPdb(
-                "DBI section contributions size exceeds stream length");
+            "DBI section contributions size exceeds stream length");
     }
 
-    const SectionContribVersion scVersion = *(SectionContribVersion*)(data + offset);
+    const SectionContribVersion scVersion =
+        *(SectionContribVersion*)(data + offset);
     offset += sizeof(scVersion);
 
     if (scVersion != SectionContribVersion::v1 &&
@@ -565,14 +562,15 @@ void patchDbiStream(MsfFile& msf, MsfMemoryStream* stream) {
     }
 
     const size_t scCount = (dbi->sectionContributionSize - sizeof(scVersion)) /
-        sizeof(SectionContribution);
+                           sizeof(SectionContribution);
 
-    SectionContribution* sectionContribs = (SectionContribution*)(data + offset);
+    SectionContribution* sectionContribs =
+        (SectionContribution*)(data + offset);
 
     for (size_t i = 0; i < scCount; ++i) {
         SectionContribution& sc = sectionContribs[i];
-        sc.padding1 = 0;
-        sc.padding2 = 0;
+        sc.padding1             = 0;
+        sc.padding2             = 0;
     }
 
     offset += dbi->sectionContributionSize - sizeof(scVersion);
@@ -583,11 +581,10 @@ void patchDbiStream(MsfFile& msf, MsfMemoryStream* stream) {
     // In the list of files, there are some temporary files with random GUIDs in
     // the name.
     if (dbi->fileInfoSize > 0) {
-
         if (offset + dbi->fileInfoSize > length)
             throw InvalidPdb("Missing file info in DBI stream");
 
-        uint8_t* p = data + offset;
+        uint8_t* p    = data + offset;
         uint8_t* pEnd = p + dbi->fileInfoSize;
 
         // Skip over the header as it doesn't always provide correct
@@ -601,19 +598,16 @@ void patchDbiStream(MsfFile& msf, MsfMemoryStream* stream) {
         uint16_t* fileCounts = (uint16_t*)p;
         p += moduleCount * sizeof(*fileCounts);
 
-        if (p >= pEnd)
-            throw InvalidPdb("got partial file info in DBI stream");
+        if (p >= pEnd) throw InvalidPdb("got partial file info in DBI stream");
 
         uint32_t* offsets = (uint32_t*)p;
 
         uint32_t offsetCount = 0;
-        for (size_t i = 0; i < moduleCount; ++i)
-            offsetCount += fileCounts[i];
+        for (size_t i = 0; i < moduleCount; ++i) offsetCount += fileCounts[i];
 
         p += offsetCount * sizeof(*offsets);
 
-        if (p >= pEnd)
-            throw InvalidPdb("got partial file info in DBI stream");
+        if (p >= pEnd) throw InvalidPdb("got partial file info in DBI stream");
 
         char* names = (char*)p;
 
@@ -654,12 +648,10 @@ void patchDbiStream(MsfFile& msf, MsfMemoryStream* stream) {
  * garbage just lives there, it needs to be zeroed out.
  */
 void patchSymbolRecordsStream(MsfMemoryStream* stream) {
-
-    uint8_t* data = stream->data();
+    uint8_t* data       = stream->data();
     const size_t length = stream->length();
 
-    for (size_t i = 0; i < length; ) {
-
+    for (size_t i = 0; i < length;) {
         if (length - i < sizeof(SymbolRecord))
             throw InvalidPdb("got partial symbol record");
 
@@ -685,12 +677,10 @@ void patchSymbolRecordsStream(MsfMemoryStream* stream) {
 
         // Find the null terminator at the end. The padding (if any) will be
         // after this point.
-        while (tail + 1 < dataLength && rec->data[tail] != 0)
-            ++tail;
+        while (tail + 1 < dataLength && rec->data[tail] != 0) ++tail;
 
         // Zero out the padding.
-        while (tail < dataLength)
-            rec->data[tail++] = 0;
+        while (tail < dataLength) rec->data[tail++] = 0;
 
         // Skip to next symbol record
         i += sizeof(SymbolRecord) + dataLength;
@@ -701,7 +691,6 @@ void patchSymbolRecordsStream(MsfMemoryStream* stream) {
  * Patch the public symbol info stream.
  */
 void patchPublicSymbolStream(MsfMemoryStream* stream) {
-
     // The public symbol info stream starts with the public symbol header
     // followed by the (Global Symbol Info) GSI hash header. We only care about
     // the public symbol header.
@@ -726,41 +715,39 @@ void patchPublicSymbolStream(MsfMemoryStream* stream) {
 /**
  * Rewrites a PDB, eliminating non-determinism.
  */
-void patchPDB(MsfFile& msf, const CV_INFO_PDB70* pdbInfo,
-        uint32_t timestamp, const uint8_t signature[16], bool force) {
-
+void patchPDB(MsfFile& msf, const CV_INFO_PDB70* pdbInfo, uint32_t timestamp,
+              const uint8_t signature[16], bool force) {
     msf.replaceStream((size_t)PdbStreamType::streamTable, nullptr);
 
     // Read the PDB header
     auto origPdbHeaderStream = msf.getStream((size_t)PdbStreamType::header);
-    if (!origPdbHeaderStream)
-        throw InvalidPdb("missing PDB header stream");
+    if (!origPdbHeaderStream) throw InvalidPdb("missing PDB header stream");
 
     auto pdbHeaderStream = std::shared_ptr<MsfMemoryStream>(
-            new MsfMemoryStream(origPdbHeaderStream.get()));
+        new MsfMemoryStream(origPdbHeaderStream.get()));
 
-    patchHeaderStream(msf, pdbHeaderStream.get(), pdbInfo, timestamp, signature, force);
+    patchHeaderStream(msf, pdbHeaderStream.get(), pdbInfo, timestamp, signature,
+                      force);
 
     msf.replaceStream((size_t)PdbStreamType::header, pdbHeaderStream);
 
     // Patch the DBI stream
     if (auto origDbiStream = msf.getStream((size_t)PdbStreamType::dbi)) {
-
-        auto dbiStream = std::make_shared<MsfMemoryStream>(
-                origDbiStream.get());
+        auto dbiStream = std::make_shared<MsfMemoryStream>(origDbiStream.get());
 
         patchDbiStream(msf, dbiStream.get());
 
         msf.replaceStream((size_t)PdbStreamType::dbi, dbiStream);
 
-        // We need the DBI header to get the symbol record stream. Note that bounds
-        // checking has already been done at this point.
+        // We need the DBI header to get the symbol record stream. Note that
+        // bounds checking has already been done at this point.
         const DbiHeader* dbiHeader = (const DbiHeader*)dbiStream->data();
 
         // Patch the symbol records stream
-        if (auto origSymRecStream = msf.getStream(dbiHeader->symbolRecordsStream)) {
-            auto symRecStream = std::make_shared<MsfMemoryStream>(
-                    origSymRecStream.get());
+        if (auto origSymRecStream =
+                msf.getStream(dbiHeader->symbolRecordsStream)) {
+            auto symRecStream =
+                std::make_shared<MsfMemoryStream>(origSymRecStream.get());
 
             patchSymbolRecordsStream(symRecStream.get());
 
@@ -771,7 +758,7 @@ void patchPDB(MsfFile& msf, const CV_INFO_PDB70* pdbInfo,
         if (auto origPubSymStream =
                 msf.getStream(dbiHeader->publicSymbolStream)) {
             auto pubSymStream = std::shared_ptr<MsfMemoryStream>(
-                    new MsfMemoryStream(origPubSymStream.get()));
+                new MsfMemoryStream(origPubSymStream.get()));
 
             patchPublicSymbolStream(pubSymStream.get());
 
@@ -783,14 +770,14 @@ void patchPDB(MsfFile& msf, const CV_INFO_PDB70* pdbInfo,
 /**
  * Patches a PDB file.
  */
-template<typename CharT>
+template <typename CharT>
 void patchPDB(const CharT* pdbPath, const CV_INFO_PDB70* pdbInfo,
-        uint32_t timestamp, const uint8_t signature[16], bool dryrun, bool force) {
-
+              uint32_t timestamp, const uint8_t signature[16], bool dryrun,
+              bool force) {
     auto tmpPdbPath = getTempPdbPath(pdbPath);
 
     {
-        auto pdb = openFile(pdbPath, FileMode<CharT>::readExisting);
+        auto pdb    = openFile(pdbPath, FileMode<CharT>::readExisting);
         auto tmpPdb = openFile(tmpPdbPath.c_str(), FileMode<CharT>::writeEmpty);
 
         MsfFile msf(pdb);
@@ -810,11 +797,12 @@ void patchPDB(const CharT* pdbPath, const CV_INFO_PDB70* pdbInfo,
     }
 }
 
-template<typename CharT>
-void patchImageImpl(const CharT* imagePath, const CharT* pdbPath, bool dryrun, bool force) {
+template <typename CharT>
+void patchImageImpl(const CharT* imagePath, const CharT* pdbPath, bool dryrun,
+                    bool force) {
     MemMap image(imagePath);
 
-    uint8_t* buf = (uint8_t*)image.buf();
+    uint8_t* buf        = (uint8_t*)image.buf();
     const size_t length = image.length();
 
     PEFile pe = PEFile(buf, length);
@@ -822,7 +810,7 @@ void patchImageImpl(const CharT* imagePath, const CharT* pdbPath, bool dryrun, b
     Patches patches(buf);
 
     patches.add(&pe.fileHeader->TimeDateStamp, &pe.timestamp,
-            "IMAGE_FILE_HEADER.TimeDateStamp");
+                "IMAGE_FILE_HEADER.TimeDateStamp");
 
     const CV_INFO_PDB70* pdbInfo = NULL;
 
@@ -830,7 +818,7 @@ void patchImageImpl(const CharT* imagePath, const CharT* pdbPath, bool dryrun, b
         case IMAGE_NT_OPTIONAL_HDR32_MAGIC: {
             // Patch as a PE32 file
             auto opt = pe.optionalHeader<IMAGE_OPTIONAL_HEADER32>();
-            pdbInfo = pe.pdbInfo(opt);
+            pdbInfo  = pe.pdbInfo(opt);
             patchOptionalHeader(pe, patches, opt);
             break;
         }
@@ -838,7 +826,7 @@ void patchImageImpl(const CharT* imagePath, const CharT* pdbPath, bool dryrun, b
         case IMAGE_NT_OPTIONAL_HDR64_MAGIC: {
             // Patch as a PE32+ file
             auto opt = pe.optionalHeader<IMAGE_OPTIONAL_HEADER64>();
-            pdbInfo = pe.pdbInfo(opt);
+            pdbInfo  = pe.pdbInfo(opt);
             patchOptionalHeader(pe, patches, opt);
             break;
         }
@@ -856,7 +844,8 @@ void patchImageImpl(const CharT* imagePath, const CharT* pdbPath, bool dryrun, b
 
     // Patch the PDB file.
     if (pdbPath) {
-        patchPDB(pdbPath, pdbInfo, pe.timestamp, pe.pdbSignature, dryrun, force);
+        patchPDB(pdbPath, pdbInfo, pe.timestamp, pe.pdbSignature, dryrun,
+                 force);
     }
 
     // Patch the ilk file with the new PDB signature. If we don't do this,
@@ -868,17 +857,19 @@ void patchImageImpl(const CharT* imagePath, const CharT* pdbPath, bool dryrun, b
     patches.apply(dryrun);
 }
 
-}
+}  // namespace
 
 #if defined(_WIN32) && defined(UNICODE)
 
-void patchImage(const wchar_t* imagePath, const wchar_t* pdbPath, bool dryrun, bool force) {
+void patchImage(const wchar_t* imagePath, const wchar_t* pdbPath, bool dryrun,
+                bool force) {
     patchImageImpl(imagePath, pdbPath, dryrun, force);
 }
 
 #else
 
-void patchImage(const char* imagePath, const char* pdbPath, bool dryrun, bool force) {
+void patchImage(const char* imagePath, const char* pdbPath, bool dryrun,
+                bool force) {
     patchImageImpl(imagePath, pdbPath, dryrun, force);
 }
 

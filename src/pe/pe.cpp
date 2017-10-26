@@ -24,17 +24,14 @@
 
 #include <cstring>
 
-PEFile::PEFile(const uint8_t* buf, size_t length)
-    : buf(buf), length(length)
-{
-    memset(pdbSignature, 0, sizeof(pdbSignature)/sizeof(*pdbSignature));
+PEFile::PEFile(const uint8_t* buf, size_t length) : buf(buf), length(length) {
+    memset(pdbSignature, 0, sizeof(pdbSignature) / sizeof(*pdbSignature));
 
     _init();
 }
 
 void PEFile::_init() {
-
-    const uint8_t* p = buf;
+    const uint8_t* p   = buf;
     const uint8_t* end = buf + length;
 
     if (p + sizeof(IMAGE_DOS_HEADER) >= end)
@@ -53,8 +50,7 @@ void PEFile::_init() {
     //
     // Check the signature
     //
-    if (p + sizeof(uint32_t) >= end)
-        throw InvalidImage("missing PE signature");
+    if (p + sizeof(uint32_t) >= end) throw InvalidImage("missing PE signature");
 
     const uint32_t signature = *(uint32_t*)p;
     if (signature != *(const uint32_t*)"PE\0\0")
@@ -87,7 +83,6 @@ void PEFile::_init() {
 }
 
 const uint8_t* PEFile::translate(size_t rva) const {
-
     const IMAGE_SECTION_HEADER* s = sectionHeaders;
 
     for (size_t i = 0; i < fileHeader->NumberOfSections; ++i) {

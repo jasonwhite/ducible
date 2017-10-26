@@ -22,30 +22,32 @@
 
 #include "util/file.h"
 
-#include <iostream>
 #include <codecvt>
-#include <string>
-#include <sstream>
+#include <iostream>
 #include <locale>
+#include <sstream>
+#include <string>
 
 #ifdef _WIN32
-#   include <windows.h>
+#include <windows.h>
 #endif
 
-template<> const FileMode<char> FileMode<char>::readExisting("rb");
-template<> const FileMode<char> FileMode<char>::writeEmpty("wb");
+template <>
+const FileMode<char> FileMode<char>::readExisting("rb");
+template <>
+const FileMode<char> FileMode<char>::writeEmpty("wb");
 
-template<> const FileMode<wchar_t> FileMode<wchar_t>::readExisting(L"rb");
-template<> const FileMode<wchar_t> FileMode<wchar_t>::writeEmpty(L"wb");
+template <>
+const FileMode<wchar_t> FileMode<wchar_t>::readExisting(L"rb");
+template <>
+const FileMode<wchar_t> FileMode<wchar_t>::writeEmpty(L"wb");
 
 /**
  * Deletion object to be used with shared_ptr.
  */
 class FileCloser {
-public:
-    void operator()(FILE* f) const {
-        fclose(f);
-    }
+   public:
+    void operator()(FILE* f) const { fclose(f); }
 };
 
 #ifdef _WIN32
@@ -89,7 +91,7 @@ FileRef openFile(const wchar_t* path, FileMode<wchar_t> mode) {
 void renameFile(const char* src, const char* dest) {
     if (!MoveFileExA(src, dest, MOVEFILE_REPLACE_EXISTING)) {
         throw std::system_error(GetLastError(), std::system_category(),
-            "failed to rename file");
+                                "failed to rename file");
     }
 }
 
@@ -102,8 +104,8 @@ void renameFile(const wchar_t* src, const wchar_t* dest) {
         std::stringbuf buf;
         std::ostream msg(&buf);
 
-        msg << "failed to rename file '" << converter.to_bytes(src)
-            << "' to '" << converter.to_bytes(dest) << "'";
+        msg << "failed to rename file '" << converter.to_bytes(src) << "' to '"
+            << converter.to_bytes(dest) << "'";
 
         throw std::system_error(err, std::system_category(), buf.str());
     }
@@ -137,7 +139,7 @@ void deleteFile(const wchar_t* path) {
     }
 }
 
-#else // !_WIN32
+#else  // !_WIN32
 
 FileRef openFile(const char* path, FileMode<char> mode) {
     FILE* f = fopen(path, mode.mode);
@@ -182,4 +184,4 @@ void deleteFile(const char* path) {
     }
 }
 
-#endif // _WIN32
+#endif  // _WIN32

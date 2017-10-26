@@ -22,10 +22,10 @@
 
 #include "msf.h"
 
-#include <system_error>
+#include <cassert>
 #include <cstring>
 #include <iostream>
-#include <cassert>
+#include <system_error>
 
 #include "util/file.h"
 
@@ -44,31 +44,30 @@ const uint8_t kBlankPage[kPageSize] = {0};
  * Helper function for finding the size of the given file.
  */
 int64_t getFileSize(FILE* f) {
-
     // Save our spot...
     int64_t pos = ftell(f);
     if (pos == -1) {
         throw std::system_error(errno, std::system_category(),
-            "ftell() failed");
+                                "ftell() failed");
     }
 
     // Go to the end
     if (fseek(f, 0, SEEK_END) == -1) {
         throw std::system_error(errno, std::system_category(),
-            "fseek() failed");
+                                "fseek() failed");
     }
 
     // Current position is the size of the file.
     int64_t size = ftell(f);
     if (size == -1) {
         throw std::system_error(errno, std::system_category(),
-            "ftell() failed");
+                                "ftell() failed");
     }
 
     // Go back to our old spot
     if (fseek(f, (long)pos, SEEK_SET) == -1) {
         throw std::system_error(errno, std::system_category(),
-            "fseek() failed");
+                                "fseek() failed");
     }
 
     return size;
@@ -88,7 +87,8 @@ int64_t getFileSize(FILE* f) {
  */
 bool isFpmPage(size_t page, size_t pageSize = kPageSize) noexcept {
     switch (page & (pageSize - 1)) {
-        case 1: case 2:
+        case 1:
+        case 2:
             return true;
         default:
             return false;
@@ -99,11 +99,10 @@ bool isFpmPage(size_t page, size_t pageSize = kPageSize) noexcept {
  * Writes a page to the given file handle.
  */
 void writePage(FileRef f, const uint8_t* data, size_t pageSize,
-        std::vector<uint32_t>& pagesWritten, uint32_t& pageCount) {
-
+               std::vector<uint32_t>& pagesWritten, uint32_t& pageCount) {
     if (fwrite(data, 1, pageSize, f.get()) != pageSize) {
         throw std::system_error(errno, std::system_category(),
-            "failed writing page");
+                                "failed writing page");
     }
 
     pagesWritten.push_back(pageCount++);
@@ -116,10 +115,8 @@ void writePage(FileRef f, const uint8_t* data, size_t pageSize,
  * count is incremented appropriately.
  */
 void writeStream(FileRef f, MsfStreamRef stream,
-        std::vector<uint32_t>& pagesWritten, uint32_t& pageCount) {
-
-    if (!stream || stream->length() == 0)
-        return;
+                 std::vector<uint32_t>& pagesWritten, uint32_t& pageCount) {
+    if (!stream || stream->length() == 0) return;
 
     uint8_t buf[kPageSize];
 
@@ -134,8 +131,10 @@ void writeStream(FileRef f, MsfStreamRef stream,
         memset(buf + bytesRead, 0, leftOver);
 
         if (isFpmPage(pageCount)) {
-            writePage(f, kBlankPage, sizeof(kBlankPage), pagesWritten, pageCount);
-            writePage(f, kBlankPage, sizeof(kBlankPage), pagesWritten, pageCount);
+            writePage(f, kBlankPage, sizeof(kBlankPage), pagesWritten,
+                      pageCount);
+            writePage(f, kBlankPage, sizeof(kBlankPage), pagesWritten,
+                      pageCount);
         }
 
         writePage(f, buf, sizeof(buf), pagesWritten, pageCount);
@@ -149,17 +148,16 @@ void writeStream(FileRef f, MsfStreamRef stream,
  * "used" if its index is a 0 in this bit map.
  */
 class FreePageMap {
-private:
+   private:
     std::vector<uint8_t> _data;
 
-public:
+   public:
     /**
      * Initialize the free page map. By default, all pages are initially marked
      * as "used".
      */
     FreePageMap(size_t pageCount, uint8_t initValue = 0x00)
-        : _data((pageCount+7)/8, initValue) {
-
+        : _data((pageCount + 7) / 8, initValue) {
         // Mark the left over bits at the end as free
         _data.back() |= ~(0xFF >> (_data.size() * 8 - pageCount));
     }
@@ -167,16 +165,12 @@ public:
     /**
      * Mark a page as free.
      */
-    void setFree(size_t page) {
-        _data[page / 8] |= 1 << (page % 8);
-    }
+    void setFree(size_t page) { _data[page / 8] |= 1 << (page % 8); }
 
     /**
      * Mark a page as used.
      */
-    void setUsed(size_t page) {
-        _data[page / 8] &= ~(1 << (page % 8));
-    }
+    void setUsed(size_t page) { _data[page / 8] &= ~(1 << (page % 8)); }
 
     /**
      * Writes the FPM to the MSF.
@@ -198,7 +192,6 @@ void FreePageMap::write(FILE* f, size_t pageSize) const {
     // file. This is due to a bug in Microsoft's PDB implementation and is
     // unlikely to be fixed in the future.
 
-
     // Start at the first page.
     size_t page = 1;
 
@@ -207,17 +200,17 @@ void FreePageMap::write(FILE* f, size_t pageSize) const {
     const uint8_t* data = _data.data();
 
     for (size_t i = 0; i < chunks; ++i) {
-
         // Seek to the FPM page
         if (fseek(f, (long)(page * pageSize), SEEK_SET) != 0) {
             throw std::system_error(errno, std::system_category(),
-                    "Failed to seek to MSF page");
+                                    "Failed to seek to MSF page");
         }
 
         // Write a page of the FPM
-        if (fwrite(data, 1, pageSize, f) != pageSize) {;
+        if (fwrite(data, 1, pageSize, f) != pageSize) {
+            ;
             throw std::system_error(errno, std::system_category(),
-                    "Failed to write FPM page");
+                                    "Failed to write FPM page");
         }
 
         page += pageSize;
@@ -229,28 +222,29 @@ void FreePageMap::write(FILE* f, size_t pageSize) const {
         // Seek to the FPM page
         if (fseek(f, (long)(page * pageSize), SEEK_SET) != 0) {
             throw std::system_error(errno, std::system_category(),
-                    "Failed to seek to final MSF page");
+                                    "Failed to seek to final MSF page");
         }
 
         // Write a partial page of the FPM
-        if (fwrite(data, 1, leftOver, f) != leftOver) {;
+        if (fwrite(data, 1, leftOver, f) != leftOver) {
+            ;
             throw std::system_error(errno, std::system_category(),
-                    "Failed to write final FPM page");
+                                    "Failed to write final FPM page");
         }
 
         // Fill the rest with 1s to indicate free pages.
         std::vector<uint8_t> ones(pageSize - leftOver, 0xFF);
-        if (fwrite(ones.data(), 1, ones.size(), f) != ones.size()) {;
+        if (fwrite(ones.data(), 1, ones.size(), f) != ones.size()) {
+            ;
             throw std::system_error(errno, std::system_category(),
-                    "Failed to write final FPM page");
+                                    "Failed to write final FPM page");
         }
     }
 }
 
-}
+}  // namespace
 
 MsfFile::MsfFile(FileRef f) {
-
     MSF_HEADER header;
 
     // Read the header
@@ -274,25 +268,27 @@ MsfFile::MsfFile(FileRef f) {
     std::unique_ptr<uint32_t> streamTablePagesPages(
         new uint32_t[stPagesPagesCount]);
 
-    if (fread(streamTablePagesPages.get(), sizeof(uint32_t), stPagesPagesCount, f.get()) !=
-            stPagesPagesCount) {
+    if (fread(streamTablePagesPages.get(), sizeof(uint32_t), stPagesPagesCount,
+              f.get()) != stPagesPagesCount) {
         throw InvalidMsf("Missing root MSF stream table page list");
     }
 
-    MsfFileStream streamTablePagesStream(f, header.pageSize, stPagesPagesCount * sizeof(uint32_t),
-            streamTablePagesPages.get());
+    MsfFileStream streamTablePagesStream(f, header.pageSize,
+                                         stPagesPagesCount * sizeof(uint32_t),
+                                         streamTablePagesPages.get());
 
     // Read the list of stream table pages.
     std::vector<uint32_t> streamTablePages(stPagesPagesCount);
-    if (streamTablePagesStream.read(&streamTablePages[0])
-            != stPagesPagesCount * sizeof(uint32_t)) {
+    if (streamTablePagesStream.read(&streamTablePages[0]) !=
+        stPagesPagesCount * sizeof(uint32_t)) {
         throw InvalidMsf("failed to read stream table page list");
     }
 
     // Finally, read the stream table itself
-    MsfFileStream streamTableStream(f, header.pageSize, header.streamTableInfo.size,
-            &streamTablePages[0]);
-    std::vector<uint32_t> streamTable(header.streamTableInfo.size / sizeof(uint32_t));
+    MsfFileStream streamTableStream(
+        f, header.pageSize, header.streamTableInfo.size, &streamTablePages[0]);
+    std::vector<uint32_t> streamTable(header.streamTableInfo.size /
+                                      sizeof(uint32_t));
     if (streamTableStream.read(&streamTable[0]) != header.streamTableInfo.size)
         throw InvalidMsf("failed to read stream table");
 
@@ -309,7 +305,6 @@ MsfFile::MsfFile(FileRef f) {
 
     uint32_t pagesIndex = 0;
     for (uint32_t i = 0; i < streamCount; ++i) {
-
         // If we were given a bogus stream count, we could potentially overflow
         // the stream table vector. Detect that here.
         if (pagesIndex >= streamTable.size())
@@ -320,22 +315,20 @@ MsfFile::MsfFile(FileRef f) {
         // Microsoft's PDB implementation sometimes sets the size of a stream to
         // -1. We can't ignore this stream as it will invalidate the stream
         // IDs everywhere. Instead, just set it to a length of 0.
-        if (size == (uint32_t)-1)
-            size = 0;
+        if (size == (uint32_t)-1) size = 0;
 
         addStream(new MsfFileStream(f, header.pageSize, size,
-                streamPages + pagesIndex));
+                                    streamPages + pagesIndex));
 
         pagesIndex += ::pageCount(header.pageSize, size);
     }
 }
 
-MsfFile::~MsfFile() {
-}
+MsfFile::~MsfFile() {}
 
 size_t MsfFile::addStream(MsfStream* stream) {
     _streams.push_back(MsfStreamRef(stream));
-    return _streams.size()-1;
+    return _streams.size() - 1;
 }
 
 MsfStreamRef MsfFile::getStream(size_t index) {
@@ -350,12 +343,9 @@ void MsfFile::replaceStream(size_t index, MsfStreamRef stream) {
     _streams[index] = stream;
 }
 
-size_t MsfFile::streamCount() const {
-    return _streams.size();
-}
+size_t MsfFile::streamCount() const { return _streams.size(); }
 
 void MsfFile::write(FileRef f) const {
-
     uint32_t pageCount = 0;
 
     // Write out 4 blank pages: one for the header, two for the FPM, and one
@@ -365,7 +355,7 @@ void MsfFile::write(FileRef f) const {
     for (; pageCount < 4; ++pageCount) {
         if (fwrite(kBlankPage, 1, kPageSize, f.get()) != kPageSize) {
             throw std::system_error(errno, std::system_category(),
-                    "failed writing MSF preamble");
+                                    "failed writing MSF preamble");
         }
     }
 
@@ -373,7 +363,7 @@ void MsfFile::write(FileRef f) const {
     std::vector<uint32_t> streamTable;
     streamTable.push_back((uint32_t)streamCount());
 
-    for (auto&& stream: _streams) {
+    for (auto&& stream : _streams) {
         if (stream)
             streamTable.push_back((uint32_t)stream->length());
         else
@@ -397,9 +387,7 @@ void MsfFile::write(FileRef f) const {
     // which pages were written.
     std::vector<uint32_t> streamTablePages;
     MsfStreamRef streamTableStream(new MsfReadOnlyStream(
-            streamTable.size() * sizeof(streamTable[0]),
-            streamTable.data())
-            );
+        streamTable.size() * sizeof(streamTable[0]), streamTable.data()));
 
     writeStream(f, streamTableStream, streamTablePages, pageCount);
 
@@ -407,29 +395,28 @@ void MsfFile::write(FileRef f) const {
     // These pages in turn will be written after the MSF header.
     std::vector<uint32_t> streamTablePgPg;
     MsfStreamRef streamTableStreamPages(new MsfReadOnlyStream(
-            streamTablePages.size() * sizeof(uint32_t),
-            streamTablePages.data()
-            ));
+        streamTablePages.size() * sizeof(uint32_t), streamTablePages.data()));
 
     writeStream(f, streamTableStreamPages, streamTablePgPg, pageCount);
 
     // Write the header
     MSF_HEADER header = {};
     memcpy(header.magic, kMsfHeaderMagic, sizeof(kMsfHeaderMagic));
-    header.pageSize = kPageSize;
+    header.pageSize    = kPageSize;
     header.freePageMap = 1;
-    header.pageCount = pageCount;
-    header.streamTableInfo.size = (uint32_t)streamTable.size() * sizeof(streamTable[0]);
+    header.pageCount   = pageCount;
+    header.streamTableInfo.size =
+        (uint32_t)streamTable.size() * sizeof(streamTable[0]);
     header.streamTableInfo.index = 0;
 
     if (fseek(f.get(), 0, SEEK_SET) != 0) {
         throw std::system_error(errno, std::system_category(),
-                "fseek() failed");
+                                "fseek() failed");
     }
 
     if (fwrite(&header, sizeof(header), 1, f.get()) != 1) {
         throw std::system_error(errno, std::system_category(),
-                "failed writing MSF header");
+                                "failed writing MSF header");
     }
 
     // Make sure there aren't too many root stream table pages. This could only
@@ -439,19 +426,19 @@ void MsfFile::write(FileRef f) const {
 
     if (streamTablePgPgLength > kPageSize - sizeof(header)) {
         throw InvalidMsf(
-                "root stream table pages are too large to fit in one page");
+            "root stream table pages are too large to fit in one page");
     }
 
     // Write the root pages for the stream table.
     if (fwrite(streamTablePgPg.data(), sizeof(streamTablePgPg[0]),
-                streamTablePgPg.size(), f.get()) != streamTablePgPg.size()) {
+               streamTablePgPg.size(), f.get()) != streamTablePgPg.size()) {
         throw std::system_error(errno, std::system_category(),
-                "failed writing MSF header");
+                                "failed writing MSF header");
     }
 
     // Construct the free page map.
     FreePageMap fpm(pageCount);
-    fpm.setFree(3); // The omnipresent superfluous page
+    fpm.setFree(3);  // The omnipresent superfluous page
 
     // Mark stream 0 pages as free
     for (size_t i = streamZeroStart; i < streamZeroEnd; ++i) {

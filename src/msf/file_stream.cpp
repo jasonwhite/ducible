@@ -27,55 +27,45 @@
 
 #include <iostream>
 
-MsfFileStream::MsfFileStream(FileRef f, size_t pageSize, size_t length, const uint32_t* pages)
-    : _f(f), _pageSize(pageSize), _pos(0), _length(length)
-{
+MsfFileStream::MsfFileStream(FileRef f, size_t pageSize, size_t length,
+                             const uint32_t* pages)
+    : _f(f), _pageSize(pageSize), _pos(0), _length(length) {
     _pages.assign(pages, pages + ::pageCount(pageSize, length));
 }
 
-size_t MsfFileStream::length() const {
-    return _length;
-}
+size_t MsfFileStream::length() const { return _length; }
 
-size_t MsfFileStream::getPos() const {
-    return _pos;
-}
+size_t MsfFileStream::getPos() const { return _pos; }
 
-void MsfFileStream::setPos(size_t pos) {
-    _pos = pos;
-}
+void MsfFileStream::setPos(size_t pos) { _pos = pos; }
 
 size_t MsfFileStream::readFromPage(size_t page, size_t length, void* buf,
-        size_t offset) {
-
+                                   size_t offset) {
     // Seek to the desired offset in the file.
     if (fseek(_f.get(), (long)(_pageSize * page + offset), SEEK_SET) != 0) {
         throw std::system_error(errno, std::system_category(),
-                "Failed to seek to MSF page");
+                                "Failed to seek to MSF page");
     }
 
     return fread(buf, 1, length, _f.get());
 }
 
 size_t MsfFileStream::read(size_t length, void* buf) {
-
     size_t bytesRead = 0;
 
     while (length > 0) {
-        size_t i = _pos / _pageSize;
-        size_t offset = _pos % _pageSize;
+        size_t i         = _pos / _pageSize;
+        size_t offset    = _pos % _pageSize;
         size_t chunkSize = std::min(length, _pageSize - offset);
 
-        if (i >= _pages.size())
-            break;
+        if (i >= _pages.size()) break;
 
         size_t chunkRead = readFromPage(_pages[i], chunkSize, buf, offset);
         bytesRead += chunkRead;
 
         _pos += chunkRead;
 
-        if (chunkRead != chunkSize)
-            break;
+        if (chunkRead != chunkSize) break;
 
         length -= chunkSize;
         buf = (uint8_t*)buf + chunkSize;
@@ -84,9 +74,7 @@ size_t MsfFileStream::read(size_t length, void* buf) {
     return bytesRead;
 }
 
-size_t MsfFileStream::read(void* buf) {
-    return read(_length - _pos, buf);
-}
+size_t MsfFileStream::read(void* buf) { return read(_length - _pos, buf); }
 
 size_t MsfFileStream::write(size_t length, const void* buf) {
     // TODO

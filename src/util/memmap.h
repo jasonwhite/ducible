@@ -30,7 +30,7 @@
 
 #pragma once
 
-#include <stdlib.h> // For size_t
+#include <stdlib.h>  // For size_t
 
 #ifdef _WIN32
 typedef void* HANDLE;
@@ -39,9 +39,8 @@ typedef void* HANDLE;
 /**
  * Maps a file into memory.
  */
-class MemMap
-{
-private:
+class MemMap {
+   private:
     void* _buf;
     size_t _length;
 
@@ -50,7 +49,7 @@ private:
     void _init(HANDLE hFile, size_t length = 0);
 #endif
 
-public:
+   public:
     MemMap(const char* path, size_t length = 0);
     ~MemMap();
 
@@ -61,14 +60,10 @@ public:
     /**
      * Returns the size of the file.
      */
-    size_t length() const {
-        return _length;
-    }
+    size_t length() const { return _length; }
 
     /**
      * Returns a pointer to the buffer.
      */
-    void* buf() {
-        return _buf;
-    }
+    void* buf() { return _buf; }
 };

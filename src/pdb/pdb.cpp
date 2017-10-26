@@ -110,13 +110,14 @@ NameMapTable readNameMapTable(const uint8_t* data, const uint8_t* dataEnd) {
     // Finally, read the pairs of string offsets and stream indices
     const uint32_t* pairs = (const uint32_t*)data;
     for (size_t i = 0; i < elemCount; ++i) {
-        const uint32_t offset = pairs[i*2];
+        const uint32_t offset = pairs[i * 2];
 
         if (offset >= stringsLength)
-            throw InvalidPdb("invalid PDB name table offset into strings buffer");
+            throw InvalidPdb(
+                "invalid PDB name table offset into strings buffer");
 
-        const char* name = &strings[offset];
-        const uint32_t stream = pairs[i*2+1];
+        const char* name         = &strings[offset];
+        const uint32_t stream    = pairs[i * 2 + 1];
         table[std::string(name)] = stream;
     }
 

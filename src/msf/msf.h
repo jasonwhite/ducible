@@ -22,9 +22,9 @@
 #pragma once
 
 #include <stdint.h>
-#include <stdio.h> // For FILE*
-#include <vector>
+#include <stdio.h>  // For FILE*
 #include <memory>
+#include <vector>
 
 #include "msf/format.h"
 #include "util/file.h"
@@ -32,18 +32,14 @@
 /**
  * Thrown when an MSF is found to be invalid or unsupported.
  */
-class InvalidMsf
-{
-private:
+class InvalidMsf {
+   private:
     const char* _why;
 
-public:
-
+   public:
     InvalidMsf(const char* why) : _why(why) {}
 
-    const char* why() const {
-        return _why;
-    }
+    const char* why() const { return _why; }
 };
 
 class MsfStream;
@@ -51,12 +47,10 @@ class MsfStream;
 typedef std::shared_ptr<MsfStream> MsfStreamRef;
 
 class MsfFile {
-private:
-
+   private:
     std::vector<MsfStreamRef> _streams;
 
-public:
-
+   public:
     MsfFile(FileRef f);
 
     virtual ~MsfFile();

@@ -81,11 +81,11 @@ struct MSF_HEADER {
     // pages list. The stream table stream can potentially take up multiple
     // pages, but it usually only takes up one page. It is also usually the
     // last page in the file.
-    //uint32_t streamTablePagesPages[0];
+    // uint32_t streamTablePagesPages[0];
 };
 
 // Magic version string in the MSF header.
 const char kMsfHeaderMagic[] = "Microsoft C/C++ MSF 7.00\r\n\x1a\x44\x53\0\0";
 
 static_assert(sizeof(MSF_HEADER::magic) == sizeof(kMsfHeaderMagic),
-        "Invalid MSF header magic string size");
+              "Invalid MSF header magic string size");

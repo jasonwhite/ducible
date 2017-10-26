@@ -26,17 +26,11 @@
 #include "msf/readonly_stream.h"
 
 MsfReadOnlyStream::MsfReadOnlyStream(size_t length, const void* buf)
-    : _pos(0), _length(length), _data((const uint8_t*)buf)
-{
-}
+    : _pos(0), _length(length), _data((const uint8_t*)buf) {}
 
-size_t MsfReadOnlyStream::length() const {
-    return _length;
-}
+size_t MsfReadOnlyStream::length() const { return _length; }
 
-size_t MsfReadOnlyStream::getPos() const {
-    return _pos;
-}
+size_t MsfReadOnlyStream::getPos() const { return _pos; }
 
 void MsfReadOnlyStream::setPos(size_t pos) {
     // Don't allow setting the position past the end of the stream.
@@ -44,9 +38,7 @@ void MsfReadOnlyStream::setPos(size_t pos) {
 }
 
 size_t MsfReadOnlyStream::read(size_t length, void* buf) {
-
-    if (_pos >= _length)
-        return 0;
+    if (_pos >= _length) return 0;
 
     size_t available = std::min(_length - _pos, length);
 
@@ -57,12 +49,9 @@ size_t MsfReadOnlyStream::read(size_t length, void* buf) {
     return available;
 }
 
-size_t MsfReadOnlyStream::read(void* buf) {
-    return read(_length - _pos, buf);
-}
+size_t MsfReadOnlyStream::read(void* buf) { return read(_length - _pos, buf); }
 
 size_t MsfReadOnlyStream::write(size_t length, const void* buf) {
-
     // TODO: Throw an exception instead
     (void)length;
     (void)buf;

@@ -27,18 +27,14 @@
 /**
  * Thrown when a PDB is found to be invalid or unsupported.
  */
-class InvalidPdb
-{
-private:
+class InvalidPdb {
+   private:
     const char* _why;
 
-public:
-
+   public:
     InvalidPdb(const char* why) : _why(why) {}
 
-    const char* why() const {
-        return _why;
-    }
+    const char* why() const { return _why; }
 };
 
 using NameMapTable = std::map<std::string, uint32_t>;

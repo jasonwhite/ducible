@@ -20,11 +20,11 @@
  * SOFTWARE.
  */
 
-#include <string>
 #include <string.h>
-#include <memory>
 #include <algorithm>
 #include <iostream>
+#include <memory>
+#include <string>
 
 #include "ducible/patch_ilk.h"
 
@@ -33,26 +33,26 @@
 namespace {
 
 // Helpers for CharT generalization
-template<typename CharT>
+template <typename CharT>
 struct Strings {
     static const CharT ilkExtension[];
 };
 
-template<> const char    Strings<char>::ilkExtension[]    = ".ilk";
-template<> const wchar_t Strings<wchar_t>::ilkExtension[] = L".ilk";
+template <>
+const char Strings<char>::ilkExtension[] = ".ilk";
+template <>
+const wchar_t Strings<wchar_t>::ilkExtension[] = L".ilk";
 
-}
+}  // namespace
 
-template<typename CharT>
+template <typename CharT>
 void patchIlkImpl(const CharT* imagePath, const uint8_t oldSignature[16],
-        const uint8_t newSignature[16], bool dryrun) {
-
+                  const uint8_t newSignature[16], bool dryrun) {
     std::basic_string<CharT> ilkPath(imagePath);
     size_t extpos = ilkPath.find_last_of('.');
 
     // Strip off the extension.
-    if (extpos != std::basic_string<CharT>::npos)
-        ilkPath.resize(extpos);
+    if (extpos != std::basic_string<CharT>::npos) ilkPath.resize(extpos);
 
     ilkPath.append(Strings<CharT>::ilkExtension);
 
@@ -60,22 +60,20 @@ void patchIlkImpl(const CharT* imagePath, const uint8_t oldSignature[16],
     try {
         MemMap ilk(ilkPath.c_str());
 
-        uint8_t* buf = (uint8_t*)ilk.buf();
+        uint8_t* buf    = (uint8_t*)ilk.buf();
         uint8_t* bufEnd = buf + ilk.length();
 
         // Find
-        uint8_t* it = std::find_first_of(buf, bufEnd,
-                oldSignature, oldSignature+16);
+        uint8_t* it =
+            std::find_first_of(buf, bufEnd, oldSignature, oldSignature + 16);
 
         // Replace
         if (it != bufEnd) {
             std::cout << "Replacing old PDB signature in ILK file.\n";
 
-            if (!dryrun)
-                memcpy(it, newSignature, 16);
+            if (!dryrun) memcpy(it, newSignature, 16);
         }
-    }
-    catch (const std::system_error&) {
+    } catch (const std::system_error&) {
         // Ignore.
     }
 }
@@ -83,14 +81,14 @@ void patchIlkImpl(const CharT* imagePath, const uint8_t oldSignature[16],
 #if defined(_WIN32) && defined(UNICODE)
 
 void patchIlk(const wchar_t* imagePath, const uint8_t oldSignature[16],
-        const uint8_t newSignature[16], bool dryrun) {
+              const uint8_t newSignature[16], bool dryrun) {
     patchIlkImpl(imagePath, oldSignature, newSignature, dryrun);
 }
 
 #else
 
 void patchIlk(const char* imagePath, const uint8_t oldSignature[16],
-        const uint8_t newSignature[16], bool dryrun) {
+              const uint8_t newSignature[16], bool dryrun) {
     patchIlkImpl(imagePath, oldSignature, newSignature, dryrun);
 }
 

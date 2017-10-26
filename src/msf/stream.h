@@ -21,14 +21,14 @@
  */
 #pragma once
 
-#include <stdlib.h>
 #include <stddef.h>
+#include <stdlib.h>
 
 /**
  * Helper function for computing the number of pages required to hold a length
  * of bytes.
  */
-template<typename T>
+template <typename T>
 inline T pageCount(T pageSize, T length) {
     return (length + pageSize - 1) / pageSize;
 }
@@ -40,8 +40,7 @@ inline T pageCount(T pageSize, T length) {
  * task of reading from a stream to make it seem as if the data is sequential.
  */
 class MsfStream {
-public:
-
+   public:
     virtual ~MsfStream() {}
 
     /**
@@ -62,9 +61,7 @@ public:
     /**
      * Skips over the given number of bytes.
      */
-    void skip(ptrdiff_t n) {
-        setPos(getPos() + n);
-    }
+    void skip(ptrdiff_t n) { setPos(getPos() + n); }
 
     /**
      * Reads a length of the stream. This abstracts reading from multiple pages.
