@@ -390,18 +390,7 @@ void MsfFile::write(FileRef f) const {
     size_t streamZeroEnd = streamTable.size();
 
     for (size_t i = 1; i < _streams.size(); ++i) {
-
-        //std::cout << "Stream #" << i << ": pages ";
-
-        //uint32_t j = pageCount;
-
         writeStream(f, _streams[i], streamTable, pageCount);
-
-        //for (; j < pageCount; ++j) {
-            //std::cout << j << ", ";
-        //}
-
-        //std::cout << std::endl;
     }
 
     // Write the stream table stream at the end of the file, keeping track of
