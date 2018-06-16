@@ -99,20 +99,22 @@ bool isFpmPage(size_t page, size_t pageSize = kPageSize) noexcept {
  * Writes a page to the given file handle.
  */
 void writePage(FileRef f, const uint8_t* data, size_t pageSize,
-               std::vector<uint32_t>& pagesWritten, uint32_t& pageCount) {
+               std::vector<uint32_t>* pagesWritten, uint32_t& pageCount) {
     if (fwrite(data, 1, pageSize, f.get()) != pageSize) {
         throw std::system_error(errno, std::system_category(),
                                 "failed writing page");
     }
 
-    pagesWritten.push_back(pageCount++);
+    if(pagesWritten)
+      pagesWritten->push_back(pageCount);
+    pageCount++;
 }
 
 /**
  * Writes a stream to the given file handle.
  *
- * The pages that are written are appended to the given vector and the page
- * count is incremented appropriately.
+ * The non-FPM pages that are written are appended to the given vector.  Page
+ * count is incremented for both normal and FPM pages.
  */
 void writeStream(FileRef f, MsfStreamRef stream,
                  std::vector<uint32_t>& pagesWritten, uint32_t& pageCount) {
@@ -131,13 +133,13 @@ void writeStream(FileRef f, MsfStreamRef stream,
         memset(buf + bytesRead, 0, leftOver);
 
         if (isFpmPage(pageCount)) {
-            writePage(f, kBlankPage, sizeof(kBlankPage), pagesWritten,
+            writePage(f, kBlankPage, sizeof(kBlankPage), nullptr,
                       pageCount);
-            writePage(f, kBlankPage, sizeof(kBlankPage), pagesWritten,
+            writePage(f, kBlankPage, sizeof(kBlankPage), nullptr,
                       pageCount);
         }
 
-        writePage(f, buf, sizeof(buf), pagesWritten, pageCount);
+        writePage(f, buf, sizeof(buf), &pagesWritten, pageCount);
     }
 }
 
