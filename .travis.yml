@@ -11,7 +11,7 @@ compiler:
 
 before_install:
  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-       brew update && brew install python3;
+       brew update && brew upgrade python;
    fi
 
 install:
