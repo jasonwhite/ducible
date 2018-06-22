@@ -105,8 +105,7 @@ void writePage(FileRef f, const uint8_t* data, size_t pageSize,
                                 "failed writing page");
     }
 
-    if(pagesWritten)
-      pagesWritten->push_back(pageCount);
+    if (pagesWritten) pagesWritten->push_back(pageCount);
     pageCount++;
 }
 
@@ -133,10 +132,8 @@ void writeStream(FileRef f, MsfStreamRef stream,
         memset(buf + bytesRead, 0, leftOver);
 
         if (isFpmPage(pageCount)) {
-            writePage(f, kBlankPage, sizeof(kBlankPage), nullptr,
-                      pageCount);
-            writePage(f, kBlankPage, sizeof(kBlankPage), nullptr,
-                      pageCount);
+            writePage(f, kBlankPage, sizeof(kBlankPage), nullptr, pageCount);
+            writePage(f, kBlankPage, sizeof(kBlankPage), nullptr, pageCount);
         }
 
         writePage(f, buf, sizeof(buf), &pagesWritten, pageCount);
