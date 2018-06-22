@@ -207,7 +207,6 @@ void FreePageMap::write(FILE* f, size_t pageSize) const {
 
         // Write a page of the FPM
         if (fwrite(data, 1, pageSize, f) != pageSize) {
-            ;
             throw std::system_error(errno, std::system_category(),
                                     "Failed to write FPM page");
         }
@@ -226,7 +225,6 @@ void FreePageMap::write(FILE* f, size_t pageSize) const {
 
         // Write a partial page of the FPM
         if (fwrite(data, 1, leftOver, f) != leftOver) {
-            ;
             throw std::system_error(errno, std::system_category(),
                                     "Failed to write final FPM page");
         }
@@ -234,7 +232,6 @@ void FreePageMap::write(FILE* f, size_t pageSize) const {
         // Fill the rest with 1s to indicate free pages.
         std::vector<uint8_t> ones(pageSize - leftOver, 0xFF);
         if (fwrite(ones.data(), 1, ones.size(), f) != ones.size()) {
-            ;
             throw std::system_error(errno, std::system_category(),
                                     "Failed to write final FPM page");
         }
