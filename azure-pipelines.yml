@@ -1,5 +1,10 @@
 trigger:
-- master
+  branches:
+    include:
+    - master
+  tags:
+    include:
+     - 'v*'
 
 jobs:
 - job: clang
@@ -51,3 +56,16 @@ jobs:
       .\vs\vs2015\$(platform)\$(configuration)\ducible.exe
       .\vs\vs2015\$(platform)\$(configuration)\pdbdump.exe
     displayName: 'Archive Artifacts'
+  - task: GitHubRelease@0
+    displayName: 'Create GitHub Release'
+    condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+    inputs:
+      gitHubConnection: release
+      repositoryName: '$(Build.Repository.Name)'
+      action: edit
+      target: '$(Build.SourceVersion)'
+      tagSource: manual
+      tag: '$(Build.SourceBranchName)'
+      assets: 'ducible-windows-$(platform)-$(configuration).zip'
+      assetUploadMode: replace
+      addChangeLog: false
