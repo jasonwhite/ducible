@@ -46,3 +46,8 @@ jobs:
   - script: |
       runtests.bat vs/vs2015/$(platform)/$(configuration)
     displayName: 'tests'
+  - script: >
+      7z a ducible-windows-$(platform)-$(configuration).zip
+      .\vs\vs2015\$(platform)\$(configuration)\ducible.exe
+      .\vs\vs2015\$(platform)\$(configuration)\pdbdump.exe
+    displayName: 'Archive Artifacts'
