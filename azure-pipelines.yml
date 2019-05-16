@@ -43,3 +43,6 @@ jobs:
       platform: $(platform)
       configuration: $(configuration)
       msbuildArgs: '/m'
+  - script: |
+      runtests.bat vs/vs2015/$(platform)/$(configuration)
+    displayName: 'tests'
