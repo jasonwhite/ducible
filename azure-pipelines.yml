@@ -17,3 +17,14 @@ jobs:
   - script: |
       make CC=gcc CXX=g++
     displayName: 'make'
+
+- job: windows
+  pool:
+    vmImage: 'vs2017-win2016'
+  steps:
+  - task: VSBuild@1
+    inputs:
+      solution: 'vs/vs2015/ducible.sln'
+      vsVersion: 'latest'
+      platform: 'x64'
+      configuration: 'Release'
