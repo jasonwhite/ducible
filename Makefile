@@ -17,9 +17,7 @@ PDBDUMP_OBJECTS = $(COMMON_OBJECTS) $(patsubst %.cpp, %.o, $(wildcard src/pdbdum
 
 HEADERS = $(wildcard src/*/*.h) src/version.h
 
-VERSION_DEPS=VERSION .git/HEAD $(wildcard .git/refs/heads/*)
-
-src/version.h: src/version.h.in $(VERSION_DEPS)
+src/version.h: src/version.h.in VERSION scripts/version.py
 	./scripts/version.py $< $@
 
 src/%.o: src/%.cpp $(HEADERS)

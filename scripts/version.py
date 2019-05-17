@@ -29,6 +29,73 @@ import re
 import sys
 import subprocess
 import argparse
+import functools
+
+from typing import Any
+
+@functools.total_ordering
+class SemVer(object):
+    """
+    Represents a semantic version of the form:
+
+        major.minor.patch[-prerelease]
+
+    This isn't meant to be completely correct, only good enough for the purpose
+    of this script.
+    """
+
+    def __init__(self, major: int, minor: int, patch: int, pre_release: str = ""):
+        self.major = major
+        self.minor = minor
+        self.patch = patch
+        self.pre_release = pre_release
+
+    @staticmethod
+    def parse(s) -> Any:
+        components = s.split("-")
+        major, minor, patch = [int(x) for x in components[0].split(".")]
+        if len(components) > 1:
+            pre_release = components[1]
+        else:
+            pre_release = None
+
+        return SemVer(major, minor, patch, pre_release)
+
+    def __str__(self) -> str:
+        if self.pre_release:
+            return "{}.{}.{}-{}".format(
+                self.major, self.minor, self.patch, self.pre_release
+            )
+
+        return "{}.{}.{}".format(self.major, self.minor, self.patch)
+
+    def __repr__(self) -> str:
+        return str(self)
+
+    def __hash__(self) -> int:
+        return hash((self.major, self.minor, self.patch, self.pre_release))
+
+    def __le__(self, other: Any) -> bool:
+        if not isinstance(other, SemVer):
+            return NotImplemented
+
+        return (self.major, self.minor, self.patch, self.pre_release) < (
+            other.major,
+            other.minor,
+            other.patch,
+            other.pre_release,
+        )
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, SemVer):
+            return NotImplemented
+
+        return (self.major, self.minor, self.patch, self.pre_release) == (
+            other.major,
+            other.minor,
+            other.patch,
+            other.pre_release,
+        )
 
 def git_version():
     """
@@ -58,19 +125,13 @@ def version_info(version_file):
     """
     Returns a tuple of version information using the given version string.
     """
+    version = SemVer.parse(next(version_file).strip())
 
     info = {}
-
-    version_string = next(version_file).strip()
-
-    version = tuple([x for x in version_string.split('.')][0:3])
-
-    info['MAJOR'] = version[0]
-    info['MINOR'] = version[1]
-    info['PATCH'] = version[2]
-    info['GIT_VERSION'] = git_version()
-    info['GIT_COMMIT_SHORT'] = git_commit_short()
-    info['GIT_COMMIT_LONG'] = git_commit_long()
+    info['MAJOR'] = version.major
+    info['MINOR'] = version.minor
+    info['PATCH'] = version.patch
+    info['FULL_VERSION'] = str(version)
 
     return info
 
@@ -85,7 +146,10 @@ def substitute_variables(input_file, output_file, variables):
     re_macro = re.compile(r'\${([^}]*)}')
 
     try:
-        output_file.write(re_macro.sub(lambda m: variables[m.group(1)], content))
+        output_file.write(re_macro.sub(
+            lambda m: str(variables[m.group(1)]),
+            content
+        ))
     except KeyError as e:
         print('Variable %s is not defined' % e, file=sys.stderr)
         sys.exit(1)

@@ -211,7 +211,7 @@ int pdbdump(int argc, CharT** argv) {
         std::cout << help;
         return 0;
     } catch (const CommandLineVersion&) {
-        std::cout << "ducible version " << DUCIBLE_PRETTY_VERSION << std::endl;
+        std::cout << DUCIBLE_VERSION << std::endl;
         return 0;
     }
 
