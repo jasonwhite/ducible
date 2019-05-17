@@ -1,10 +1,6 @@
-[travis-ci-badge]: https://travis-ci.org/jasonwhite/ducible.svg?branch=master
-[appveyor-badge]: https://ci.appveyor.com/api/projects/status/96cmnhjw4159goep/branch/master?svg=true
-
 # Ducible
 
-[![Build Status][travis-ci-badge]](https://travis-ci.org/jasonwhite/ducible)
-[![Build status][appveyor-badge]](https://ci.appveyor.com/project/jasonwhite/ducible/branch/master)
+[![Build Status](https://dev.azure.com/jason-white/ducible/_apis/build/status/jasonwhite.ducible?branchName=master)](https://dev.azure.com/jason-white/ducible/_build/latest?definitionId=1&branchName=master)
 
 This is a tool to make builds of Portable Executables (PEs) and PDBs
 repro*ducible*.
