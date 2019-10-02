@@ -1,6 +1,6 @@
 # Ducible
 
-[![Build Status](https://dev.azure.com/jason-white/ducible/_apis/build/status/jasonwhite.ducible?branchName=master)](https://dev.azure.com/jason-white/ducible/_build/latest?definitionId=1&branchName=master)
+[![Build Status](https://dev.azure.com/jasonwhite-io/opensource/_apis/build/status/jasonwhite.ducible?branchName=master)](https://dev.azure.com/jasonwhite-io/opensource/_build/latest?definitionId=5&branchName=master)
 
 This is a tool to make builds of Portable Executables (PEs) and PDBs
 repro*ducible*.
